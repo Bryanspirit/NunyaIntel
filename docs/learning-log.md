@@ -4,6 +4,30 @@ One entry per build step: what we built, the key ideas behind it, how to run it,
 
 ---
 
+## W1: The web API (18 Nov 2026)
+
+**What:** `nunyaintel serve` starts a local web server (FastAPI) at http://127.0.0.1:8000. It returns every analysis as JSON for the React app:
+- `/api/meta` and `/api/maps/{map}`: data for the pickers and map callouts.
+- `/api/scout`: the scouting report.
+- `/api/operator`, `/api/operator/angles`: Operator analyses.
+- `/api/utility`, `/api/utility/lineups`: utility analyses.
+
+Open http://127.0.0.1:8000/docs to try every endpoint in the browser. FastAPI generates that page automatically.
+
+**Key ideas**
+- **Frontend/backend split:** React (in the browser) asks for data over HTTP, and Python answers with JSON. The API is a **thin layer**: it calls the same functions as the CLI, so there's no duplicated analysis logic.
+- **The JSON shape is a contract.** Explicit converter functions spell out each response's fields. The React code will mirror them as TypeScript types, so if one side changes, the mismatch is visible.
+- **Do geometry on the server:** every point comes with minimap coordinates (`u`, `v` from 0 to 1), so the frontend just places dots and arrows.
+- **Dependency injection:** `Depends(get_con)` gives each request its own read-only database connection. `yield` lets FastAPI close it afterwards, even if the endpoint fails.
+- **Validation for free:** typed parameters (`radius: float = Query(150, gt=0)`) make FastAPI reject bad input with HTTP 422 before our code runs. An unknown team returns 404.
+- **App factory** (`create_app(db_path, maps_path)`): tests build the app on a tiny fake database and map file, and the real server uses the real ones.
+- **Safe refactor:** we moved plant-loading into a shared `plants()` function and confirmed the Lotus report output was *identical* before and after.
+- **Licensed data:** the server binds to `127.0.0.1` (this computer only). Don't deploy it publicly.
+
+**Read:** `src/nunyaintel/api/app.py`, `tests/test_api.py`.
+
+---
+
 ## O3: Operator angles (18 Nov 2026)
 
 **What:** `nunyaintel operator --map lotus --angles [--team Cloud9] [--side defender]` lists where Operator players shoot from and into, e.g. "StarBound, attack: C Bend → C Site, 6 kills in 4 matches, ~18 m, ~62 s into the round". `--precise` switches to exact-spot clusters.

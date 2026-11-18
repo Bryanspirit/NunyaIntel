@@ -11,7 +11,7 @@ Junie reads this file automatically, and Claude Code follows it too. Keep it cur
 - Python 3.14 in `.venv`, `src/` layout, package `nunyaintel`, configured in `pyproject.toml`.
 - Install: `.venv\Scripts\python -m pip install -e ".[dev]"`
 - Test: `.venv\Scripts\python -m pytest`. Lint: `.venv\Scripts\python -m ruff check .`
-- Python **3.14+** is required (stdlib `compression.zstd` reads the data). No runtime dependencies yet. To add one, put it in `pyproject.toml` and note the reason in your task entry.
+- Python **3.14+** is required (stdlib `compression.zstd` reads the data). Runtime dependencies: `fastapi`, `uvicorn` (web API). Dev: `pytest`, `ruff`, `httpx`. Frontend: Node 24 + npm in `web/`. To add one, put it in `pyproject.toml` and note the reason in your task entry.
 
 ## Layout
 - `src/nunyaintel/data/`: provider-agnostic models (`models.py`) and the `DataSource` protocol (`sources.py`). Provider adapters go here and map raw feeds onto those models. Analysis code never reads a raw feed directly.
@@ -19,6 +19,7 @@ Junie reads this file automatically, and Claude Code follows it too. Keep it cur
 - `src/nunyaintel/maps.py`: map callouts from valorant-api.com (downloaded once to `data/cache/maps.json`). Use `get_map(name).region_of(x, y)` / `.site_of(x, y)` to name positions, and `.to_minimap(x, y)` for drawing. Coordinates verified to match GRID.
 - `src/nunyaintel/economy.py`: shared buy-type classifier (pistol / eco / semi-eco / semi-buy / full-buy). Use it for any economy analysis; `economy.register(con)` exposes `classify_buy()` in SQL.
 - `docs/learning-log.md`: the user is learning as we build. After finishing a task, add an entry (what, key ideas, how to run, what to read).
+- `src/nunyaintel/api/app.py`: FastAPI JSON API for the React app (`nunyaintel serve`, docs at /docs). Endpoints are thin wrappers over the analysis functions, and the converters define the JSON contract. Every point includes minimap `u`, `v`.
 - `src/nunyaintel/__main__.py`: CLI (`nunyaintel scout|utility|operator`).
 - `tests/`: pytest. Every new module gets tests.
 - `src/nunyaintel/data/grid.py`: `GridRepo` gives streaming access to the hackathon data (series index, `meta/` tables, event feeds, ability supplements).

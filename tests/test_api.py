@@ -1,0 +1,156 @@
+"""API tests: every endpoint against a tiny synthetic database file and map file.
+
+The analysis logic has its own tests; here we check the HTTP layer: status codes, JSON shapes,
+filters reaching the analysis, and minimap coordinates being added. No real data.
+"""
+
+import json
+import sqlite3
+
+import pytest
+from fastapi.testclient import TestClient
+
+from nunyaintel.api import create_app
+from nunyaintel.data.extract import SCHEMA
+from nunyaintel.maps import load_maps
+
+MAPS = {
+    "data": [
+        {
+            "displayName": "Testmap",
+            "displayIcon": "https://example.invalid/testmap.png",
+            "xMultiplier": 0.0001, "yMultiplier": -0.0001,
+            "xScalarToAdd": 0.5, "yScalarToAdd": 0.5,
+            "callouts": [
+                {"regionName": "Site", "superRegionName": "A", "location": {"x": 1000, "y": 0}},
+                {"regionName": "Site", "superRegionName": "B", "location": {"x": -1000, "y": 0}},
+                {"regionName": "Main", "superRegionName": "A", "location": {"x": 2500, "y": 0}},
+            ],
+        }
+    ]
+}  # fmt: skip
+
+
+def _insert(con, table, **row):
+    cols = ", ".join(row)
+    marks = ", ".join("?" * len(row))
+    con.execute(f"INSERT INTO {table} ({cols}) VALUES ({marks})", list(row.values()))
+
+
+@pytest.fixture
+def client(tmp_path):
+    db = tmp_path / "test.sqlite"
+    con = sqlite3.connect(db)
+    for table, cols in SCHEMA.items():
+        con.execute(f"CREATE TABLE {table} ({cols})")
+    con.execute(
+        "CREATE TABLE meta_teams (team_id TEXT, name TEXT, series_count TEXT, "
+        "first_seen TEXT, last_seen TEXT)"
+    )
+    con.execute("CREATE TABLE meta_players (player_id TEXT, name TEXT)")
+    con.execute("CREATE TABLE meta_games (game_id TEXT, map TEXT, started_at TEXT)")
+    con.execute("CREATE TABLE meta_series (series_id TEXT, event TEXT)")
+    _insert(con, "meta_teams", team_id="A", name="Alpha", series_count="2",
+            first_seen="2025-01-01", last_seen="2025-02-01")  # fmt: skip
+    _insert(con, "meta_teams", team_id="B", name="Bravo", series_count="2",
+            first_seen="2025-01-01", last_seen="2025-02-01")  # fmt: skip
+    _insert(con, "meta_players", player_id="p1", name="Alice")
+
+    for i, series in enumerate(("s1", "s2"), 1):
+        game = f"g{i}"
+        _insert(con, "meta_games", game_id=game, map="Testmap", started_at=f"2025-0{i}-01")
+        _insert(con, "meta_series", series_id=series, event="Test Cup 2026")
+        for num, winner in ((1, "A"), (2, "B")):
+            buy_end = f"2025-0{i}-01T10:0{num}:00.000Z"
+            _insert(con, "rounds", series_id=series, game_id=game, round_num=num,
+                    buy_ended_at=buy_end, attack_team_id="A", defense_team_id="B",
+                    winner_team_id=winner, win_type="opponentEliminated")  # fmt: skip
+            _insert(con, "loadouts", series_id=series, game_id=game, round_num=num,
+                    player_id="p1", team_id="A", side="attacker", agent="sova",
+                    loadout_value=4500, has_operator=1)  # fmt: skip
+            at = f"2025-0{i}-01T10:0{num}:10.000Z"
+            _insert(con, "objectives", series_id=series, game_id=game, round_num=num,
+                    occurred_at=at, team_id="A", action="plantBomb", x=950, y=10)  # fmt: skip
+            _insert(con, "kills", series_id=series, game_id=game, round_num=num,
+                    occurred_at=at, killer_id="p1", killer_team_id="A", victim_id="e1",
+                    victim_team_id="B", weapon="operator", first_kill=1,
+                    killer_x=2500, killer_y=0, victim_x=1000, victim_y=0)  # fmt: skip
+            _insert(con, "damage", series_id=series, game_id=game, round_num=num,
+                    occurred_at=at, attacker_id="p1", attacker_team_id="A",
+                    attacker_side="attacker", source="operator", amount=150,
+                    victim_health_after=0, attacker_x=2500, attacker_y=0,
+                    victim_x=1000, victim_y=0)  # fmt: skip
+            # the same recon bolt lineup cast in every round
+            for k in range(2):
+                _insert(con, "abilities", series_id=series, game_id=game, round_num=num,
+                        occurred_at=f"2025-0{i}-01T10:0{num}:0{k + 2}.000Z",
+                        event_id=f"{series}-{num}-{k}", player_id="p1", team_id="A",
+                        side="attacker", ability="recon-bolt", slot="ABILITY_2",
+                        quality="ok", grid_x=2500, grid_y=0, cast_x=2500 + k, cast_y=0,
+                        cast_z=0, view_x=-1, view_y=0, view_z=0)  # fmt: skip
+    con.commit()
+    con.close()
+
+    maps = tmp_path / "maps.json"
+    maps.write_text(json.dumps(MAPS), encoding="utf-8")
+    load_maps.cache_clear()
+    return TestClient(create_app(db_path=db, maps_path=maps))
+
+
+def test_meta(client):
+    j = client.get("/api/meta").json()
+    assert [t["name"] for t in j["teams"]] == ["Alpha", "Bravo"]
+    assert j["teams"][0]["series"] == 2
+    assert j["maps"] == ["testmap"]
+
+
+def test_map_info(client):
+    j = client.get("/api/maps/TESTMAP").json()
+    assert j["minimap_url"].endswith("testmap.png")
+    site_a = next(c for c in j["callouts"] if c["name"] == "A Site")
+    assert (site_a["u"], site_a["v"]) == pytest.approx((0.5, 0.4))  # u from y, v from x
+    assert client.get("/api/maps/nowhere").status_code == 404
+
+
+def test_scout(client):
+    j = client.get("/api/scout", params={"team": "alpha", "map": "testmap"}).json()
+    assert j["team"] == {"id": "A", "name": "Alpha"}
+    assert (j["games"], j["rounds"]) == (2, 4)
+    assert j["sides"]["attacker"] == {"won": 2, "played": 4, "win_rate": 0.5}
+    assert j["sites"]["attack"][0]["site"] == "A"
+    plant = j["sites"]["plants"][0]
+    assert plant["by_us"] is True and 0 <= plant["u"] <= 1
+    assert j["sites"]["setups"][0]["name"] == "Alice"
+    # without a map: no sites section; unknown team: 404
+    assert "sites" not in client.get("/api/scout", params={"team": "A"}).json()
+    assert client.get("/api/scout", params={"team": "Nobody"}).status_code == 404
+
+
+def test_operator(client):
+    j = client.get("/api/operator", params={"team": "A"}).json()
+    (p,) = j["profiles"]
+    assert (p["name"], p["rounds_with_op"], p["op_kills"]) == ("Alice", 4, 4)
+    assert {r["economy"] for r in j["economy"]} == {"pistol", "eco"}
+    assert j["duels"][0]["op_duels_won"] == 4
+
+
+def test_operator_angles(client):
+    j = client.get("/api/operator/angles", params={"map": "testmap", "team": "A"}).json()
+    (a,) = j["angles"]
+    assert (a["from_region"], a["to_region"], a["shots"]) == ("A Main", "A Site", 4)
+    assert {"u", "v", "target_u", "target_v"} <= set(a)
+
+
+def test_utility(client):
+    j = client.get("/api/utility", params={"map": "testmap", "team": "A"}).json()
+    assert (j["casts"], j["rounds"]) == (8, 4)
+    assert j["summary"][0]["ability"] == "recon-bolt"
+
+
+def test_utility_lineups(client):
+    j = client.get("/api/utility/lineups", params={"map": "testmap", "team": "A"}).json()
+    (lu,) = j["lineups"]
+    assert (lu["ability"], lu["series"], lu["region"]) == ("recon-bolt", 2, "A Main")
+    assert "score" in lu and lu["aim_u"] is not None
+    bad = client.get("/api/utility/lineups", params={"map": "testmap", "radius": -1})
+    assert bad.status_code == 422  # FastAPI validates query parameters for us

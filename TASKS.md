@@ -8,8 +8,8 @@ Format: `- [status] ID: description (owner: junie|claude|-)`
 | Milestone | Due | Scope |
 |---|---|---|
 | M1 Core analytics ✓ | Sun 29 Nov | T1 ✓, T2 ✓, O1 ✓, O2 ✓, U1 ✓ |
-| M2 Feature depth | Sun 13 Dec | T3 ✓, U2 ✓, U3 ✓, O3 ✓, D1 |
-| M3 Feature-complete (feature freeze) | Sun 20 Dec | D2 presentation layer working end-to-end |
+| M2 Feature depth ✓ | Sun 13 Dec | T3 ✓, U2 ✓, U3 ✓, O3 ✓, D1 ✓ |
+| M3 Feature-complete (feature freeze) | Sun 20 Dec | D2 React web app working end-to-end (W1–W5) |
 | M4 Polish + demo | Sun 3 Jan | bug fixes, README, demo video and write-up drafts (holidays are buffer) |
 | **Finish** | **Wed 6 Jan** | D3 submission package complete and checked |
 
@@ -37,6 +37,11 @@ If a milestone slips, cut scope (U3/O3 are the first candidates). Don't move the
 - [x] O3: `operator_profiler/angles.py`: Operator shots (spot + direction, >100 m dropped) grouped by named region (default) or DBSCAN exact spots (`--precise`); `nunyaintel operator --map <m> --angles [--team --side --player]` (owner: claude)
 
 ## Delivery
-- [ ] D1: CLI commands wired to each feature (owner: -)
-- [ ] D2: Presentation layer (choose after core analysis works) (owner: -)
+- [x] D1: CLI commands wired to each feature: `scout`, `utility` (`--lineups --score`), `operator` (`--economy --duels --angles`), `build-cache` (owner: claude)
+- [ ] D2: Presentation layer = **React web app** (decided 18 Nov): FastAPI JSON API + Vite/React/TypeScript frontend, served together by `nunyaintel serve`
+  - [x] W1: FastAPI backend `nunyaintel/api/`: JSON endpoints for meta, maps, scout, operator, angles, utility, lineups; `nunyaintel serve` (owner: claude)
+  - [ ] W2: React scaffold in `web/` (Vite + TS), API client, team/map/side pickers, layout (owner: -)
+  - [ ] W3: `<Minimap>` SVG component: minimap image + points/arrows from game coords (owner: -)
+  - [ ] W4: Pages: Scouting (maps, sides, economy, sites), Operator (profiles, economy, duels, angles), Utility (summary, lineups + scores) (owner: -)
+  - [ ] W5: `nunyaintel serve` = build web/ and serve it from FastAPI; one-command demo (owner: -)
 - [ ] D3: Demo video and submission write-up, complete by **6 Jan 2027** (owner: -)

@@ -51,29 +51,56 @@ def _round_keys(rounds: Sequence[TeamRound]) -> tuple[list[str], list[str]]:
     return sorted({r.series_id for r in rounds}), sorted({r.game_id for r in rounds})
 
 
+@dataclass(frozen=True, slots=True)
+class Plant:
+    """The spike plant of one of the team's rounds (by either team)."""
+
+    game_id: str
+    round_num: int
+    side: str  # the scouted team's side in that round
+    won: bool  # did the scouted team win the round
+    planter_team_id: str
+    site: str
+    x: float
+    y: float
+    time_s: float | None
+
+
+def plants(con: sqlite3.Connection, rounds: Sequence[TeamRound], map_info: MapInfo) -> list[Plant]:
+    """The first plant of every round in ``rounds`` (positions are for drawing on the map)."""
+    series, games = _round_keys(rounds)
+    if not games:
+        return []
+    by_round = {(r.game_id, r.round_num): r for r in rounds}
+    found: dict[tuple[str, int], Plant] = {}
+    for game, num, planter_team, x, y, t in con.execute(
+        f"""SELECT o.game_id, o.round_num, o.team_id, o.x, o.y,
+                   (julianday(o.occurred_at) - julianday(r.buy_ended_at)) * 86400.0
+            FROM objectives o
+            JOIN rounds r ON r.series_id = o.series_id AND r.game_id = o.game_id
+                         AND r.round_num = o.round_num
+            WHERE o.action = 'plantBomb' AND o.x IS NOT NULL
+              AND o.series_id IN ({_marks(series)}) AND o.game_id IN ({_marks(games)})
+            ORDER BY o.occurred_at""",
+        [*series, *games],
+    ):
+        r = by_round.get((game, num))
+        if r is None or (game, num) in found:
+            continue  # not one of our rounds, or a later plant in the same round
+        found[game, num] = Plant(
+            game, num, r.side, r.won, planter_team, map_info.site_of(x, y), x, y, t
+        )
+    return list(found.values())
+
+
 def site_report(
     con: sqlite3.Connection, team_id: str, rounds: Sequence[TeamRound], map_info: MapInfo
 ) -> SiteReport:
-    series, games = _round_keys(rounds)
-    plants: dict[tuple[str, int], tuple[str, str, float | None]] = {}
-    if games:
-        for game, num, planter_team, x, y, t in con.execute(
-            f"""SELECT o.game_id, o.round_num, o.team_id, o.x, o.y,
-                       (julianday(o.occurred_at) - julianday(r.buy_ended_at)) * 86400.0
-                FROM objectives o
-                JOIN rounds r ON r.series_id = o.series_id AND r.game_id = o.game_id
-                             AND r.round_num = o.round_num
-                WHERE o.action = 'plantBomb' AND o.x IS NOT NULL
-                  AND o.series_id IN ({_marks(series)}) AND o.game_id IN ({_marks(games)})
-                ORDER BY o.occurred_at""",
-            [*series, *games],
-        ):
-            # first plant of the round wins (a reversed plant would already be removed)
-            plants.setdefault((game, num), (map_info.site_of(x, y), planter_team, t))
-
+    by_round = {(p.game_id, p.round_num): p for p in plants(con, rounds, map_info)}
     report = SiteReport(defaultdict(SiteStats), defaultdict(SiteStats), 0, 0)
     for r in rounds:
-        site, _, t = plants.get((r.game_id, r.round_num), ("no plant", None, None))
+        p = by_round.get((r.game_id, r.round_num))
+        site, t = (p.site, p.time_s) if p else ("no plant", None)
         if r.side == "attacker":
             report.attack_rounds += 1
             stats = report.attack[site]

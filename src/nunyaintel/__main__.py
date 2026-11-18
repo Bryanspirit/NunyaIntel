@@ -39,6 +39,9 @@ def build_parser() -> argparse.ArgumentParser:
     op.add_argument("--side", choices=["attacker", "defender"], help="With --angles: one side")
     op.add_argument("--player", help="With --angles: only this player ID")
     op.add_argument("--precise", action="store_true", help="With --angles: exact-spot clusters")
+    srv = sub.add_parser("serve", help="Run the web API (and the React app once built)")
+    srv.add_argument("--port", type=int, default=8000)
+    srv.add_argument("--host", default="127.0.0.1", help="Keep local: the data is licensed")
     build = sub.add_parser(
         "build-cache", help="Extract the GRID data into data/cache/nunyaintel.sqlite"
     )
@@ -61,6 +64,14 @@ def main(argv: list[str] | None = None) -> int:
         summary = build_cache(series_ids=args.series, workers=args.workers)
         print(json.dumps(summary, indent=2))
         return 1 if summary["failures"] else 0
+    if args.command == "serve":
+        import uvicorn
+
+        from nunyaintel.api import create_app
+
+        print(f"NunyaIntel API on http://{args.host}:{args.port}  (docs: /docs)")
+        uvicorn.run(create_app(), host=args.host, port=args.port)
+        return 0
     if args.command == "scout":
         from nunyaintel.data.extract import connect, resolve_team
         from nunyaintel.scouting.report import build_report
