@@ -4,6 +4,24 @@ One entry per build step: what we built, the key ideas behind it, how to run it,
 
 ---
 
+## P1: Can a judge actually run it? (18 Nov 2026)
+
+**What:** `nunyaintel doctor` checks everything NunyaIntel needs and prints the command that fixes each problem. It checks Python, packages, the data repo, the extract (built? current schema? complete?), map data, Node, the web build and the port. The README has a 5-step **Quickstart** that was tested on a fresh clone.
+
+**Key ideas**
+- **Rehearse from scratch:** we cloned the *public* GitHub repo into an empty folder and followed the judge's steps: clone → venv → install → doctor → build-cache → `serve --build`. Your own machine hides problems, because everything is already installed, built and cached.
+- **The rehearsal found two real issues** that unit tests never would have:
+  1. The data repo's README suggests a smaller "sparse" download of `val` and `val-ability-supplements`. That leaves out **`meta/`**, which NunyaIntel needs. The doctor now checks for it and gives the corrected command, and so does our README.
+  2. An extract built from only a few matches showed as "ok", which would mean thin results with no explanation. The doctor now warns "partial (3 of 857 series)".
+- **Errors that tell you what to do:** every non-ok line has a `fix:` with the exact command. A failure exits with code 1, so scripts and CI can rely on it.
+- **One broken check mustn't hide the others:** each check runs inside `try/except`, and a crash is reported as FAIL for that check only.
+- **Testing a port check:** the test opens a socket on a random free port (`bind(("127.0.0.1", 0))`), checks that the doctor sees it as taken, then closes it and checks again.
+- **Plain ASCII output** (`[ok]`, `[FAIL]`) prints correctly in every console, after the `°` mix-up in U2.
+
+**Read:** `src/nunyaintel/doctor.py`, `tests/test_doctor.py`, README "Quickstart".
+
+---
+
 ## W5: One command for the demo (18 Nov 2026)
 
 **What:** `nunyaintel serve --build --open` builds the React app and starts **one** Python process that serves the page at http://127.0.0.1:4811 and the API under `/api`, then opens the browser. After the first build, `nunyaintel serve --open` is enough.

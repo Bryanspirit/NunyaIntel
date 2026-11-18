@@ -49,6 +49,17 @@ def check_packages() -> Check:
     return Check("Python packages", OK, "fastapi, uvicorn installed")
 
 
+DATA_REPO_URL = "https://github.com/cloud9esports/stl-hackathon-2026-grid-starter.git"
+# A sparse checkout must include meta/ (teams, players, maps). The data repo's own README
+# example lists only val/ and val-ability-supplements/, which would leave it out.
+SPARSE_FIX = "cd <data repo>; git sparse-checkout set val val-ability-supplements meta"
+
+
+def _series_count(root) -> int:
+    with open(root / "val" / "series.csv", encoding="utf-8") as f:
+        return sum(1 for _ in f) - 1
+
+
 def check_data_repo() -> Check:
     from nunyaintel.config import stl_data_dir
 
@@ -56,12 +67,21 @@ def check_data_repo() -> Check:
     if not (root / "val" / "series.csv").exists():
         return Check(
             "GRID data repo", FAIL, f"not found at {root}",
-            "git clone https://github.com/cloud9esports/stl-hackathon-2026-grid-starter.git "
-            "next to this project, or set STL_DATA_DIR",
+            f"git clone {DATA_REPO_URL} next to this project, or set STL_DATA_DIR",
         )  # fmt: skip
-    with open(root / "val" / "series.csv", encoding="utf-8") as f:
-        series = sum(1 for _ in f) - 1
-    return Check("GRID data repo", OK, f"{root} ({series} VALORANT series)")
+    missing = [
+        part
+        for part, path in (
+            ("meta/", root / "meta" / "games.csv"),
+            ("val-ability-supplements/", root / "val-ability-supplements"),
+        )
+        if not path.exists()
+    ]
+    if missing:
+        return Check("GRID data repo", FAIL,
+                     f"{root} is missing {', '.join(missing)} (partial sparse checkout?)",
+                     SPARSE_FIX)  # fmt: skip
+    return Check("GRID data repo", OK, f"{root} ({_series_count(root)} VALORANT series)")
 
 
 def check_extract() -> Check:
@@ -89,6 +109,17 @@ def check_extract() -> Check:
     )
     if failed:
         return Check("Local extract", WARN, f"{detail}; failed: {failed}", "nunyaintel build-cache")
+    try:
+        from nunyaintel.config import stl_data_dir
+
+        available = _series_count(stl_data_dir())
+    except OSError:
+        available = None
+    parsed = int(info.get("series_parsed") or 0)
+    if available and parsed < available:
+        return Check("Local extract", WARN,
+                     f"{detail}: partial ({parsed} of {available} series), results will be thin",
+                     "nunyaintel build-cache   (all series)")  # fmt: skip
     return Check("Local extract", OK, detail)
 
 

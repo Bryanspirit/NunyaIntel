@@ -4,6 +4,34 @@ NunyaIntel is an individual entry for the **Cloud9 × JetBrains: Sky's The Limit
 
 - Submission deadline: **12 January 2027**. Everything finished by **6 January 2027** (milestones in `TASKS.md`).
 
+## Quickstart
+
+You need **Python 3.14+**, **Node.js 22.12+** and **git**, plus ~3 GB of disk for the data and ~1 GB for the extract. This path was rehearsed on a fresh clone.
+
+```powershell
+# 1. Get the code and, NEXT TO it (not inside), the hackathon's GRID data (~1.4 GB)
+git clone https://github.com/Bryanspirit/NunyaIntel.git
+git clone https://github.com/cloud9esports/stl-hackathon-2026-grid-starter.git
+cd NunyaIntel
+
+# 2. Install
+py -3.14 -m venv .venv                    # macOS/Linux: python3.14 -m venv .venv
+.venv\Scripts\python -m pip install -e .  # macOS/Linux: .venv/bin/...
+
+# 3. Check the setup: every problem comes with the command that fixes it
+.venv\Scripts\nunyaintel doctor
+
+# 4. Build the local extract once (~7 min, ~1 GB; reads the data in place)
+.venv\Scripts\nunyaintel build-cache
+
+# 5. Build the web app and open it: http://127.0.0.1:4811
+.venv\Scripts\nunyaintel serve --build --open
+```
+
+- Data elsewhere? Set `STL_DATA_DIR` to the data repo's path.
+- Saving disk with a sparse checkout of the data? Include **`meta`**: `git sparse-checkout set val val-ability-supplements meta`. (The data README's example leaves it out, and NunyaIntel needs it.)
+- Port 4811 taken? Use `nunyaintel serve --port 4821`.
+
 ## Modules
 
 | Package | Purpose |
