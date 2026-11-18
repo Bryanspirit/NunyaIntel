@@ -39,6 +39,7 @@ def build_parser() -> argparse.ArgumentParser:
     op.add_argument("--side", choices=["attacker", "defender"], help="With --angles: one side")
     op.add_argument("--player", help="With --angles: only this player ID")
     op.add_argument("--precise", action="store_true", help="With --angles: exact-spot clusters")
+    sub.add_parser("doctor", help="Check the setup (Python, data, extract, Node, port)")
     srv = sub.add_parser("serve", help="Run the web app (React page + API) on one address")
     srv.add_argument("--port", type=int, default=4811)
     srv.add_argument("--host", default="127.0.0.1", help="Keep local: the data is licensed")
@@ -105,6 +106,10 @@ def main(argv: list[str] | None = None) -> int:
         summary = build_cache(series_ids=args.series, workers=args.workers)
         print(json.dumps(summary, indent=2))
         return 1 if summary["failures"] else 0
+    if args.command == "doctor":
+        from nunyaintel import doctor
+
+        return doctor.main()
     if args.command == "serve":
         return serve(args.host, args.port, build=args.build, open_browser=args.open)
     if args.command == "scout":
