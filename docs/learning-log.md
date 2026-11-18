@@ -4,6 +4,26 @@ One entry per build step: what we built, the key ideas behind it, how to run it,
 
 ---
 
+## T1 + T2: Scouting report (18 Nov 2026)
+
+**What:** `nunyaintel scout --team Cloud9 [--map lotus] [--since 2025-06-01]` prints a scouting report with three parts:
+- **Maps:** games won, round record, attack/defense round win %.
+- **How rounds end:** elimination, spike detonated, defused or time out, per side.
+- **Economy:** pistol win % per side, what happens the round after a pistol, eco upsets, anti-eco losses, and a full own-buy × opponent-buy win % grid.
+
+**Key ideas**
+- **One loader, many analyses.** `load_team_rounds()` returns one row per round *from the team's point of view* (side, won, own buy, opponent buy). Every statistic is then simple counting in Python, which is easy to read and to test with hand-made rounds.
+- **Named SQL parameters** (`:team`, `:map`) let one value appear several times in a query. We needed that because the same filter is used twice (in a CTE and in the main query). An early version tried to swap `?` placeholders by string replacement. It was fragile, so we rewrote it.
+- **Know the game's rules before interpreting data:** if defenders kill every attacker *after* the plant, they still have to defuse, and the round is logged as "defused". That's why defuses outnumber detonations. We confirmed the labels against the actual spike events first.
+- **Cross-check against an independent source:** games won (computed from rounds) matched the official map winners in `meta_games` for Cloud9 and Cloud9 GC. 45 maps and 89 pistol rounds also match the counts in the index.
+- **Check what the data covers:** the dataset has **no VCT (main-team) matches in 2026**. 2026 is Game Changers only. Cloud9 (ID 79) has 19 matches, Jan–Aug 2025. Cloud9 GC (ID 3429) has 9 matches, Jul–Sep 2026.
+
+**What it showed (Cloud9, 45 maps):** 85% conversion after a pistol win, but **30% of full-buy rounds lost to eco/semi-eco buys**, which is unusually high. Lotus (their most-played map) is 48% of rounds. Ascent shows 28% attack vs. 68% defense (small sample).
+
+**Read:** `src/nunyaintel/scouting/team_rounds.py` → `overview.py` → `economy_report.py` → `report.py`, then `tests/test_scouting.py`.
+
+---
+
 ## U2: Lineup detection with DBSCAN (18 Nov 2026)
 
 **What:** `nunyaintel utility --team Cloud9 --map ascent --lineups` finds the utility setups a team repeats: same agent and ability, same spot, same aim, in at least 2 different matches. It shows each lineup's typical timing and the round win % when it was used.

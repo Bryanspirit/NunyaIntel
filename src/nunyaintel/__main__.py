@@ -11,7 +11,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="nunyaintel", description=__doc__)
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     sub = parser.add_subparsers(dest="command")
-    sub.add_parser("scout", help="Generate a scouting report for a team (TODO)")
+    sc = sub.add_parser("scout", help="Scouting report: maps, sides, win types, economy")
+    sc.add_argument("--team", required=True, help="Team ID or exact name, e.g. 79 or Cloud9")
+    sc.add_argument("--map", dest="map_name", help="Only this map, e.g. lotus")
+    sc.add_argument("--since", help="Only maps played on/after this date, e.g. 2025-06-01")
     ut = sub.add_parser("utility", help="How a team uses each agent's abilities on a map")
     ut.add_argument("--team", help="Team ID or exact name, e.g. 79 or Cloud9 (default: all)")
     ut.add_argument("--map", dest="map_name", required=True, help="Map, e.g. ascent")
@@ -53,6 +56,14 @@ def main(argv: list[str] | None = None) -> int:
         summary = build_cache(series_ids=args.series, workers=args.workers)
         print(json.dumps(summary, indent=2))
         return 1 if summary["failures"] else 0
+    if args.command == "scout":
+        from nunyaintel.data.extract import connect, resolve_team
+        from nunyaintel.scouting.report import build_report
+
+        con = connect()
+        team_id = resolve_team(con, args.team)
+        print(build_report(con, team_id, map_name=args.map_name, since=args.since))
+        return 0
     if args.command == "utility":
         from nunyaintel.data.extract import connect, resolve_team
         from nunyaintel.utility import placement

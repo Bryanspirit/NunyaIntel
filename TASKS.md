@@ -7,7 +7,7 @@ Format: `- [status] ID: description (owner: junie|claude|-)`
 
 | Milestone | Due | Scope |
 |---|---|---|
-| M1 Core analytics | Sun 29 Nov | T1, T2, O1 ✓, O2 ✓, U1 ✓ |
+| M1 Core analytics ✓ | Sun 29 Nov | T1 ✓, T2 ✓, O1 ✓, O2 ✓, U1 ✓ |
 | M2 Feature depth | Sun 13 Dec | T3, U2 ✓, U3, O3, D1 |
 | M3 Feature-complete (feature freeze) | Sun 20 Dec | D2 presentation layer working end-to-end |
 | M4 Polish + demo | Sun 3 Jan | bug fixes, README, demo video and write-up drafts (holidays are buffer) |
@@ -22,8 +22,8 @@ If a milestone slips, cut scope (U3/O3 are the first candidates). Don't move the
 - [x] S4: Feed replay (handles `!` reversals and rolled-back games) → local SQLite extract `data/cache/nunyaintel.sqlite` via `nunyaintel build-cache` (owner: claude)
 
 ## Tactical Scouting
-- [ ] T1: Query helpers over the extract (`rounds`/`kills`/`objectives`) for one team: maps played, per-side round win %, win types (owner: -)
-- [ ] T2: Per-side round win rates and pistol/eco conversion in `scouting/report.py`. Use `nunyaintel.economy.classify_buy` / `economy.register(con)` for eco/pistol definitions (owner: -)
+- [x] T1: `scouting/team_rounds.py` (one row per round from a team's view, incl. own/opponent buy) + `scouting/overview.py`: maps (games, wins, rounds), attack/defense round win %, win types (owner: claude)
+- [x] T2: `scouting/economy_report.py`: pistol win % per side, conversion/break after pistols, eco upsets, anti-eco losses, buy-vs-buy win grid; `nunyaintel scout --team <t> [--map] [--since]` (owner: claude)
 - [ ] T3: Site attack preferences and default setups per map (owner: -)
 
 ## Utility Placement

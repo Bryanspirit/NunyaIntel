@@ -35,7 +35,8 @@ Junie reads this file automatically, and Claude Code follows it too. Keep it cur
 - Source: https://github.com/cloud9esports/stl-hackathon-2026-grid-starter, cloned **next to** this project at `../stl-hackathon-2026-grid-starter` (override with the `STL_DATA_DIR` env var). Read that repo's `AGENTS.md` and `README.md` before writing data code.
 - **Never copy, commit or push any data or extract of it** (`.zst`, `.jsonl`, `meta/*.csv`, `series.csv`, caches, DBs). Never `git add -A`; stage files by name and check `git diff --cached --name-only`. Tests use small synthetic files only.
 - Find matches through the index first (`val/series.csv`, `meta/*.csv`), and don't glob the folders. Stream feeds line by line; don't decompress the corpus to disk.
-- Join on IDs, never on names. Cloud9 VCT Americas has team ID `79`.
+- Join on IDs, never on names. **Cloud9** (VCT Americas) = team `79`: 19 matches, Jan–Aug 2025. **Cloud9 GC** (Game Changers) = team `3429`: 9 matches, Jul–Sep 2026.
+- **Coverage:** there are no VCT (main-team) matches in 2026. All 2026 data is Game Changers. Keep this in mind for "recent form" claims.
 - Feed basics: event `type` = `{actor}-{action}-{target}`. A `!` before the action reverses an earlier event. Drop games rolled back by `series-!started-game`. The final box score is the last `seriesState`.
 - Kill weapon: in `player-killed-player`, it's `actor.stateDelta.round.weaponKills` (e.g. `{"operator": 1}`). Round result: `team-won-round` → `actor.stateDelta.round.winType`.
 - Ability positions: use the supplement's `interpolated.position`/`view`, joined on `grid_event_id` == event `id`, when `quality == "ok"`. VCT Americas 2025 is 1 Hz, so it's less precise.
