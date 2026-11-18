@@ -4,6 +4,21 @@ One entry per build step: what we built, the key ideas behind it, how to run it,
 
 ---
 
+## W3: Drawing on the minimap (18 Nov 2026)
+
+**What:** `<Minimap>` (in `web/src/components/Minimap.tsx`) shows a map's minimap image with an SVG drawing layer, plus reusable `<MapDot>` and `<MapArrow>` marks, callout labels you can switch on, and a legend. First use: pick a map on the Scouting tab to see every spike plant (team vs. opponent, hollow = the planting team lost the round). Hover a dot for details.
+
+**Key ideas**
+- **Two layers, one coordinate system:** the image and the SVG are stacked in the same square box. The SVG's `viewBox="0 0 1000 1000"` means a point at `(u, v)` is drawn at `(u·1000, v·1000)`, and everything scales with the image at any screen size.
+- **Verify against the picture, not just the formula:** we looked at the Lotus minimap (three olive patches = the sites) and checked that the API's "A/B/C Site" callouts and the median plant positions land inside those patches: A at pixel (875, 369), B at (515, 470), C at (151, 448). That confirms the axis swap from T3 in practice.
+- **Prefer simple, portable techniques:** SVG arrowhead markers with `context-stroke` aren't supported everywhere, so each arrowhead is a small triangle computed from the line's unit vector `(dx, dy)` and its perpendicular `(-dy, dx)`.
+- **Free tooltips:** an SVG `<title>` inside a shape shows on hover, with no tooltip library needed.
+- **Who won?** The `won` flag is from the scouted team's point of view, so "did the *planter* win" is `by_us === won`. It's easy to get backwards, so the code comments it.
+
+**Read:** `web/src/components/Minimap.tsx` → `web/src/components/PlantMap.tsx` → `web/src/styles.css` (Minimap section).
+
+---
+
 ## W2: The React app skeleton (18 Nov 2026)
 
 **What:** the `web/` folder holds a React + TypeScript app. It has team/map/side/date pickers, Scouting/Operator/Utility tabs, and a first real table (maps for the selected team) fetched from the API. Run it with `nunyaintel serve` plus `cd web; npm run dev`, then open http://127.0.0.1:4810.

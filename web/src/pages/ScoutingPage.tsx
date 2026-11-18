@@ -1,7 +1,8 @@
-// Scouting (T1/T2/T3). W2 shows the header and the per-map table to prove the
-// React -> Vite proxy -> FastAPI -> SQLite chain works; W4 adds economy, sites and the minimap.
+// Scouting (T1/T2/T3). So far: header, per-map table and (with a map selected) the plant map.
+// W4 adds economy, sites, setups and opening duels.
 
 import { apiUrl, type Scout } from "../api";
+import { PlantMap } from "../components/PlantMap";
 import { pct, title } from "../format";
 import { useApi } from "../useApi";
 import type { Selection } from "../useSelection";
@@ -53,6 +54,13 @@ export function ScoutingPage({ selection }: { selection: Selection }) {
           ))}
         </tbody>
       </table>
+
+      {selection.map && data.sites && (
+        <>
+          <h3>Spike plants</h3>
+          <PlantMap map={selection.map} plants={data.sites.plants} side={selection.side} teamName={data.team.name} />
+        </>
+      )}
     </section>
   );
 }
