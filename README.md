@@ -26,3 +26,18 @@ NunyaIntel is an individual entry for the **Cloud9 × JetBrains: Sky's The Limit
 This repo is built with Junie (inside PyCharm) and Claude Code working together:
 - `.junie/guidelines.md` holds the project rules that both agents follow.
 - `TASKS.md` is the shared backlog. Claim a task before you start it, and tick it off when it's done.
+
+## Data
+
+NunyaIntel reads the hackathon's GRID dataset straight from a separate local clone of the data repo. Nothing is copied into this repo:
+
+```powershell
+cd ..; git clone https://github.com/cloud9esports/stl-hackathon-2026-grid-starter.git
+# or point elsewhere:  $env:STL_DATA_DIR = "D:\path\to\stl-hackathon-2026-grid-starter"
+```
+
+The data is licensed for the hackathon only and must never be committed. `scripts/check_no_data.py` blocks it. Install the guard as a git pre-commit hook:
+
+```sh
+printf '#!/bin/sh\nexec .venv/Scripts/python.exe scripts/check_no_data.py\n' > .git/hooks/pre-commit
+```

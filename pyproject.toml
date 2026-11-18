@@ -7,7 +7,7 @@ name = "nunyaintel"
 version = "0.1.0"
 description = "NunyaIntel: VALORANT tactical scouting, utility placement and Operator profiling (Cloud9 x JetBrains Hackathon 2026, Category 1)"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 dependencies = []
 
 [project.optional-dependencies]
@@ -25,7 +25,7 @@ addopts = "-q"
 
 [tool.ruff]
 line-length = 100
-target-version = "py312"
+target-version = "py314"
 src = ["src", "tests"]
 
 [tool.ruff.lint]

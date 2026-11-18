@@ -14,3 +14,12 @@ PROCESSED_DIR = DATA_DIR / "processed"
 def get_env(name: str, default: str | None = None) -> str | None:
     """Read a setting from the environment (e.g. a data provider API key)."""
     return os.environ.get(name, default)
+
+
+def stl_data_dir() -> Path:
+    """Location of the hackathon GRID data repo (a separate clone, never inside this project).
+
+    Override with the STL_DATA_DIR environment variable.
+    """
+    default = PROJECT_ROOT.parent / "stl-hackathon-2026-grid-starter"
+    return Path(get_env("STL_DATA_DIR") or default)
