@@ -4,6 +4,20 @@ One entry per build step: what we built, the key ideas behind it, how to run it,
 
 ---
 
+## O3: Operator angles (18 Nov 2026)
+
+**What:** `nunyaintel operator --map lotus --angles [--team Cloud9] [--side defender]` lists where Operator players shoot from and into, e.g. "StarBound, attack: C Bend → C Site, 6 kills in 4 matches, ~18 m, ~62 s into the round". `--precise` switches to exact-spot clusters.
+
+**Key ideas**
+- **A shot has a spot and a direction.** Each Operator hit gives the shooter's and the victim's positions, so the direction is the unit vector from one to the other (`(dx, dy) / length`).
+- **Clean impossible values:** the longest recorded "shot" was 573 m, longer than any map. We drop shots over 100 m as bad position data.
+- **Pick the method that fits the data size.** Exact-spot clustering (DBSCAN, reused from U2) found only 9 angles in 1,107 Lotus hits, because the same angle gets shot from slightly different spots at different points of a corridor. Grouping by **named regions** (from T3's map module) found 112. Discretising (turning positions into categories) needs far fewer samples to show a pattern. We kept both: regions by default, `--precise` for heavy Operator users.
+- **Report thin data honestly:** OXY has 3 Operator hits on Lotus and 11 on Haven. The only angle repeated across matches is Pearl defense, B Screen → B Ramp. That fits O1/O2 (Cloud9 isn't an Op-centred team), so O3 is most useful for scouting **opponents'** Operator players.
+
+**Read:** `src/nunyaintel/operator_profiler/angles.py`, `tests/test_angles.py`.
+
+---
+
 ## T3: Sites and default setups (18 Nov 2026)
 
 **What:** `nunyaintel scout --team Cloud9 --map lotus` now adds a map section:

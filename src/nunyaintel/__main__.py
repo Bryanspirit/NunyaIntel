@@ -35,6 +35,10 @@ def build_parser() -> argparse.ArgumentParser:
     view = op.add_mutually_exclusive_group()
     view.add_argument("--economy", action="store_true", help="Op rate per team economy state")
     view.add_argument("--duels", action="store_true", help="Opening duels with vs. without Op")
+    view.add_argument("--angles", action="store_true", help="Angles held with the Op (needs --map)")
+    op.add_argument("--side", choices=["attacker", "defender"], help="With --angles: one side")
+    op.add_argument("--player", help="With --angles: only this player ID")
+    op.add_argument("--precise", action="store_true", help="With --angles: exact-spot clusters")
     build = sub.add_parser(
         "build-cache", help="Extract the GRID data into data/cache/nunyaintel.sqlite"
     )
@@ -115,6 +119,23 @@ def main(argv: list[str] | None = None) -> int:
             rates = opp.op_rate_by_economy(con, **filters)
             top = list(dict.fromkeys((r.player_id, r.team_id) for r in rates))[: args.top]
             print(opp.format_economy_table([r for r in rates if (r.player_id, r.team_id) in top]))
+        elif args.angles:
+            if not args.map_name:
+                parser.error("--angles needs --map")
+            from nunyaintel.maps import get_map
+            from nunyaintel.operator_profiler import angles as opa
+
+            shots = opa.load_op_shots(
+                con, args.map_name, team_id=team_id, player_id=args.player, side=args.side
+            )
+            map_info = get_map(args.map_name)
+            if args.precise:
+                found = opa.find_angles(shots, map_info)
+            else:
+                found = opa.region_angles(shots, map_info)
+            names = dict(con.execute("SELECT player_id, name FROM meta_players").fetchall())
+            print(f"{len(shots)} Operator hits on {args.map_name}, {len(found)} angles\n")
+            print(opa.format_angles(found[: args.top], names))
         elif args.duels:
             print(opp.format_duels_table(opp.opening_duels(con, **filters)[: args.top]))
         else:
