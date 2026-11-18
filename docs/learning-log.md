@@ -4,6 +4,29 @@ One entry per build step: what we built, the key ideas behind it, how to run it,
 
 ---
 
+## T3: Sites and default setups (18 Nov 2026)
+
+**What:** `nunyaintel scout --team Cloud9 --map lotus` now adds a map section:
+- **Attack:** which site the team plants on, win % after planting, and median plant time.
+- **Defense:** which site opponents hit, and how often the team holds or retakes it.
+- **Default setups:** each player's usual early-round area.
+- **Opening duels:** where the first kill happens, and the team's win % there.
+
+**Key ideas**
+- **Bring in outside knowledge when the data lacks it.** GRID positions are bare x/y. The community API valorant-api.com publishes named *callouts* per map ("A Main", "Mid Courtyard") in game coordinates. `nunyaintel/maps.py` downloads it once to `data/cache/maps.json`.
+- **Validate before trusting it:** spike plants landed a median 3–10 m from the matching "Site" callout (95% within 11–17 m), and the site splits matched pro play (Lotus B and Haven B attacked least). That confirmed both sources use the same coordinate system.
+- **Nearest-point regions (Voronoi):** naming a position by its *nearest* callout splits the map into one zone per callout. It's simple and robust.
+- **Minimap conversion** (`to_minimap`): the image's horizontal axis comes from the game's **y**, not x. This axis swap is easy to get wrong, so a test pins it down. It's the groundwork for map visuals in M3.
+- **Measure what you can actually see:** we only know where a player is when they act (cast, shoot, take damage). The "seen in N/M rounds" column makes that coverage visible instead of hiding it.
+- **A window that suits one side may not suit the other:** in the first 20 s attackers are mostly still around spawn ("A Lobby"), so attack setups are less informative than defense setups.
+- **UNION ALL** stacks several queries into one list (positions from abilities, kills and damage) so they can be processed together.
+
+**What it showed (Cloud9 on Lotus):** on attack, A is their main site (35% of rounds, 76% won after planting), B is rare and slow (16%, planted 73 s in, 44%), and in 23% of attack rounds they never plant and win only 3% of those. On defense, C is hit most (37%) and is their weakest hold (33%).
+
+**Read:** `src/nunyaintel/maps.py` → `src/nunyaintel/scouting/sites.py` → `tests/test_maps.py`, `tests/test_sites.py`.
+
+---
+
 ## U3: How well does a lineup work? (18 Nov 2026)
 
 **What:** `nunyaintel utility --team Cloud9 --map lotus --lineups --score` ranks a team's lineups by how much better the team does when it uses them. It also shows ability damage per cast and kills/deaths in the 10 seconds after each cast.

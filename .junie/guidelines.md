@@ -16,6 +16,7 @@ Junie reads this file automatically, and Claude Code follows it too. Keep it cur
 ## Layout
 - `src/nunyaintel/data/`: provider-agnostic models (`models.py`) and the `DataSource` protocol (`sources.py`). Provider adapters go here and map raw feeds onto those models. Analysis code never reads a raw feed directly.
 - `src/nunyaintel/scouting/`, `utility/`, `operator_profiler/`: one package per Category 1 feature.
+- `src/nunyaintel/maps.py`: map callouts from valorant-api.com (downloaded once to `data/cache/maps.json`). Use `get_map(name).region_of(x, y)` / `.site_of(x, y)` to name positions, and `.to_minimap(x, y)` for drawing. Coordinates verified to match GRID.
 - `src/nunyaintel/economy.py`: shared buy-type classifier (pistol / eco / semi-eco / semi-buy / full-buy). Use it for any economy analysis; `economy.register(con)` exposes `classify_buy()` in SQL.
 - `docs/learning-log.md`: the user is learning as we build. After finishing a task, add an entry (what, key ideas, how to run, what to read).
 - `src/nunyaintel/__main__.py`: CLI (`nunyaintel scout|utility|operator`).

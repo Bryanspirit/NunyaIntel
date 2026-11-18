@@ -1,4 +1,4 @@
-"""Scouting report for one team: overview (T1) + economy (T2), as plain text."""
+"""Scouting report for one team: overview (T1), economy (T2), and with a map: sites (T3)."""
 
 from __future__ import annotations
 
@@ -27,4 +27,10 @@ def build_report(
         f"SCOUTING REPORT: {name}{scope}\n"
         f"{games} maps, {len(rounds)} rounds, {first} to {last}\n" + "=" * 55
     )
-    return "\n\n".join([header, format_overview(rounds), format_economy(rounds)])
+    sections = [header, format_overview(rounds), format_economy(rounds)]
+    if map_name:
+        from nunyaintel.maps import get_map
+        from nunyaintel.scouting.sites import format_sites
+
+        sections.append(format_sites(con, team_id, rounds, get_map(map_name)))
+    return "\n\n".join(sections)
