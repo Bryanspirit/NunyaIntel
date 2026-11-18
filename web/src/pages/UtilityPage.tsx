@@ -1,0 +1,126 @@
+// Utility (U1 ability summary, U2 lineups on the minimap, U3 effectiveness scores).
+
+import { useState } from "react";
+import { apiUrl, type Lineups, type MapInfo, type Utility } from "../api";
+import { MapArrow, Minimap } from "../components/Minimap";
+import { Empty, WinBar } from "../components/ui";
+import { nice, pct, secs, SIDE_COLOR, SIDE_LABEL, title } from "../format";
+import { useApi } from "../useApi";
+import type { Selection } from "../useSelection";
+
+export function UtilityPage({ selection }: { selection: Selection }) {
+  if (!selection.map) return <Empty>Pick a map to see how this team uses its utility.</Empty>;
+  return (
+    <section>
+      <h2>Utility on {title(selection.map)}</h2>
+      <Summary selection={selection} />
+      <LineupsSection selection={selection} />
+    </section>
+  );
+}
+
+function Summary({ selection }: { selection: Selection }) {
+  const util = useApi<Utility>(
+    apiUrl("/utility", { map: selection.map, team: selection.team, side: selection.side }),
+  );
+  if (util.error) return <p className="error">{util.error}</p>;
+  if (!util.data) return <p className="muted">Loading abilities…</p>;
+  if (util.data.casts === 0) return <Empty>No ability casts with these filters.</Empty>;
+
+  return (
+    <div className={util.loading ? "stale" : ""}>
+      <h3>Abilities</h3>
+      <p className="muted">{util.data.casts} casts in {util.data.rounds} rounds</p>
+      <table>
+        <thead>
+          <tr>
+            <th className="left">Agent</th><th className="left">Ability</th><th>Casts</th><th>Per round</th>
+            <th>In buy phase</th><th>Median time</th>
+          </tr>
+        </thead>
+        <tbody>
+          {util.data.summary.map((s) => (
+            <tr key={s.agent + s.ability}>
+              <td className="left">{nice(s.agent)}</td>
+              <td className="left">{nice(s.ability)} <span className="tag">{s.slot.replace("ABILITY_", "A").toLowerCase()}</span></td>
+              <td>{s.casts}</td>
+              <td>{s.per_round.toFixed(2)}</td>
+              <td>{pct(s.buy_phase_share)}</td>
+              <td>{secs(s.median_time_s)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="note">Time is relative to the end of the buy phase: negative = set up before the round starts.</p>
+    </div>
+  );
+}
+
+function LineupsSection({ selection }: { selection: Selection }) {
+  const [highlight, setHighlight] = useState<number | null>(null);
+  const mapInfo = useApi<MapInfo>(apiUrl(`/maps/${selection.map}`));
+  const lineups = useApi<Lineups>(
+    apiUrl("/utility/lineups", { map: selection.map, team: selection.team, side: selection.side }),
+  );
+
+  if (lineups.error || mapInfo.error) return <p className="error">{lineups.error ?? mapInfo.error}</p>;
+  if (!lineups.data || !mapInfo.data) return <p className="muted">Finding and scoring lineups… (a few seconds)</p>;
+  const rows = lineups.data.lineups.slice(0, 30);
+
+  return (
+    <div className={lineups.loading ? "stale" : ""}>
+      <h3>Lineups (repeated setups), best score first</h3>
+      <p className="muted">
+        {lineups.data.lineups.length} lineups: same ability from the same spot (±1.5 m) and aim (±10°), in 2+ matches
+      </p>
+      {rows.length === 0 ? (
+        <Empty>No repeated lineups with these filters.</Empty>
+      ) : (
+        <div className="grid-2">
+          <Minimap
+            map={mapInfo.data}
+            legend={[
+              { color: SIDE_COLOR.attacker, label: "Attack" },
+              { color: SIDE_COLOR.defender, label: "Defense" },
+            ]}
+          >
+            {rows.map((l, i) => (
+              <MapArrow key={i} u={l.u} v={l.v} u2={l.aim_u} v2={l.aim_v} color={SIDE_COLOR[l.side]}
+                width={highlight === i ? 5 : 2.5} opacity={highlight === null || highlight === i ? 0.95 : 0.15}
+                title={`${nice(l.agent)} ${nice(l.ability)} from ${l.region}: ${l.casts} casts, ${pct(l.round_win_rate)} rounds won`} />
+            ))}
+          </Minimap>
+          <table>
+            <thead>
+              <tr>
+                <th className="left">Agent / ability</th><th className="left">Spot</th><th>Rounds</th>
+                <th>Win %</th><th>Usual</th><th title="win % lift vs. usual, shrunk for small samples">Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((l, i) => (
+                <tr key={i} className={highlight === i ? "hl" : ""} onMouseEnter={() => setHighlight(i)}
+                  onMouseLeave={() => setHighlight(null)}
+                  title={`${l.series} matches · median ${secs(l.median_time_s)} · 10 s after: ${l.window_kills ?? 0} kills / ${l.window_deaths ?? 0} deaths`}>
+                  <td className="left">
+                    <span className="dot" style={{ background: SIDE_COLOR[l.side] }} title={SIDE_LABEL[l.side]} />
+                    {nice(l.agent)} · {nice(l.ability)}
+                  </td>
+                  <td className="left">{l.region}</td>
+                  <td>{l.rounds}</td>
+                  <td><WinBar rate={l.round_win_rate} played={l.rounds} /></td>
+                  <td>{pct(l.baseline)}</td>
+                  <td>{l.score !== undefined ? `${l.score >= 0 ? "+" : ""}${(l.score * 100).toFixed(1)}` : "–"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <p className="note">
+        Score = round win % when the lineup was used vs. the team's usual on this map and side, pulled toward
+        "usual" when it was used only a few times. Arrows show where the caster aimed (smokes aimed on the minimap excepted).
+      </p>
+    </div>
+  );
+}

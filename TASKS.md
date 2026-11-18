@@ -42,6 +42,6 @@ If a milestone slips, cut scope (U3/O3 are the first candidates). Don't move the
   - [x] W1: FastAPI backend `nunyaintel/api/`: JSON endpoints for meta, maps, scout, operator, angles, utility, lineups; `nunyaintel serve` (owner: claude)
   - [x] W2: React scaffold in `web/` (Vite 8 + React 19 + TS 7, pinned), typed API client (`api.ts`), `useApi` hook, URL-backed selection, team/map/side/since pickers, tabs, first Scouting table end to end (owner: claude)
   - [x] W3: `components/Minimap.tsx` (`<Minimap>`, `<MapDot>`, `<MapArrow>`, callout labels, legend) + `PlantMap` on Scouting when a map is selected; u/v verified against the Lotus image (owner: claude)
-  - [ ] W4: Pages: Scouting (maps, sides, economy, sites), Operator (profiles, economy, duels, angles), Utility (summary, lineups + scores) (owner: -)
+  - [x] W4: Pages: Scouting (stats, maps, win types, pistols, buy grid, plant map, sites, setups, opening duels), Operator (profiles, economy, duels, angle arrows), Utility (ability summary, lineup arrows + scores, hover-to-highlight); checked in the browser (owner: claude)
   - [ ] W5: `nunyaintel serve` = build web/ and serve it from FastAPI; one-command demo (owner: -)
 - [ ] D3: Demo video and submission write-up, complete by **6 Jan 2027** (owner: -)

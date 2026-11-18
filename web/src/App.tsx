@@ -3,7 +3,9 @@
 import { apiUrl, type Meta } from "./api";
 import { Pickers } from "./components/Pickers";
 import { title } from "./format";
+import { OperatorPage } from "./pages/OperatorPage";
 import { ScoutingPage } from "./pages/ScoutingPage";
+import { UtilityPage } from "./pages/UtilityPage";
 import { useApi } from "./useApi";
 import { TABS, useSelection } from "./useSelection";
 
@@ -36,8 +38,8 @@ export function App() {
           </p>
         )}
         {selection.tab === "scouting" && <ScoutingPage selection={selection} />}
-        {selection.tab === "operator" && <p className="muted">Operator page: coming in W4.</p>}
-        {selection.tab === "utility" && <p className="muted">Utility page: coming in W4.</p>}
+        {selection.tab === "operator" && <OperatorPage selection={selection} />}
+        {selection.tab === "utility" && <UtilityPage selection={selection} />}
       </main>
 
       <footer className="muted">

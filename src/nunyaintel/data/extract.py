@@ -149,8 +149,16 @@ def parse_series(root: Path, series_id: str) -> dict[str, Any]:
                 game_id, round_num = target.get("id"), 0
             elif t == "game-started-round":
                 round_num = t_state.get("sequenceNumber") or round_num + 1
-                add("rounds", t, _actor=None, started_at=at, attack_team_id=None,
-                    defense_team_id=None, winner_team_id=None, win_type=None)
+                add(
+                    "rounds",
+                    t,
+                    _actor=None,
+                    started_at=at,
+                    attack_team_id=None,
+                    defense_team_id=None,
+                    winner_team_id=None,
+                    win_type=None,
+                )
             elif t == "round-ended-freezetime":
                 _record_buy_phase(e, at, game_id, add, rows["rounds"])
             elif t == "team-won-round":
@@ -165,25 +173,48 @@ def parse_series(root: Path, series_id: str) -> dict[str, Any]:
             elif t == "player-killed-player":
                 (kx, ky), (vx, vy) = _xy(a_state), _xy(t_state)
                 delta_round = (actor.get("stateDelta") or {}).get("round") or {}
-                add("kills", t, _actor=actor.get("id"), occurred_at=at, event_id=e["id"],
-                    killer_id=actor.get("id"), killer_team_id=a_state.get("teamId"),
-                    killer_side=a_state.get("side"), victim_id=target.get("id"),
-                    victim_team_id=t_state.get("teamId"), victim_side=t_state.get("side"),
+                add(
+                    "kills",
+                    t,
+                    _actor=actor.get("id"),
+                    occurred_at=at,
+                    event_id=e["id"],
+                    killer_id=actor.get("id"),
+                    killer_team_id=a_state.get("teamId"),
+                    killer_side=a_state.get("side"),
+                    victim_id=target.get("id"),
+                    victim_team_id=t_state.get("teamId"),
+                    victim_side=t_state.get("side"),
                     weapon=_first_key(delta_round.get("weaponKills")),
                     first_kill=int(bool(delta_round.get("firstKill"))),
-                    killer_x=kx, killer_y=ky, victim_x=vx, victim_y=vy)
+                    killer_x=kx,
+                    killer_y=ky,
+                    victim_x=vx,
+                    victim_y=vy,
+                )
             elif t == "player-damaged-player":
                 (ax, ay), (vx, vy) = _xy(a_state), _xy(t_state)
                 d = (actor.get("stateDelta") or {}).get("round") or {}
-                add("damage", t, _actor=actor.get("id"), occurred_at=at, event_id=e["id"],
-                    attacker_id=actor.get("id"), attacker_team_id=a_state.get("teamId"),
-                    attacker_side=a_state.get("side"), victim_id=target.get("id"),
+                add(
+                    "damage",
+                    t,
+                    _actor=actor.get("id"),
+                    occurred_at=at,
+                    event_id=e["id"],
+                    attacker_id=actor.get("id"),
+                    attacker_team_id=a_state.get("teamId"),
+                    attacker_side=a_state.get("side"),
+                    victim_id=target.get("id"),
                     victim_team_id=t_state.get("teamId"),
                     source=_first_named(d.get("damageDealtSources"), "source"),
                     hit=_first_named(d.get("damageDealtTargets"), "target"),
                     amount=d.get("damageDealt"),
                     victim_health_after=(t_state.get("round") or {}).get("currentHealth"),
-                    attacker_x=ax, attacker_y=ay, victim_x=vx, victim_y=vy)
+                    attacker_x=ax,
+                    attacker_y=ay,
+                    victim_x=vx,
+                    victim_y=vy,
+                )
             elif t == "player-used-ability":
                 gx, gy = _xy(a_state)
                 cast = supplement.get(e["id"]) or {}
@@ -191,17 +222,42 @@ def parse_series(root: Path, series_id: str) -> dict[str, Any]:
                 ok = cast.get("quality") == "ok"
                 pos = (interp.get("position") or {}) if ok else {}
                 view = (interp.get("view") or {}) if ok else {}
-                add("abilities", t, _actor=actor.get("id"), occurred_at=at, event_id=e["id"],
-                    player_id=actor.get("id"), team_id=a_state.get("teamId"),
-                    side=a_state.get("side"), ability=target.get("id"), grid_x=gx, grid_y=gy,
-                    slot=cast.get("slot"), quality=cast.get("quality"),
-                    cast_x=pos.get("x"), cast_y=pos.get("y"), cast_z=pos.get("z"),
-                    view_x=view.get("x"), view_y=view.get("y"), view_z=view.get("z"))
+                add(
+                    "abilities",
+                    t,
+                    _actor=actor.get("id"),
+                    occurred_at=at,
+                    event_id=e["id"],
+                    player_id=actor.get("id"),
+                    team_id=a_state.get("teamId"),
+                    side=a_state.get("side"),
+                    ability=target.get("id"),
+                    grid_x=gx,
+                    grid_y=gy,
+                    slot=cast.get("slot"),
+                    quality=cast.get("quality"),
+                    cast_x=pos.get("x"),
+                    cast_y=pos.get("y"),
+                    cast_z=pos.get("z"),
+                    view_x=view.get("x"),
+                    view_y=view.get("y"),
+                    view_z=view.get("z"),
+                )
             elif t.startswith("player-completed-") and target.get("type") in OBJECTIVES:
                 x, y = _xy(a_state)
-                add("objectives", t, _actor=actor.get("id"), occurred_at=at, event_id=e["id"],
-                    player_id=actor.get("id"), team_id=a_state.get("teamId"),
-                    side=a_state.get("side"), action=target.get("type"), x=x, y=y)
+                add(
+                    "objectives",
+                    t,
+                    _actor=actor.get("id"),
+                    occurred_at=at,
+                    event_id=e["id"],
+                    player_id=actor.get("id"),
+                    team_id=a_state.get("teamId"),
+                    side=a_state.get("side"),
+                    action=target.get("type"),
+                    x=x,
+                    y=y,
+                )
 
     for table in rows.values():
         table[:] = [r for r in table if r["game_id"] not in rolled_back]
@@ -209,9 +265,7 @@ def parse_series(root: Path, series_id: str) -> dict[str, Any]:
     return {"series_id": series_id, "rows": rows, "stats": dict(stats)}
 
 
-def _record_buy_phase(
-    e: dict[str, Any], at: str, game_id: str | None, add, rounds: list
-) -> None:
+def _record_buy_phase(e: dict[str, Any], at: str, game_id: str | None, add, rounds: list) -> None:
     """At the end of the buy phase, snapshot every player's agent, credits and weapons."""
     games = (e.get("seriesState") or {}).get("games") or []
     game = next((g for g in games if g.get("id") == game_id), None)
@@ -224,10 +278,19 @@ def _record_buy_phase(
         for p in team.get("players") or []:
             items = [i.get("id") for i in (p.get("inventory") or {}).get("items") or []]
             weapons = [i for i in items if i and i not in NON_WEAPON_ITEMS]
-            add("loadouts", None, _actor=None, player_id=p.get("id"), team_id=team.get("id"),
-                side=side, agent=(p.get("character") or {}).get("id"), money=p.get("money"),
-                loadout_value=p.get("loadoutValue"), weapons=",".join(weapons),
-                has_operator=int("operator" in weapons))
+            add(
+                "loadouts",
+                None,
+                _actor=None,
+                player_id=p.get("id"),
+                team_id=team.get("id"),
+                side=side,
+                agent=(p.get("character") or {}).get("id"),
+                money=p.get("money"),
+                loadout_value=p.get("loadoutValue"),
+                weapons=",".join(weapons),
+                has_operator=int("operator" in weapons),
+            )
     if rounds and rounds[-1]["game_id"] == game_id:
         rounds[-1]["attack_team_id"] = sides.get("attacker")
         rounds[-1]["defense_team_id"] = sides.get("defender")
@@ -339,11 +402,18 @@ def build_cache(
     }
 
 
-def connect(db_path: Path = DEFAULT_DB) -> sqlite3.Connection:
-    """Open the extract read-only, with rows accessible by column name."""
+def connect(db_path: Path = DEFAULT_DB, check_same_thread: bool = True) -> sqlite3.Connection:
+    """Open the extract read-only, with rows accessible by column name.
+
+    ``check_same_thread=False`` lets a connection be used from a different thread than the one
+    that opened it. The web API needs this: FastAPI may run a request's setup (opening the
+    connection) and its endpoint on different worker threads. It's safe there because each
+    request still has its own connection, never shared between requests.
+    """
     if not Path(db_path).exists():
         raise FileNotFoundError(f"{db_path} not found. Build it with: nunyaintel build-cache")
-    con = sqlite3.connect(f"file:{Path(db_path).as_posix()}?mode=ro", uri=True)
+    uri = f"file:{Path(db_path).as_posix()}?mode=ro"
+    con = sqlite3.connect(uri, uri=True, check_same_thread=check_same_thread)
     con.row_factory = sqlite3.Row
     return con
 

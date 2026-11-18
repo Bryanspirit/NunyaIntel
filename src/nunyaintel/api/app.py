@@ -72,7 +72,8 @@ def create_app(db_path: Path = DEFAULT_DB, maps_path: Path = DEFAULT_MAPS) -> Fa
     app = FastAPI(title="NunyaIntel API", version=__version__)
 
     def get_con() -> Iterator[sqlite3.Connection]:
-        con = connect(db_path)
+        # one connection per request; opened and used on possibly different worker threads
+        con = connect(db_path, check_same_thread=False)
         try:
             yield con
         finally:

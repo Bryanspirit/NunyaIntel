@@ -4,6 +4,25 @@ One entry per build step: what we built, the key ideas behind it, how to run it,
 
 ---
 
+## W4: The three pages (18 Nov 2026)
+
+**What:** the web app now has full **Scouting**, **Operator** and **Utility** pages:
+- **Scouting:** headline stats, maps, how rounds end, pistols, the buy-vs-buy heat grid, and (with a map selected) the plant map, site tables, default setups and opening duels.
+- **Operator:** profiles, Op rate by economy, opening duels, and angles drawn as arrows.
+- **Utility:** the ability summary, plus lineups drawn as aim arrows and ranked by score. **Hover a table row to highlight its arrow on the map.**
+
+**Key ideas**
+- **Small shared components** (`Stat`, `WinBar`, `RecText`, `BuyMatrix`, `nice()`) keep the pages short and consistent. The pages only arrange data.
+- **Linked views:** one piece of React state (`highlight`) is set by `onMouseEnter` on a table row and read by the map to make that arrow bold and fade the rest. Shared state is all it takes to connect two views.
+- **Concurrency bug found by testing in a real browser:** command-line requests ran one at a time and passed. The browser sends several at once, and some failed with HTTP 500: *"SQLite objects created in a thread can only be used in that same thread."* FastAPI can open the connection (in `Depends`) on one worker thread and run the endpoint on another. The fix is `check_same_thread=False` for API connections. That's safe because each request still owns its connection. Two regression tests now cover it: a cross-thread connection, and 16 requests fired in parallel.
+- **Check the result visually:** screenshots confirmed the plant dots sit on the three Lotus sites, attack lineups start from the attacker side, and hover-highlighting works. They also caught a CSS problem: two equally specific rules mean the later one wins, which centred the grid's labels.
+
+**What it showed:** on Pearl, OXY wins **75%** of his opening duels with the Operator vs. 39% without it, better than his all-maps 67%. Pearl is where his Operator matters most.
+
+**Read:** `web/src/components/ui.tsx`, `BuyMatrix.tsx` → `web/src/pages/ScoutingPage.tsx`, `OperatorPage.tsx`, `UtilityPage.tsx` → `connect()` in `src/nunyaintel/data/extract.py` and `tests/test_api.py::test_parallel_requests`.
+
+---
+
 ## W3: Drawing on the minimap (18 Nov 2026)
 
 **What:** `<Minimap>` (in `web/src/components/Minimap.tsx`) shows a map's minimap image with an SVG drawing layer, plus reusable `<MapDot>` and `<MapArrow>` marks, callout labels you can switch on, and a legend. First use: pick a map on the Scouting tab to see every spike plant (team vs. opponent, hollow = the planting team lost the round). Hover a dot for details.

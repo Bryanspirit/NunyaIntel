@@ -154,3 +154,38 @@ def test_utility_lineups(client):
     assert "score" in lu and lu["aim_u"] is not None
     bad = client.get("/api/utility/lineups", params={"map": "testmap", "radius": -1})
     assert bad.status_code == 422  # FastAPI validates query parameters for us
+
+
+def test_connection_usable_across_threads(tmp_path):
+    """Regression: FastAPI may open the connection on one worker thread and run the endpoint
+    on another. With sqlite3's default check_same_thread=True that failed with HTTP 500 when
+    the browser sent several requests at once."""
+    import threading
+
+    from nunyaintel.data.extract import connect
+
+    db = tmp_path / "x.sqlite"
+    sqlite3.connect(db).close()
+    con = connect(db, check_same_thread=False)
+    errors = []
+
+    def use():
+        try:
+            con.execute("SELECT 1").fetchone()
+        except Exception as exc:  # pragma: no cover - only on regression
+            errors.append(exc)
+
+    t = threading.Thread(target=use)
+    t.start()
+    t.join()
+    assert errors == []
+
+
+def test_parallel_requests(client):
+    """Several requests at once (like the browser does) all succeed."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    urls = ["/api/meta", "/api/scout?team=A", "/api/utility?map=testmap", "/api/operator"] * 4
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        codes = list(pool.map(lambda u: client.get(u).status_code, urls))
+    assert codes == [200] * len(urls)
