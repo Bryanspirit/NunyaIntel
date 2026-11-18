@@ -43,6 +43,8 @@ class UtilityUsage:
     view_z: float | None
     precise: bool
     round_won: bool
+    event_id: str = ""  # GRID event ID of the cast (links to damage/kills timing)
+    occurred_at: str = ""  # UTC timestamp of the cast
 
     @property
     def in_buy_phase(self) -> bool:
@@ -95,7 +97,8 @@ def load_utility(
            (julianday(a.occurred_at) - julianday(r.buy_ended_at)) * 86400.0 AS time_s,
            a.cast_x, a.cast_y, a.cast_z, a.view_x, a.view_y, a.view_z,
            ms.event NOT LIKE ? AS precise,
-           r.winner_team_id = a.team_id AS round_won
+           r.winner_team_id = a.team_id AS round_won,
+           a.event_id, a.occurred_at
     FROM abilities a
     JOIN rounds r ON r.series_id = a.series_id AND r.game_id = a.game_id
                  AND r.round_num = a.round_num
@@ -109,7 +112,12 @@ def load_utility(
     ORDER BY a.series_id, a.game_id, a.round_num, a.occurred_at
     """
     rows = con.execute(sql, [LOW_RATE_EVENT_PATTERN, *params]).fetchall()
-    return [UtilityUsage(*r[:17], precise=bool(r[17]), round_won=bool(r[18])) for r in rows]
+    return [
+        UtilityUsage(
+            *r[:17], precise=bool(r[17]), round_won=bool(r[18]), event_id=r[19], occurred_at=r[20]
+        )
+        for r in rows
+    ]
 
 
 @dataclass(slots=True)

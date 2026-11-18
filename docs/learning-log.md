@@ -4,6 +4,22 @@ One entry per build step: what we built, the key ideas behind it, how to run it,
 
 ---
 
+## U3: How well does a lineup work? (18 Nov 2026)
+
+**What:** `nunyaintel utility --team Cloud9 --map lotus --lineups --score` ranks a team's lineups by how much better the team does when it uses them. It also shows ability damage per cast and kills/deaths in the 10 seconds after each cast.
+
+**Key ideas**
+- **Small samples lie, so use shrinkage.** A lineup used 3 times and won 3 times shows "100%", but that's mostly luck. We add *k = 10 imaginary rounds at the team's usual win rate*: `adjusted = (wins + 10 × baseline) / (uses + 10)`. With few uses the result stays near the baseline. With many uses the real record wins out. On Cloud9 Lotus, an Omen smoke used in **46 rounds** at 61% (+11.4) ranks next to lineups used **3 times** at 100% (+11.6). Without shrinkage the 3-use lineups would score +50 and bury the far stronger evidence. (This is the idea behind "empirical Bayes" estimates.)
+- **Compare to a baseline, not to 50%.** The score is relative to the team's own win rate on that map and side, so a team that's strong on defense doesn't make every defensive lineup look good.
+- **Attribution with `bisect`:** to credit each ability hit to the right cast, we sort a player's casts by time and use `bisect` (binary search) to find the latest cast before the hit. Damage from a *later*, different cast doesn't count for the lineup (the test checks this).
+- **Time windows:** a flash deals no damage, so we count team kills/deaths in the 10 s after each in-round cast. Buy-phase setups are skipped because nothing happens right after them.
+- **Suspicious ≠ wrong:** "0 damage" for Tejo's guided-salvo looked like a bug. Checking showed every hit *was* credited. Cloud9 simply landed only 47 hits from 342 casts.
+- **Correlation, not causation:** a lineup might look good because it's used in rounds the team was likely to win anyway (full buys). Treat the score as "worth a closer look".
+
+**Read:** `src/nunyaintel/utility/effectiveness.py`, `tests/test_effectiveness.py`.
+
+---
+
 ## T1 + T2: Scouting report (18 Nov 2026)
 
 **What:** `nunyaintel scout --team Cloud9 [--map lotus] [--since 2025-06-01]` prints a scouting report with three parts:

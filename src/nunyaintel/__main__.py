@@ -26,6 +26,7 @@ def build_parser() -> argparse.ArgumentParser:
     ut.add_argument("--angle", type=float, default=10.0, help="Lineup max aim difference, deg")
     ut.add_argument("--min-matches", type=int, default=2, help="Lineup must recur in N matches")
     ut.add_argument("--top", type=int, default=30, help="Show at most this many lineups")
+    ut.add_argument("--score", action="store_true", help="With --lineups: rank by effectiveness")
     op = sub.add_parser("operator", help="Profile Operator usage per player")
     op.add_argument("--team", help="Team ID or exact name, e.g. 79 or Cloud9 (default: all)")
     op.add_argument("--map", dest="map_name", help="Only this map, e.g. ascent")
@@ -89,7 +90,13 @@ def main(argv: list[str] | None = None) -> int:
                 min_series=args.min_matches,
             )
             print(f"{len(found)} lineups\n")
-            print(lu.format_lineups(found[: args.top]))
+            if args.score:
+                from nunyaintel.utility import effectiveness
+
+                scores = effectiveness.score_lineups(con, found)
+                print(effectiveness.format_scores(scores[: args.top]))
+            else:
+                print(lu.format_lineups(found[: args.top]))
         else:
             print(placement.format_summary(placement.summarize(usages)))
         return 0
