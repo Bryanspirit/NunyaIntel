@@ -7,7 +7,7 @@ it lives in ``data/cache/`` (gitignored) and must never be committed or shared.
 Tables
 ------
 meta_* ........... copies of the data repo's meta/*.csv (VALORANT rows) plus series.csv
-rounds ........... one row per round: attacking/defending team, winner, win type
+rounds ........... one row per round: buy-phase end time, attacking/defending team, winner, win type
 kills ............ enemy kills: killer/victim, sides, weapon, first blood, both positions
 damage ........... every damage instance: source (weapon or ability), hit location, amount
 abilities ........ ability casts from GRID + supplement cast position/aim (if quality ok)
@@ -31,11 +31,11 @@ from typing import Any
 from nunyaintel.config import DATA_DIR
 from nunyaintel.data.grid import TITLE, GridRepo, read_jsonl_zst
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2  # v2: rounds.buy_ended_at
 DEFAULT_DB = DATA_DIR / "cache" / "nunyaintel.sqlite"
 
 SCHEMA = {
-    "rounds": "series_id TEXT, game_id TEXT, round_num INT, started_at TEXT, "
+    "rounds": "series_id TEXT, game_id TEXT, round_num INT, started_at TEXT, buy_ended_at TEXT, "
     "attack_team_id TEXT, defense_team_id TEXT, winner_team_id TEXT, win_type TEXT",
     "kills": "series_id TEXT, game_id TEXT, round_num INT, occurred_at TEXT, event_id TEXT, "
     "killer_id TEXT, killer_team_id TEXT, killer_side TEXT, victim_id TEXT, victim_team_id TEXT, "
@@ -152,7 +152,7 @@ def parse_series(root: Path, series_id: str) -> dict[str, Any]:
                 add("rounds", t, _actor=None, started_at=at, attack_team_id=None,
                     defense_team_id=None, winner_team_id=None, win_type=None)
             elif t == "round-ended-freezetime":
-                _record_buy_phase(e, game_id, add, rows["rounds"])
+                _record_buy_phase(e, at, game_id, add, rows["rounds"])
             elif t == "team-won-round":
                 num = t_state.get("sequenceNumber") or round_num
                 for r in reversed(rows["rounds"]):
@@ -209,7 +209,9 @@ def parse_series(root: Path, series_id: str) -> dict[str, Any]:
     return {"series_id": series_id, "rows": rows, "stats": dict(stats)}
 
 
-def _record_buy_phase(e: dict[str, Any], game_id: str | None, add, rounds: list) -> None:
+def _record_buy_phase(
+    e: dict[str, Any], at: str, game_id: str | None, add, rounds: list
+) -> None:
     """At the end of the buy phase, snapshot every player's agent, credits and weapons."""
     games = (e.get("seriesState") or {}).get("games") or []
     game = next((g for g in games if g.get("id") == game_id), None)
@@ -229,6 +231,7 @@ def _record_buy_phase(e: dict[str, Any], game_id: str | None, add, rounds: list)
     if rounds and rounds[-1]["game_id"] == game_id:
         rounds[-1]["attack_team_id"] = sides.get("attacker")
         rounds[-1]["defense_team_id"] = sides.get("defender")
+        rounds[-1]["buy_ended_at"] = at  # end of buy phase = start of action
 
 
 def _parse_worker(args: tuple[str, str]) -> dict[str, Any]:
@@ -343,3 +346,15 @@ def connect(db_path: Path = DEFAULT_DB) -> sqlite3.Connection:
     con = sqlite3.connect(f"file:{Path(db_path).as_posix()}?mode=ro", uri=True)
     con.row_factory = sqlite3.Row
     return con
+
+
+def resolve_team(con: sqlite3.Connection, team: str) -> str:
+    """Accept a team ID or an exact team name (case-insensitive) and return the team ID."""
+    row = con.execute(
+        "SELECT team_id FROM meta_teams WHERE team_id = ? OR lower(name) = lower(?) "
+        "ORDER BY team_id = ? DESC LIMIT 1",
+        (team, team, team),
+    ).fetchone()
+    if not row:
+        raise ValueError(f"Unknown team: {team!r}")
+    return row[0]

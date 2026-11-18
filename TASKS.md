@@ -7,7 +7,7 @@ Format: `- [status] ID: description (owner: junie|claude|-)`
 
 | Milestone | Due | Scope |
 |---|---|---|
-| M1 Core analytics | Sun 29 Nov | T1, T2, O1 ✓, O2 ✓, U1 |
+| M1 Core analytics | Sun 29 Nov | T1, T2, O1 ✓, O2 ✓, U1 ✓ |
 | M2 Feature depth | Sun 13 Dec | T3, U2, U3, O3, D1 |
 | M3 Feature-complete (feature freeze) | Sun 20 Dec | D2 presentation layer working end-to-end |
 | M4 Polish + demo | Sun 3 Jan | bug fixes, README, demo video and write-up drafts (holidays are buffer) |
@@ -27,8 +27,8 @@ If a milestone slips, cut scope (U3/O3 are the first candidates). Don't move the
 - [ ] T3: Site attack preferences and default setups per map (owner: -)
 
 ## Utility Placement
-- [ ] U1: Load `UtilityUsage` from the `abilities` table (cast_x/y + view; quality ok) per map/side (owner: -)
-- [ ] U2: Cluster placements per map/side to find common lineups (owner: -)
+- [x] U1: `load_utility()` + `nunyaintel utility --team <t> --map <m> [--side]`: casts with supplement position/aim, timing vs. buy-phase end (extract v2 adds `rounds.buy_ended_at`), per-ability summary (owner: claude)
+- [~] U2: Cluster placements per map/side to find common lineups (owner: claude)
 - [ ] U3: Effectiveness score per lineup (owner: -)
 
 ## Operator Profiler

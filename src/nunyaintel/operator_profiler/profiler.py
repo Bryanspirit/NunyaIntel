@@ -15,6 +15,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 from nunyaintel import economy
+from nunyaintel.data.extract import resolve_team  # noqa: F401  (re-exported for callers)
 
 OPERATOR = "operator"
 
@@ -289,18 +290,6 @@ def opening_duels(
     ORDER BY SUM(d.has_op) DESC
     """
     return [OpeningDuels(*r) for r in con.execute(sql, [*params, min_op_rounds])]
-
-
-def resolve_team(con: sqlite3.Connection, team: str) -> str:
-    """Accept a team ID or an exact team name (case-insensitive) and return the team ID."""
-    row = con.execute(
-        "SELECT team_id FROM meta_teams WHERE team_id = ? OR lower(name) = lower(?) "
-        "ORDER BY team_id = ? DESC LIMIT 1",
-        (team, team, team),
-    ).fetchone()
-    if not row:
-        raise ValueError(f"Unknown team: {team!r}")
-    return row[0]
 
 
 def format_table(profiles: Sequence[OperatorProfile]) -> str:

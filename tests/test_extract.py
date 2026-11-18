@@ -159,6 +159,7 @@ def test_parse_series(tmp_path):
     (rnd,) = rows["rounds"]
     assert (rnd["attack_team_id"], rnd["defense_team_id"]) == ("A", "B")
     assert (rnd["winner_team_id"], rnd["win_type"]) == ("A", "opponentEliminated")
+    assert rnd["buy_ended_at"] == "t6"  # occurredAt of the round-ended-freezetime envelope
 
     (cast,) = rows["abilities"]
     assert (cast["ability"], cast["cast_x"], cast["view_x"], cast["grid_x"]) == (

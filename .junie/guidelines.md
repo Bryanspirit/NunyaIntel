@@ -22,7 +22,7 @@ Junie reads this file automatically, and Claude Code follows it too. Keep it cur
 - `tests/`: pytest. Every new module gets tests.
 - `src/nunyaintel/data/grid.py`: `GridRepo` gives streaming access to the hackathon data (series index, `meta/` tables, event feeds, ability supplements).
 - `src/nunyaintel/data/extract.py`: builds the **local extract** `data/cache/nunyaintel.sqlite` (`nunyaintel build-cache`, ~5 min, all 857 VALORANT series). **Analysis code queries this extract via `extract.connect()`, not the raw feeds.** Tables:
-  - `rounds` (attack/defense team, winner, win_type), `kills` (weapon, first_kill, killer/victim x,y), `damage` (source = weapon or ability, hit, amount), `abilities` (GRID x,y + supplement cast_x/y/z & view_x/y/z when quality ok), `objectives` (plant/defuse/explode x,y), `loadouts` (per player per round after buy phase: agent, money, loadout_value, weapons, has_operator)
+  - `rounds` (buy_ended_at = start of action, attack/defense team, winner, win_type), `kills` (weapon, first_kill, killer/victim x,y), `damage` (source = weapon or ability, hit, amount), `abilities` (GRID x,y + supplement cast_x/y/z & view_x/y/z when quality ok), `objectives` (plant/defuse/explode x,y), `loadouts` (per player per round after buy phase: agent, money, loadout_value, weapons, has_operator)
   - `meta_series`, `meta_games` (map, scores), `meta_rosters`, `meta_teams`, `meta_players`, `meta_characters`, `meta_tournaments`; `build_info`
   - Keys: `(series_id, game_id, round_num)`; player/team IDs are GRID IDs (strings).
   - Full build: 857 series, 2,078 maps, 42.6k rounds, 298k kills, 1.4M ability casts, ~930 MB.

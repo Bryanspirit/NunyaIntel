@@ -12,7 +12,17 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     sub = parser.add_subparsers(dest="command")
     sub.add_parser("scout", help="Generate a scouting report for a team (TODO)")
-    sub.add_parser("utility", help="Analyse utility placement (TODO)")
+    ut = sub.add_parser("utility", help="How a team uses each agent's abilities on a map")
+    ut.add_argument("--team", help="Team ID or exact name, e.g. 79 or Cloud9 (default: all)")
+    ut.add_argument("--map", dest="map_name", required=True, help="Map, e.g. ascent")
+    ut.add_argument("--side", choices=["attacker", "defender"], help="Only this side")
+    ut.add_argument("--player", help="Only this player ID")
+    ut.add_argument("--precise-only", action="store_true", help="Skip 1 Hz (VCT Americas 2025)")
+    ut.add_argument("--lineups", action="store_true", help="Find repeated setups (U2)")
+    ut.add_argument("--radius", type=float, default=150.0, help="Lineup spot radius in cm")
+    ut.add_argument("--angle", type=float, default=10.0, help="Lineup max aim difference, deg")
+    ut.add_argument("--min-matches", type=int, default=2, help="Lineup must recur in N matches")
+    ut.add_argument("--top", type=int, default=30, help="Show at most this many lineups")
     op = sub.add_parser("operator", help="Profile Operator usage per player")
     op.add_argument("--team", help="Team ID or exact name, e.g. 79 or Cloud9 (default: all)")
     op.add_argument("--map", dest="map_name", help="Only this map, e.g. ascent")
@@ -43,6 +53,35 @@ def main(argv: list[str] | None = None) -> int:
         summary = build_cache(series_ids=args.series, workers=args.workers)
         print(json.dumps(summary, indent=2))
         return 1 if summary["failures"] else 0
+    if args.command == "utility":
+        from nunyaintel.data.extract import connect, resolve_team
+        from nunyaintel.utility import placement
+
+        con = connect()
+        usages = placement.load_utility(
+            con,
+            map_name=args.map_name,
+            team_id=resolve_team(con, args.team) if args.team else None,
+            side=args.side,
+            player_id=args.player,
+            precise_only=args.precise_only,
+        )
+        rounds = len({(u.series_id, u.game_id, u.round_num) for u in usages})
+        print(f"{len(usages)} casts in {rounds} rounds on {args.map_name}\n")
+        if args.lineups:
+            from nunyaintel.utility import lineups as lu
+
+            found = lu.find_lineups(
+                usages,
+                radius_cm=args.radius,
+                max_angle_deg=args.angle,
+                min_series=args.min_matches,
+            )
+            print(f"{len(found)} lineups\n")
+            print(lu.format_lineups(found[: args.top]))
+        else:
+            print(placement.format_summary(placement.summarize(usages)))
+        return 0
     if args.command == "operator":
         from nunyaintel.data.extract import connect
         from nunyaintel.operator_profiler import profiler as opp
