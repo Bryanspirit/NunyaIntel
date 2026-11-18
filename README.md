@@ -36,6 +36,14 @@ cd ..; git clone https://github.com/cloud9esports/stl-hackathon-2026-grid-starte
 # or point elsewhere:  $env:STL_DATA_DIR = "D:\path\to\stl-hackathon-2026-grid-starter"
 ```
 
+Build the local extract once (about 5 minutes, all 857 VALORANT series). It holds rounds, kills, damage, ability casts with positions, spike events and per-round loadouts:
+
+```powershell
+.venv\Scripts\nunyaintel build-cache
+```
+
+It's written to `data/cache/nunyaintel.sqlite`, which is gitignored because it's derived from the licensed data.
+
 The data is licensed for the hackathon only and must never be committed. `scripts/check_no_data.py` blocks it. Install the guard as a git pre-commit hook:
 
 ```sh

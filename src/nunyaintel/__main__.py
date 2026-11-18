@@ -14,6 +14,11 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("scout", help="Generate a scouting report for a team (TODO)")
     sub.add_parser("utility", help="Analyse utility placement (TODO)")
     sub.add_parser("operator", help="Profile Operator usage (TODO)")
+    build = sub.add_parser(
+        "build-cache", help="Extract the GRID data into data/cache/nunyaintel.sqlite"
+    )
+    build.add_argument("--series", nargs="*", help="Only these series IDs (default: all)")
+    build.add_argument("--workers", type=int, default=None, help="Parallel processes")
     return parser
 
 
@@ -23,6 +28,14 @@ def main(argv: list[str] | None = None) -> int:
     if args.command is None:
         parser.print_help()
         return 0
+    if args.command == "build-cache":
+        import json
+
+        from nunyaintel.data.extract import build_cache
+
+        summary = build_cache(series_ids=args.series, workers=args.workers)
+        print(json.dumps(summary, indent=2))
+        return 1 if summary["failures"] else 0
     print(f"'{args.command}' is not implemented yet. See TASKS.md.")
     return 1
 

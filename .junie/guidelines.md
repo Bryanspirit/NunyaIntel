@@ -19,6 +19,12 @@ Junie reads this file automatically, and Claude Code follows it too. Keep it cur
 - `src/nunyaintel/__main__.py`: CLI (`nunyaintel scout|utility|operator`).
 - `tests/`: pytest. Every new module gets tests.
 - `src/nunyaintel/data/grid.py`: `GridRepo` gives streaming access to the hackathon data (series index, `meta/` tables, event feeds, ability supplements).
+- `src/nunyaintel/data/extract.py`: builds the **local extract** `data/cache/nunyaintel.sqlite` (`nunyaintel build-cache`, ~5 min, all 857 VALORANT series). **Analysis code queries this extract via `extract.connect()`, not the raw feeds.** Tables:
+  - `rounds` (attack/defense team, winner, win_type), `kills` (weapon, first_kill, killer/victim x,y), `damage` (source = weapon or ability, hit, amount), `abilities` (GRID x,y + supplement cast_x/y/z & view_x/y/z when quality ok), `objectives` (plant/defuse/explode x,y), `loadouts` (per player per round after buy phase: agent, money, loadout_value, weapons, has_operator)
+  - `meta_series`, `meta_games` (map, scores), `meta_rosters`, `meta_teams`, `meta_players`, `meta_characters`, `meta_tournaments`; `build_info`
+  - Keys: `(series_id, game_id, round_num)`; player/team IDs are GRID IDs (strings).
+  - Full build: 857 series, 2,078 maps, 42.6k rounds, 298k kills, 1.4M ability casts, ~930 MB.
+  - Caveats: (1) `kills.weapon` is NULL for ability kills (~3.7%, e.g. tour-de-force, blade-storm). The ability is the `damage.source` of the same victim at the same `occurred_at`. (2) To count real rounds, use `rounds.winner_team_id IS NOT NULL` and join `meta_games` on `game_id`. This drops 3 stray game fragments and 109 restarted rounds. Winner counts then match final scores exactly.
 - `data/raw`, `data/processed`, `data/cache`: local derived data, gitignored. Never commit match data or API keys.
 - `scripts/check_no_data.py`: pre-commit guard that blocks data files.
 - `docs/`: competition plan and design notes.
