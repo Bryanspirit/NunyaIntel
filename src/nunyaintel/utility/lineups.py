@@ -12,6 +12,14 @@ the same direction. We find them by clustering casts with DBSCAN:
 DBSCAN finds however many clusters exist (no need to choose k up front, unlike k-means).
 A cluster only counts as a lineup if it shows up in at least ``min_series`` different matches,
 so it reflects a habit rather than one game plan.
+
+Defaults (1.5 m, 10 deg): the lineup count grows smoothly as these loosen (no natural plateau),
+and looser values start merging different throws. Real lineups are pixel-precise, but 1 Hz
+matches (VCT Americas 2025) carry metres of position error, so this is a middle ground.
+
+Caveat: map-targeted abilities (e.g. Omen/Brimstone smokes, Astra stars) are aimed on the
+minimap, so the caster's view direction says nothing about where they land. For those a
+"lineup" means "cast from the same spot facing the same way", not "same landing spot".
 """
 
 from __future__ import annotations
@@ -165,7 +173,7 @@ def find_lineups(
 def format_lineups(lineups: Sequence[Lineup]) -> str:
     header = (
         f"{'#':>3} {'side':<9}{'agent':<10}{'ability':<18}{'casts':>6}{'matches':>8}"
-        f"{'median t':>9}{'win %':>7}   {'spot (x, y)':<18}{'aim':>5}"
+        f"{'median t':>9}{'win %':>7}   {'spot (x, y)':<18}{'aim':>7}"
     )
     lines = [header, "-" * len(header)]
     for i, lu in enumerate(lineups, 1):
@@ -173,6 +181,6 @@ def format_lineups(lineups: Sequence[Lineup]) -> str:
         lines.append(
             f"{i:>3} {lu.side[:8]:<9}{lu.agent[:9]:<10}{lu.ability[:17]:<18}{lu.casts:>6}"
             f"{lu.series:>8}{t:>9}{lu.round_win_rate:>7.0%}   "
-            f"{f'({lu.x:.0f}, {lu.y:.0f})':<18}{lu.yaw_deg:>4.0f}°"
+            f"{f'({lu.x:.0f}, {lu.y:.0f})':<18}{lu.yaw_deg:>4.0f}deg"
         )
     return "\n".join(lines)
