@@ -27,3 +27,23 @@ def test_classify_buy(round_num, value, expected):
 def test_register_makes_function_available_in_sql():
     con = economy.register(sqlite3.connect(":memory:"))
     assert con.execute("SELECT classify_buy(5, 21000)").fetchone()[0] == "full-buy"
+
+
+def test_register_is_safe_while_another_query_is_open(tmp_path):
+    """Regression: registering inside a loop over another query's rows used to raise
+    'Error creating function'. connect() now registers up front, and repeats are no-ops."""
+    from nunyaintel.data.extract import connect
+
+    db = tmp_path / "x.sqlite"
+    raw = sqlite3.connect(db)
+    raw.execute("CREATE TABLE t (n INT)")
+    raw.executemany("INSERT INTO t VALUES (?)", [(1,), (2,)])
+    raw.commit()
+    raw.close()
+
+    con = connect(db)
+    seen = []
+    for (n,) in con.execute("SELECT n FROM t"):  # a query is open while we register
+        economy.register(con)
+        seen.append(con.execute("SELECT classify_buy(?, 25000)", (n,)).fetchone()[0])
+    assert seen == ["pistol", "full-buy"]

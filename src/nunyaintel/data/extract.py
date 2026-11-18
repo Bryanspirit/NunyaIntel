@@ -415,6 +415,9 @@ def connect(db_path: Path = DEFAULT_DB, check_same_thread: bool = True) -> sqlit
     uri = f"file:{Path(db_path).as_posix()}?mode=ro"
     con = sqlite3.connect(uri, uri=True, check_same_thread=check_same_thread)
     con.row_factory = sqlite3.Row
+    from nunyaintel import economy  # registered up front: see economy.register()
+
+    economy.register(con)
     return con
 
 

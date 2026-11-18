@@ -4,6 +4,21 @@ One entry per build step: what we built, the key ideas behind it, how to run it,
 
 ---
 
+## P2: A README for judges (18 Nov 2026)
+
+**What:** the README now leads with what a judge needs, in order: what NunyaIntel answers → what it found for Cloud9 (with sample sizes) → a tested Quickstart → a tour → how it works (diagram) → methods → data license and caveats.
+
+**Key ideas**
+- **Every number needs its sample size and a baseline.** "Cloud9 loses 30% of anti-eco rounds" means little alone. Next to the league average (17.5%, 888 of 5,067) it's the *worst of 55 teams*. And "15 of 50" tells the reader how much to trust it.
+- **Checking figures before quoting them changes the story.** "OXY wins 75% of Op opening duels on Pearl" turned out to be **6 of 8**, too few to headline. The README uses the all-maps figure instead (20 of 30).
+- **Don't state what you haven't verified.** The economy thresholds had been described as "matching VLR.gg's buy types", which we never checked. Code, README and this log now say only what we verified (they sit at the dips in our data).
+- **A bug found while writing docs:** looping over one query while calling code that registers a SQL function on the same connection raised *"Error creating function"*. SQLite won't change a connection's functions while a query on it is still open. The fix: `connect()` registers `classify_buy` up front, and `register()` first *asks* whether the function exists (`SELECT classify_buy(1, 0)`). A first attempt kept a `WeakSet` of connections, but sqlite3 connections can't be weak-referenced, and the test suite caught that immediately.
+- **Diagrams as code:** a Mermaid block in Markdown is drawn by GitHub, so the architecture diagram lives in the repo, under version control, with no image file to keep in sync.
+
+**Read:** `README.md`, `register()` in `src/nunyaintel/economy.py`, `tests/test_economy.py::test_register_is_safe_while_another_query_is_open`.
+
+---
+
 ## P1: Can a judge actually run it? (18 Nov 2026)
 
 **What:** `nunyaintel doctor` checks everything NunyaIntel needs and prints the command that fixes each problem. It checks Python, packages, the data repo, the extract (built? current schema? complete?), map data, Node, the web build and the port. The README has a 5-step **Quickstart** that was tested on a fresh clone.
@@ -227,7 +242,7 @@ Open http://127.0.0.1:4811/docs to try every endpoint in the browser. FastAPI ge
 - `nunyaintel operator --team Cloud9 --duels`: how often they take the round's opening duel, and how often they win it, with an Op vs. without.
 
 **Key ideas**
-- **Let the data choose the thresholds.** Before writing the classifier, we plotted a histogram of team loadout values. It showed a dip at 5–7.5k, a force-buy hump at 7.5–15k and a full-buy peak above 20k. That matches VLR.gg's buy types, so we use eco < 5k, semi-eco < 10k, semi-buy < 20k, full-buy ≥ 20k, and rounds 1 and 13 are pistol.
+- **Let the data choose the thresholds.** Before writing the classifier, we plotted a histogram of team loadout values. It showed a dip at 5–7.5k, a force-buy hump at 7.5–15k and a full-buy peak above 20k. That's the usual eco / half-buy / full-buy split, so we put the cutoffs at those dips: eco < 5k, semi-eco < 10k, semi-buy < 20k, full-buy ≥ 20k, and rounds 1 and 13 are pistol. (An earlier version of this entry said the cutoffs "match VLR.gg"; we could not verify that, so it was removed in P2.)
 - **Check an assumption before building on it.** "Opening duel = the kill with `first_kill = 1`" only works if each round has exactly one. We checked: 42,452 rounds have one, 38 have zero (no kills at all), and none have two.
 - **One source of truth.** The thresholds live in Python (`economy.py`). `economy.register(con)` makes `classify_buy()` callable *inside SQL* (`con.create_function`), so no query copies the numbers.
 - **SQL building blocks:**

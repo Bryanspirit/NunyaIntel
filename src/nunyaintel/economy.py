@@ -1,7 +1,7 @@
 """Round economy: classify each team-round by how much the team spent.
 
 Thresholds are on the team's total ``loadout_value`` at the end of the buy phase (all 5
-players). They follow the buy types VLR.gg uses, and they match the shape of our data: a dip
+players): the usual eco / half-buy / full-buy split, with cutoffs placed by our data: a dip
 around 5-7.5k, a force-buy hump at 7.5-15k, and the big full-buy peak above 20k.
 
 Shared by the Operator profiler (O2) and scouting (T2) so both use identical definitions.
@@ -40,6 +40,14 @@ def register(con: sqlite3.Connection) -> sqlite3.Connection:
 
     SQLite lets Python register its own functions. That way the thresholds above stay the
     single source of truth, instead of being copied into every query as a CASE expression.
+
+    Registers once per connection: SQLite refuses to add a function while another query on
+    the same connection is still open ("Error creating function"), e.g. inside a loop over
+    the rows of another query. ``extract.connect()`` registers up front, so later calls are
+    no-ops.
     """
-    con.create_function("classify_buy", 2, classify_buy, deterministic=True)
+    try:  # already there? (asking needs no bookkeeping; connections can't be weak-referenced)
+        con.execute("SELECT classify_buy(1, 0)").fetchone()
+    except sqlite3.OperationalError:  # "no such function"
+        con.create_function("classify_buy", 2, classify_buy, deterministic=True)
     return con

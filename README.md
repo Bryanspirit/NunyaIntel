@@ -1,8 +1,27 @@
 # NunyaIntel
 
-NunyaIntel is an individual entry for the **Cloud9 × JetBrains: Sky's The Limit Hackathon 2026, Category 1: VALORANT Tactical Scouting, Utility Placement & Operator Profiler**.
+**VALORANT opponent scouting from pro match data: how a team wins rounds, where it sets up its utility, and how it plays the Operator.**
 
-- Submission deadline: **12 January 2027**. Everything finished by **6 January 2027** (milestones in `TASKS.md`).
+An individual entry for the **Cloud9 × JetBrains: Sky's The Limit Hackathon 2026, Category 1: VALORANT Tactical Scouting, Utility Placement & Operator Profiler.** It runs locally on the hackathon's GRID data: 857 series, 2,078 maps, 42,490 rounds, 160 teams (VCT Americas, Masters and Game Changers, Jan 2025 – Sep 2026).
+
+NunyaIntel answers three questions a coach asks before playing a team:
+
+| Question | NunyaIntel shows |
+|---|---|
+| **How do they win and lose rounds?** | Map and side win rates, how rounds end, pistol and economy patterns, which sites they hit and hold, default setups, where opening duels happen |
+| **Where and when do they use utility?** | Every ability by timing (set up during the buy phase or used mid-round), the **lineups** they repeat (same spot, same aim, across matches) drawn on the minimap, and how well each one works |
+| **How do they play the Operator?** | Who buys it and when (by team economy), opening-duel success with vs. without it, and the **angles** they hold, drawn on the minimap |
+
+## What it finds: Cloud9 (VCT Americas 2025)
+
+These are examples from 45 maps / 961 rounds. Sample sizes are in brackets; treat small ones as leads, not verdicts.
+
+- **Anti-eco is a weakness.** On a full buy against an eco or semi-eco, Cloud9 lost **30% of rounds (15 of 50)**. The league average is **17.5% (888 of 5,067)**, which makes it the **worst of the 55 teams** with 30+ such rounds.
+- **Pistols convert reliably.** After winning a pistol round they won the next round **85% of the time (40 of 47)**. After losing one, they broke the opponent's bonus round only **21% (9 of 42)**.
+- **Lotus has a clear attack plan and a weak spot on defense.** On attack they play **A**: 35% of rounds, won **76% (42 of 55)** after planting there. In **23% of attack rounds they never plant, and win 1 of 35**. On defense, **C** is hit most and is their weakest hold: **33% (16 of 49)**.
+- **The Operator is a role, not a crutch.** OXY holds an Op in **10% of rounds (97 of 961)**, only on full buys, and wins **67% of his opening duels with it (20 of 30)**.
+
+> **Data coverage:** the dataset has no VCT (main-team) matches in 2026; all 2026 data is Game Changers. Cloud9's VCT data runs Jan–Aug 2025. Cloud9 GC (Game Changers) has 9 series from Jul–Sep 2026.
 
 ## Quickstart
 
@@ -32,69 +51,98 @@ py -3.14 -m venv .venv                    # macOS/Linux: python3.14 -m venv .ven
 - Saving disk with a sparse checkout of the data? Include **`meta`**: `git sparse-checkout set val val-ability-supplements meta`. (The data README's example leaves it out, and NunyaIntel needs it.)
 - Port 4811 taken? Use `nunyaintel serve --port 4821`.
 
-## Modules
+## A tour
 
-| Package | Purpose |
+Pick a team (the **Cloud9** / **Cloud9 GC** buttons are shortcuts), a map and optionally a side. The selection lives in the URL, e.g. `/?team=79&map=lotus&tab=utility`, so any view can be bookmarked or shared.
+
+| Tab | What you see |
 |---|---|
-| `nunyaintel.data` | Domain models (matches, rounds, players, events) and data source adapters |
-| `nunyaintel.scouting` | Opponent tendencies and scouting reports |
-| `nunyaintel.utility` | Utility placement analysis (where and when lineups are thrown, and how well they work) |
-| `nunyaintel.operator_profiler` | Operator (AWP-class sniper) usage profiles per player and team |
+| **Scouting** | Headline numbers (side win %, pistol conversion, anti-eco losses, eco upsets) · per-map record · how rounds end · a buy-vs-buy win-rate heat grid. With a map: **every spike plant on the minimap**, site tables (where they plant / what they hold), default setups per player, opening-duel areas |
+| **Operator** | Who uses the Op · Op rate by team economy · opening duels with vs. without it. With a map: **angles drawn as arrows** (shooter area → target area) |
+| **Utility** | Every ability: casts per round, % set up during the buy phase, median timing. **Lineups drawn as aim arrows** and ranked by effectiveness. Hover a row to highlight its arrow |
 
-## Setup
+Everything is also available on the command line:
+
+```powershell
+nunyaintel scout    --team Cloud9 [--map lotus] [--since 2025-06-01]
+nunyaintel operator --team Cloud9 [--economy | --duels | --map pearl --angles]
+nunyaintel utility  --team Cloud9 --map lotus [--side defender] [--lineups --score]
+```
+
+*Screenshots: coming with the submission kit (task K4).*
+
+## How it works
+
+```mermaid
+flowchart LR
+    A["GRID data repo<br/>857 series, .jsonl.zst<br/>(local, never copied)"] -->|"nunyaintel build-cache<br/>stream + replay feeds<br/>in parallel, ~7 min"| B[("Local extract<br/>SQLite ~1 GB<br/>rounds · kills · damage<br/>abilities · plants · loadouts")]
+    M["valorant-api.com<br/>map callouts + minimap<br/>(public, cached once)"] --> C
+    B --> C["Analysis (Python)<br/>scouting · utility · operator"]
+    C --> D["FastAPI JSON API<br/>/api/*"]
+    C --> E["CLI<br/>nunyaintel …"]
+    D --> F["React + TypeScript<br/>tables + SVG minimaps"]
+```
+
+1. **Extract:** each match feed is replayed once, in parallel. Every event carries a full match snapshot, so feeds are ~200× larger uncompressed. The replay undoes reversed events and drops abandoned maps, then keeps only compact rows. It's verified against the data's own index: all 2,078 maps are present, and round winners add up to every map's final score.
+2. **Analysis:** plain Python + SQL over the extract. It runs in seconds, with one module per question.
+3. **Presentation:** a FastAPI server returns JSON (with minimap coordinates already computed), and a React app draws tables and SVG overlays on the minimap. `nunyaintel serve` runs both from one process.
+
+## Methods (short version)
+
+- **Economy:** each team-round is classified by the team's total loadout value at the end of the buy phase: eco < 5k, semi-eco < 10k, semi-buy < 20k, full-buy ≥ 20k, and rounds 1 and 13 are pistol. These are the usual eco / half-buy / full-buy split analysts use, with cutoffs placed at the dips in our data's distribution of team loadouts.
+- **Utility timing** is measured from the **end of the buy phase**, so a negative time = set up before the round starts (e.g. Cypher Trapwire −20 s).
+- **Lineups:** **DBSCAN** clustering on cast position (±1.5 m) and aim direction (±10°), per team / map / side / agent / ability, kept only if repeated in ≥ 2 matches. Cast positions come from the GRID ability supplement.
+- **Lineup score:** the round win rate when the lineup was used vs. the team's usual rate on that map and side, **shrunk toward the usual rate** (10 imaginary average rounds) so that a 3-for-3 lineup can't outrank strong evidence. Also reported: ability damage per cast and team kills/deaths in the 10 s after the cast. It's correlation, not causation.
+- **Sites and areas:** positions are named by the nearest map callout from valorant-api.com. Verified: plants sit a median 3–10 m from their site's callout, and site callouts land on the minimap's site areas.
+- **Default setups:** each player's first known position in the first 20 s of the round. Players are only "seen" when they act, so coverage is shown next to each one.
+- **Operator angles:** each Operator hit has a shooter and a target position. Hits are grouped by named area (shooter area → target area); `--precise` clusters exact spots instead. Hits over 100 m are dropped as bad positions.
+
+## Data, license and caveats
+
+- The **GRID data is licensed for this hackathon only**. It is read in place from a separate clone and never copied, committed or published: `.gitignore` excludes it, and a pre-commit hook (`scripts/check_no_data.py`) blocks it. The server binds to `127.0.0.1` only. Charts, screenshots and aggregate numbers are fine to share.
+- Low-rate positions: VCT Americas 2025 movement is sampled at 1 Hz (others at 5 Hz), so cast positions there can be a few metres off.
+- Map-targeted abilities (Omen and Brimstone smokes, Astra) are aimed on the minimap, so their arrows show where the caster faced, not where the smoke landed.
+- "Spike defused" includes rounds where the defenders killed every attacker after the plant: they still have to defuse.
+- About 3.7% of kills are ability kills with no weapon recorded. They don't affect Operator stats.
+
+## Project structure
+
+```
+src/nunyaintel/
+  data/        grid.py (stream the data repo) · extract.py (build/read the SQLite extract)
+  scouting/    team_rounds · overview (T1) · economy_report (T2) · sites (T3) · report
+  utility/     placement (U1) · lineups (U2, DBSCAN) · effectiveness (U3)
+  operator_profiler/  profiler (O1, O2) · angles (O3)
+  api/         FastAPI app (JSON for the web app)
+  maps.py · economy.py · doctor.py · __main__.py (CLI)
+web/           React + TypeScript (Vite): pages, <Minimap>, typed API client
+tests/         pytest on synthetic data only (the licensed data never appears in tests)
+docs/          learning-log.md: what was built at each step and why
+```
+
+## Development
 
 ```powershell
 .venv\Scripts\python -m pip install -e ".[dev]"
-.venv\Scripts\python -m pytest
-.venv\Scripts\nunyaintel --help
+.venv\Scripts\python -m pytest            # synthetic data only
+.venv\Scripts\python -m ruff check .
+cd web; npm run build                     # type-check + bundle
 ```
 
-## Working with AI agents
+**Frontend with live reload:** run `nunyaintel serve` (API on :4811) and `cd web; npm run dev` (http://127.0.0.1:4810, forwards `/api/*` to :4811).
 
-This repo is built with Junie (inside PyCharm) and Claude Code working together:
-- `.junie/guidelines.md` holds the project rules that both agents follow.
-- `TASKS.md` is the shared backlog. Claim a task before you start it, and tick it off when it's done.
-
-## Data
-
-NunyaIntel reads the hackathon's GRID dataset straight from a separate local clone of the data repo. Nothing is copied into this repo:
-
-```powershell
-cd ..; git clone https://github.com/cloud9esports/stl-hackathon-2026-grid-starter.git
-# or point elsewhere:  $env:STL_DATA_DIR = "D:\path\to\stl-hackathon-2026-grid-starter"
-```
-
-Build the local extract once (about 5 minutes, all 857 VALORANT series). It holds rounds, kills, damage, ability casts with positions, spike events and per-round loadouts:
-
-```powershell
-.venv\Scripts\nunyaintel build-cache
-```
-
-It's written to `data/cache/nunyaintel.sqlite`, which is gitignored because it's derived from the licensed data.
-
-The data is licensed for the hackathon only and must never be committed. `scripts/check_no_data.py` blocks it. Install the guard as a git pre-commit hook:
+Install the data guard as a git pre-commit hook:
 
 ```sh
 printf '#!/bin/sh\nexec .venv/Scripts/python.exe scripts/check_no_data.py\n' > .git/hooks/pre-commit
 ```
 
-## Web app
+## How it was built
 
-**Demo (one command):** builds the React app and serves page + API from one process.
+Developed in **PyCharm** with AI coding agents. `TASKS.md` is the shared task board, recording who did what and when, and `.junie/guidelines.md` holds the project rules every agent follows. Most of the code so far was written with **Claude Code**; **Junie** (JetBrains' agent) takes the frontend polish and CI tasks. `docs/learning-log.md` records each step: what was built, the key ideas, and the bugs found along the way.
 
-```powershell
-.venv\Scripts\nunyaintel serve --build --open     # http://127.0.0.1:4811
-```
+**Built with:** Python 3.14 (stdlib `compression.zstd`, `sqlite3`, `concurrent.futures`) · FastAPI · Uvicorn · React 19 · TypeScript · Vite · SVG · pytest · Ruff · GRID data · valorant-api.com map data.
 
-After the first build, `nunyaintel serve --open` is enough. Rebuild with `--build` after frontend changes. The server binds to 127.0.0.1 only, because the data is licensed.
+## License
 
-**Frontend development** (live reload): run the API and the Vite dev server side by side.
-
-```powershell
-# terminal 1: API on http://127.0.0.1:4811  (try /docs)
-.venv\Scripts\nunyaintel serve
-# terminal 2: React dev server on http://127.0.0.1:4810 (forwards /api/* to 4811)
-cd web; npm install; npm run dev
-```
-
-Ports 4810/4811 avoid the common 5173/8000, which other local projects often use.
+The code license is to be decided (task P7). The GRID data is not covered by this repo's license. It belongs to its owners and is used under the hackathon's data license.
