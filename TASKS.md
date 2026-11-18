@@ -20,7 +20,7 @@ Format: `- [status] ID: description (owner: junie|claude|-)`
 - [ ] U3: Effectiveness score per lineup (owner: -)
 
 ## Operator Profiler
-- [ ] O1: Fill `OperatorProfile` from `loadouts.has_operator` (rounds with Op) + `kills.weapon = 'operator'` (owner: -)
+- [x] O1: `profile_players()` + `nunyaintel operator --team <id|name> [--map m]`: rounds with Op, buy rate, Op kills, first bloods, Op K/D, win % with Op (owner: claude)
 - [ ] O2: Op buy rate by economy state, plus opening-duel success (owner: -)
 - [ ] O3: Common angles held per map/side (owner: -)
 
