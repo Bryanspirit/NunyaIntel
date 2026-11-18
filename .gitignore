@@ -22,3 +22,7 @@ stl-hackathon-2026-grid-starter/
 *.sqlite
 *.duckdb
 data/cache/
+
+# Web frontend build output and packages
+web/node_modules/
+web/dist/

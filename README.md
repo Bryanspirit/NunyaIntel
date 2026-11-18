@@ -49,3 +49,16 @@ The data is licensed for the hackathon only and must never be committed. `script
 ```sh
 printf '#!/bin/sh\nexec .venv/Scripts/python.exe scripts/check_no_data.py\n' > .git/hooks/pre-commit
 ```
+
+## Web app
+
+Python API (FastAPI) + React frontend (Vite + TypeScript, in `web/`). Everything runs locally only, because the data is licensed.
+
+```powershell
+# terminal 1: the API on http://127.0.0.1:8765  (try /docs)
+.venv\Scripts\nunyaintel serve
+# terminal 2: the React dev server on http://127.0.0.1:5273
+cd web; npm install; npm run dev
+```
+
+Ports 8765/5273 avoid the common 8000/5173, which other local projects often use. The dev server forwards `/api/*` to the API.

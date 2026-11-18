@@ -4,15 +4,31 @@ One entry per build step: what we built, the key ideas behind it, how to run it,
 
 ---
 
+## W2: The React app skeleton (18 Nov 2026)
+
+**What:** the `web/` folder holds a React + TypeScript app. It has team/map/side/date pickers, Scouting/Operator/Utility tabs, and a first real table (maps for the selected team) fetched from the API. Run it with `nunyaintel serve` plus `cd web; npm run dev`, then open http://127.0.0.1:5273.
+
+**Key ideas**
+- **Vite** is the dev server and bundler. In development its **proxy** forwards `/api/*` to the Python server, so the browser talks to one address (no CORS setup). `npm run build` type-checks (`tsc --noEmit`) and bundles everything into `web/dist/`.
+- **Typed API contract** (`src/api.ts`): TypeScript interfaces mirror the JSON from `api/app.py`. If a field is renamed in Python but not here, the compiler flags every place that uses it.
+- **A custom hook** (`useApi`): React components ask for `{data, error, loading}` for a URL. `useEffect` re-fetches when the URL changes, and its cleanup function **aborts** the old request (`AbortController`), so a slow, outdated response can't overwrite a newer one.
+- **State in the URL** (`useSelection`): team, map, side and tab live in `?team=79&map=lotus&tab=scouting`, so any view can be bookmarked or shared. `popstate` handles the browser's back button.
+- **Supply-chain hygiene:** exact versions (no `^`), releases at least 2 weeks old (we used Vite 8.3.5 instead of the 7-day-old 8.3.8), and `package-lock.json` committed. The whole install is 24 packages.
+- **Debugging a "wrong app" bug:** the page said "HRHUB". Docker was already holding 127.0.0.1:5173 and :8000, and "localhost" made Vite bind to IPv6 (`::1`), so requests reached the other app. We found it by listing which process owned each port (`Get-NetTCPConnection`). The fix: our own ports (8765/5273) and an explicit `127.0.0.1`.
+
+**Read:** `web/vite.config.ts` → `web/src/api.ts` → `web/src/useApi.ts` → `web/src/useSelection.ts` → `web/src/App.tsx` → `web/src/pages/ScoutingPage.tsx`.
+
+---
+
 ## W1: The web API (18 Nov 2026)
 
-**What:** `nunyaintel serve` starts a local web server (FastAPI) at http://127.0.0.1:8000. It returns every analysis as JSON for the React app:
+**What:** `nunyaintel serve` starts a local web server (FastAPI) at http://127.0.0.1:8765 (originally 8000, moved in W2 because Docker already used it). It returns every analysis as JSON for the React app:
 - `/api/meta` and `/api/maps/{map}`: data for the pickers and map callouts.
 - `/api/scout`: the scouting report.
 - `/api/operator`, `/api/operator/angles`: Operator analyses.
 - `/api/utility`, `/api/utility/lineups`: utility analyses.
 
-Open http://127.0.0.1:8000/docs to try every endpoint in the browser. FastAPI generates that page automatically.
+Open http://127.0.0.1:8765/docs to try every endpoint in the browser. FastAPI generates that page automatically.
 
 **Key ideas**
 - **Frontend/backend split:** React (in the browser) asks for data over HTTP, and Python answers with JSON. The API is a **thin layer**: it calls the same functions as the CLI, so there's no duplicated analysis logic.

@@ -20,6 +20,7 @@ Junie reads this file automatically, and Claude Code follows it too. Keep it cur
 - `src/nunyaintel/economy.py`: shared buy-type classifier (pistol / eco / semi-eco / semi-buy / full-buy). Use it for any economy analysis; `economy.register(con)` exposes `classify_buy()` in SQL.
 - `docs/learning-log.md`: the user is learning as we build. After finishing a task, add an entry (what, key ideas, how to run, what to read).
 - `src/nunyaintel/api/app.py`: FastAPI JSON API for the React app (`nunyaintel serve`, docs at /docs). Endpoints are thin wrappers over the analysis functions, and the converters define the JSON contract. Every point includes minimap `u`, `v`.
+- `web/`: React + TypeScript (Vite). `src/api.ts` = TypeScript types mirroring the API JSON (keep in sync with `api/app.py`). `useApi` = fetch hook. `useSelection` = team/map/side/tab kept in the URL. Pages are in `src/pages/`. Run `npm run build` (type-check + bundle) before committing. Dev: API `nunyaintel serve` (:8765) + `npm run dev` (:5273, proxies /api). Pin npm versions exactly, and use releases at least 2 weeks old.
 - `src/nunyaintel/__main__.py`: CLI (`nunyaintel scout|utility|operator`).
 - `tests/`: pytest. Every new module gets tests.
 - `src/nunyaintel/data/grid.py`: `GridRepo` gives streaming access to the hackathon data (series index, `meta/` tables, event feeds, ability supplements).

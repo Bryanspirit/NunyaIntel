@@ -1,0 +1,269 @@
+// The API contract: TypeScript types that mirror the JSON built in src/nunyaintel/api/app.py.
+// If the Python side changes a field, update the matching type here; the compiler then points
+// at every component that needs to change.
+
+export type Side = "attacker" | "defender";
+
+/** won / played / win_rate: the SideRecord shape used all over the API. */
+export interface Rec {
+  won: number;
+  played: number;
+  win_rate: number;
+}
+
+/** Minimap coordinates, 0..1 (u = right, v = down). Added by the server to every point. */
+export interface UV {
+  u: number;
+  v: number;
+}
+
+// ---- /api/meta, /api/maps/{map} ---------------------------------------------------------
+
+export interface Team {
+  id: string;
+  name: string;
+  series: number;
+  first_seen: string;
+  last_seen: string;
+}
+
+export interface Meta {
+  version: string;
+  teams: Team[];
+  maps: string[];
+}
+
+export interface Callout extends UV {
+  name: string;
+  super_region: string;
+  region: string;
+  x: number;
+  y: number;
+}
+
+export interface MapInfo {
+  name: string;
+  minimap_url: string | null;
+  callouts: Callout[];
+}
+
+// ---- /api/scout -------------------------------------------------------------------------
+
+export interface MapRecord {
+  map: string;
+  games: number;
+  games_won: number;
+  rounds_won: number;
+  rounds_lost: number;
+  round_win_rate: number;
+  attack: Rec;
+  defense: Rec;
+}
+
+export interface SiteRow extends Rec {
+  site: string;
+  median_plant_time_s: number | null;
+}
+
+export interface Plant extends UV {
+  side: Side;
+  won: boolean;
+  site: string;
+  time_s: number | null;
+  by_us: boolean;
+  x: number;
+  y: number;
+}
+
+export interface Setup {
+  player_id: string;
+  name: string;
+  side: Side;
+  agent: string;
+  rounds_played: number;
+  rounds_seen: number;
+  regions: { region: string; count: number }[];
+}
+
+export interface Sites {
+  attack_rounds: number;
+  defense_rounds: number;
+  attack: SiteRow[];
+  defense: SiteRow[];
+  plants: Plant[];
+  setups: Setup[];
+  opening_duels: Record<Side, ({ region: string } & Rec)[]>;
+}
+
+export interface Scout {
+  team: { id: string; name: string };
+  filters: { map: string | null; since: string | null };
+  rounds: number;
+  games: number;
+  first: string | null;
+  last: string | null;
+  // the rest is missing when no rounds match the filters
+  maps?: MapRecord[];
+  sides?: Record<Side, Rec>;
+  win_types?: Record<Side, { won: Record<string, number>; lost: Record<string, number> }>;
+  pistol?: { by_side: Record<Side, Rec>; conversions: Rec; breaks: Rec };
+  economy?: {
+    eco_upsets: Rec;
+    anti_eco: Rec;
+    matrix: ({ own: string; opp: string } & Rec)[];
+  };
+  sites?: Sites; // only when a map is selected
+}
+
+// ---- /api/operator, /api/operator/angles -----------------------------------------------
+
+export interface OpProfile {
+  player_id: string;
+  name: string;
+  team_id: string;
+  rounds_played: number;
+  rounds_with_op: number;
+  op_kills: number;
+  first_bloods_with_op: number;
+  deaths_with_op: number;
+  rounds_won_with_op: number;
+  op_buy_rate: number;
+  kills_per_op_round: number;
+  op_kd: number;
+  op_round_win_rate: number;
+}
+
+export interface OpEconomy {
+  player_id: string;
+  name: string;
+  team_id: string;
+  economy: string;
+  rounds: number;
+  rounds_with_op: number;
+  op_rate: number;
+}
+
+export interface OpDuels {
+  player_id: string;
+  name: string;
+  team_id: string;
+  op_rounds: number;
+  op_duels: number;
+  op_duels_won: number;
+  op_duel_rate: number;
+  op_duel_win_rate: number;
+  other_rounds: number;
+  other_duel_rate: number;
+  other_duel_win_rate: number;
+}
+
+export interface Operator {
+  profiles: OpProfile[];
+  economy: OpEconomy[];
+  duels: OpDuels[];
+}
+
+export interface OpAngle extends UV {
+  player_id: string;
+  name: string;
+  side: Side;
+  from_region: string;
+  to_region: string;
+  shots: number;
+  kills: number;
+  series: number;
+  median_distance_m: number;
+  median_time_s: number | null;
+  x: number;
+  y: number;
+  target_x: number;
+  target_y: number;
+  target_u: number;
+  target_v: number;
+}
+
+export interface OpAngles {
+  map: string;
+  shots: number;
+  angles: OpAngle[];
+}
+
+// ---- /api/utility, /api/utility/lineups ------------------------------------------------
+
+export interface AbilitySummary {
+  agent: string;
+  ability: string;
+  slot: string;
+  casts: number;
+  rounds: number;
+  per_round: number;
+  buy_phase_share: number;
+  median_time_s: number | null;
+}
+
+export interface Utility {
+  casts: number;
+  rounds: number;
+  summary: AbilitySummary[];
+}
+
+export interface Lineup extends UV {
+  team_id: string;
+  side: Side;
+  agent: string;
+  ability: string;
+  casts: number;
+  series: number;
+  rounds: number;
+  rounds_won: number;
+  round_win_rate: number;
+  median_time_s: number | null;
+  yaw_deg: number;
+  x: number;
+  y: number;
+  z: number;
+  aim_u: number;
+  aim_v: number;
+  region: string;
+  // U3 scores (present when score=true, the default)
+  baseline?: number;
+  adjusted_win_rate?: number;
+  score?: number;
+  damage_per_cast?: number;
+  in_round_casts?: number;
+  window_kills?: number;
+  window_deaths?: number;
+}
+
+export interface Lineups {
+  map: string;
+  casts: number;
+  lineups: Lineup[];
+}
+
+// ---- fetching ---------------------------------------------------------------------------
+
+/** Build "/api/path?a=1&b=2", skipping empty parameters. */
+export function apiUrl(path: string, params: Record<string, string | number | boolean | null | undefined> = {}): string {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== null && value !== undefined && value !== "") query.set(key, String(value));
+  }
+  const qs = query.toString();
+  return `/api${path}${qs ? `?${qs}` : ""}`;
+}
+
+/** Fetch JSON; throws an Error with the server's message on HTTP errors. */
+export async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
+  const response = await fetch(url, { signal });
+  if (!response.ok) {
+    let detail = response.statusText;
+    try {
+      detail = (await response.json()).detail ?? detail;
+    } catch {
+      // body wasn't JSON; keep the status text
+    }
+    throw new Error(`${response.status}: ${typeof detail === "string" ? detail : JSON.stringify(detail)}`);
+  }
+  return (await response.json()) as T;
+}

@@ -40,7 +40,7 @@ def build_parser() -> argparse.ArgumentParser:
     op.add_argument("--player", help="With --angles: only this player ID")
     op.add_argument("--precise", action="store_true", help="With --angles: exact-spot clusters")
     srv = sub.add_parser("serve", help="Run the web API (and the React app once built)")
-    srv.add_argument("--port", type=int, default=8000)
+    srv.add_argument("--port", type=int, default=8765)
     srv.add_argument("--host", default="127.0.0.1", help="Keep local: the data is licensed")
     build = sub.add_parser(
         "build-cache", help="Extract the GRID data into data/cache/nunyaintel.sqlite"

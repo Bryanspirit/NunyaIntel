@@ -40,7 +40,7 @@ If a milestone slips, cut scope (U3/O3 are the first candidates). Don't move the
 - [x] D1: CLI commands wired to each feature: `scout`, `utility` (`--lineups --score`), `operator` (`--economy --duels --angles`), `build-cache` (owner: claude)
 - [ ] D2: Presentation layer = **React web app** (decided 18 Nov): FastAPI JSON API + Vite/React/TypeScript frontend, served together by `nunyaintel serve`
   - [x] W1: FastAPI backend `nunyaintel/api/`: JSON endpoints for meta, maps, scout, operator, angles, utility, lineups; `nunyaintel serve` (owner: claude)
-  - [ ] W2: React scaffold in `web/` (Vite + TS), API client, team/map/side pickers, layout (owner: -)
+  - [x] W2: React scaffold in `web/` (Vite 8 + React 19 + TS 7, pinned), typed API client (`api.ts`), `useApi` hook, URL-backed selection, team/map/side/since pickers, tabs, first Scouting table end to end (owner: claude)
   - [ ] W3: `<Minimap>` SVG component: minimap image + points/arrows from game coords (owner: -)
   - [ ] W4: Pages: Scouting (maps, sides, economy, sites), Operator (profiles, economy, duels, angles), Utility (summary, lineups + scores) (owner: -)
   - [ ] W5: `nunyaintel serve` = build web/ and serve it from FastAPI; one-command demo (owner: -)
