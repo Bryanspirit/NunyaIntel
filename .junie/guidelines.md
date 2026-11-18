@@ -5,7 +5,7 @@ Junie reads this file automatically, and Claude Code follows it too. Keep it cur
 ## Project
 - **Name:** NunyaIntel. Always use this name. Never use "VALORANT IntelAI", which is an old name.
 - **Goal:** Cloud9 × JetBrains Hackathon 2026, Category 1: VALORANT Tactical Scouting, Utility Placement & Operator Profiler.
-- **Deadline:** 12 Jan 2027. We aim to submit on **11 Jan 2027**, so scope every task to fit that date.
+- **Deadline:** 12 Jan 2027. **Everything must be finished by 6 Jan 2027.** Milestones are in `TASKS.md`, so scope every task to fit them.
 
 ## Stack
 - Python 3.14 in `.venv`, `src/` layout, package `nunyaintel`, configured in `pyproject.toml`.
@@ -16,6 +16,8 @@ Junie reads this file automatically, and Claude Code follows it too. Keep it cur
 ## Layout
 - `src/nunyaintel/data/`: provider-agnostic models (`models.py`) and the `DataSource` protocol (`sources.py`). Provider adapters go here and map raw feeds onto those models. Analysis code never reads a raw feed directly.
 - `src/nunyaintel/scouting/`, `utility/`, `operator_profiler/`: one package per Category 1 feature.
+- `src/nunyaintel/economy.py`: shared buy-type classifier (pistol / eco / semi-eco / semi-buy / full-buy). Use it for any economy analysis; `economy.register(con)` exposes `classify_buy()` in SQL.
+- `docs/learning-log.md`: the user is learning as we build. After finishing a task, add an entry (what, key ideas, how to run, what to read).
 - `src/nunyaintel/__main__.py`: CLI (`nunyaintel scout|utility|operator`).
 - `tests/`: pytest. Every new module gets tests.
 - `src/nunyaintel/data/grid.py`: `GridRepo` gives streaming access to the hackathon data (series index, `meta/` tables, event feeds, ability supplements).

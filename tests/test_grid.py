@@ -30,8 +30,10 @@ def fake_repo(tmp_path):
     )
     _write_zst(
         tmp_path / "val" / "events_1_grid.jsonl.zst",
-        [{"occurredAt": "t0", "events": [{"type": "grid-started-feed"}]},
-         {"occurredAt": "t1", "events": [{"type": "player-killed-player"}]}],
+        [
+            {"occurredAt": "t0", "events": [{"type": "grid-started-feed"}]},
+            {"occurredAt": "t1", "events": [{"type": "player-killed-player"}]},
+        ],
     )
     return GridRepo(tmp_path)
 

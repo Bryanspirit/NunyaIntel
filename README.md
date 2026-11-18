@@ -2,7 +2,7 @@
 
 NunyaIntel is an individual entry for the **Cloud9 × JetBrains: Sky's The Limit Hackathon 2026, Category 1: VALORANT Tactical Scouting, Utility Placement & Operator Profiler**.
 
-- Submission deadline: **12 January 2027**. Target submit date: **11 January 2027**.
+- Submission deadline: **12 January 2027**. Everything finished by **6 January 2027** (milestones in `TASKS.md`).
 
 ## Modules
 

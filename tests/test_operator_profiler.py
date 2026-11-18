@@ -7,7 +7,11 @@ import pytest
 from nunyaintel.data.extract import SCHEMA
 from nunyaintel.operator_profiler.profiler import (
     OperatorProfile,
+    format_duels_table,
+    format_economy_table,
     format_table,
+    op_rate_by_economy,
+    opening_duels,
     profile_players,
     resolve_team,
 )
@@ -113,3 +117,27 @@ def test_ratios_handle_zero():
 
 def test_format_table(con):
     assert "OpGuy" in format_table(profile_players(con))
+
+
+def test_op_rate_by_economy(con):
+    con.execute("UPDATE loadouts SET loadout_value = 5000")  # 2 players -> team 10k = semi-buy
+    rates = {r.economy: r for r in op_rate_by_economy(con, min_op_rounds=1)}
+    assert set(rates) == {"pistol", "semi-buy"}  # only player "op" qualifies
+    assert (rates["pistol"].rounds, rates["pistol"].rounds_with_op) == (1, 1)
+    assert (rates["semi-buy"].rounds, rates["semi-buy"].rounds_with_op) == (3, 2)
+    assert rates["semi-buy"].op_rate == pytest.approx(2 / 3)
+
+
+def test_opening_duels(con):
+    (d,) = opening_duels(con, min_op_rounds=1)
+    # Op rounds 1-3 (round 5 has no winner): only round 1 had a first kill, and "op" made it
+    assert (d.player_id, d.op_rounds, d.op_duels, d.op_duels_won) == ("op", 3, 1, 1)
+    assert (d.other_rounds, d.other_duels) == (1, 0)
+    assert d.op_duel_rate == pytest.approx(1 / 3)
+    assert d.op_duel_win_rate == 1.0
+    assert d.other_duel_win_rate == 0.0
+
+
+def test_formatters(con):
+    assert "OpGuy" in format_economy_table(op_rate_by_economy(con))
+    assert "OpGuy" in format_duels_table(opening_duels(con))

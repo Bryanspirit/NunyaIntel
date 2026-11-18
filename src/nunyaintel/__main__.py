@@ -18,6 +18,9 @@ def build_parser() -> argparse.ArgumentParser:
     op.add_argument("--map", dest="map_name", help="Only this map, e.g. ascent")
     op.add_argument("--min-op-rounds", type=int, default=20, help="Hide players below this")
     op.add_argument("--top", type=int, default=25, help="Show at most this many players")
+    view = op.add_mutually_exclusive_group()
+    view.add_argument("--economy", action="store_true", help="Op rate per team economy state")
+    view.add_argument("--duels", action="store_true", help="Opening duels with vs. without Op")
     build = sub.add_parser(
         "build-cache", help="Extract the GRID data into data/cache/nunyaintel.sqlite"
     )
@@ -42,18 +45,23 @@ def main(argv: list[str] | None = None) -> int:
         return 1 if summary["failures"] else 0
     if args.command == "operator":
         from nunyaintel.data.extract import connect
-        from nunyaintel.operator_profiler.profiler import (
-            format_table,
-            profile_players,
-            resolve_team,
-        )
+        from nunyaintel.operator_profiler import profiler as opp
 
         con = connect()
-        team_id = resolve_team(con, args.team) if args.team else None
-        profiles = profile_players(
-            con, team_id=team_id, map_name=args.map_name, min_op_rounds=args.min_op_rounds
-        )
-        print(format_table(profiles[: args.top]))
+        team_id = opp.resolve_team(con, args.team) if args.team else None
+        filters = {
+            "team_id": team_id,
+            "map_name": args.map_name,
+            "min_op_rounds": args.min_op_rounds,
+        }
+        if args.economy:
+            rates = opp.op_rate_by_economy(con, **filters)
+            top = list(dict.fromkeys((r.player_id, r.team_id) for r in rates))[: args.top]
+            print(opp.format_economy_table([r for r in rates if (r.player_id, r.team_id) in top]))
+        elif args.duels:
+            print(opp.format_duels_table(opp.opening_duels(con, **filters)[: args.top]))
+        else:
+            print(opp.format_table(opp.profile_players(con, **filters)[: args.top]))
         return 0
     print(f"'{args.command}' is not implemented yet. See TASKS.md.")
     return 1
