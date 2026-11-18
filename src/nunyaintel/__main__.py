@@ -39,15 +39,56 @@ def build_parser() -> argparse.ArgumentParser:
     op.add_argument("--side", choices=["attacker", "defender"], help="With --angles: one side")
     op.add_argument("--player", help="With --angles: only this player ID")
     op.add_argument("--precise", action="store_true", help="With --angles: exact-spot clusters")
-    srv = sub.add_parser("serve", help="Run the web API (and the React app once built)")
+    srv = sub.add_parser("serve", help="Run the web app (React page + API) on one address")
     srv.add_argument("--port", type=int, default=4811)
     srv.add_argument("--host", default="127.0.0.1", help="Keep local: the data is licensed")
+    srv.add_argument("--build", action="store_true", help="Build the React app (npm) first")
+    srv.add_argument("--open", action="store_true", help="Open the app in the browser")
     build = sub.add_parser(
         "build-cache", help="Extract the GRID data into data/cache/nunyaintel.sqlite"
     )
     build.add_argument("--series", nargs="*", help="Only these series IDs (default: all)")
     build.add_argument("--workers", type=int, default=None, help="Parallel processes")
     return parser
+
+
+def build_web() -> None:
+    """``npm install`` (first time only) + ``npm run build`` in web/, producing web/dist."""
+    import shutil
+    import subprocess
+
+    from nunyaintel.config import WEB_DIR
+
+    npm = shutil.which("npm")  # finds npm.cmd on Windows
+    if npm is None:
+        raise SystemExit("npm not found: install Node.js 22.12+ to build the web app")
+    if not (WEB_DIR / "node_modules").exists():
+        subprocess.run([npm, "install", "--no-audit", "--no-fund"], cwd=WEB_DIR, check=True)
+    subprocess.run([npm, "run", "build"], cwd=WEB_DIR, check=True)
+
+
+def serve(host: str, port: int, build: bool = False, open_browser: bool = False) -> int:
+    """One process serves the built React app at / and the JSON API at /api."""
+    import threading
+    import webbrowser
+
+    import uvicorn
+
+    from nunyaintel.api import create_app
+    from nunyaintel.config import WEB_DIST
+
+    if build:
+        build_web()
+    url = f"http://{host}:{port}/"
+    if (WEB_DIST / "index.html").exists():
+        print(f"NunyaIntel on {url}   (API docs: {url}docs)")
+    else:
+        print(f"API only on {url}api  (docs: {url}docs)")
+        print("The web app isn't built yet: run `nunyaintel serve --build` once.")
+    if open_browser:
+        threading.Timer(1.5, webbrowser.open, args=[url]).start()  # after the server is up
+    uvicorn.run(create_app(static_dir=WEB_DIST), host=host, port=port)
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -65,13 +106,7 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(summary, indent=2))
         return 1 if summary["failures"] else 0
     if args.command == "serve":
-        import uvicorn
-
-        from nunyaintel.api import create_app
-
-        print(f"NunyaIntel API on http://{args.host}:{args.port}  (docs: /docs)")
-        uvicorn.run(create_app(), host=args.host, port=args.port)
-        return 0
+        return serve(args.host, args.port, build=args.build, open_browser=args.open)
     if args.command == "scout":
         from nunyaintel.data.extract import connect, resolve_team
         from nunyaintel.scouting.report import build_report

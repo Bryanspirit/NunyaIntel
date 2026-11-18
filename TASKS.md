@@ -9,7 +9,7 @@ Format: `- [status] ID: description (owner: junie|claude|-)`
 |---|---|---|
 | M1 Core analytics ✓ | Sun 29 Nov | T1 ✓, T2 ✓, O1 ✓, O2 ✓, U1 ✓ |
 | M2 Feature depth ✓ | Sun 13 Dec | T3 ✓, U2 ✓, U3 ✓, O3 ✓, D1 ✓ |
-| M3 Feature-complete (feature freeze) | Sun 20 Dec | D2 React web app working end-to-end (W1–W5) |
+| M3 Feature-complete (feature freeze) ✓ | Sun 20 Dec | D2 React web app working end-to-end (W1–W5) |
 | M4 Polish + demo | Sun 3 Jan | bug fixes, README, demo video and write-up drafts (holidays are buffer) |
 | **Finish** | **Wed 6 Jan** | D3 submission package complete and checked |
 
@@ -38,10 +38,10 @@ If a milestone slips, cut scope (U3/O3 are the first candidates). Don't move the
 
 ## Delivery
 - [x] D1: CLI commands wired to each feature: `scout`, `utility` (`--lineups --score`), `operator` (`--economy --duels --angles`), `build-cache` (owner: claude)
-- [ ] D2: Presentation layer = **React web app** (decided 18 Nov): FastAPI JSON API + Vite/React/TypeScript frontend, served together by `nunyaintel serve`
+- [x] D2: Presentation layer = **React web app** (decided 18 Nov): FastAPI JSON API + Vite/React/TypeScript frontend, served together by `nunyaintel serve`
   - [x] W1: FastAPI backend `nunyaintel/api/`: JSON endpoints for meta, maps, scout, operator, angles, utility, lineups; `nunyaintel serve` (owner: claude)
   - [x] W2: React scaffold in `web/` (Vite 8 + React 19 + TS 7, pinned), typed API client (`api.ts`), `useApi` hook, URL-backed selection, team/map/side/since pickers, tabs, first Scouting table end to end (owner: claude)
   - [x] W3: `components/Minimap.tsx` (`<Minimap>`, `<MapDot>`, `<MapArrow>`, callout labels, legend) + `PlantMap` on Scouting when a map is selected; u/v verified against the Lotus image (owner: claude)
   - [x] W4: Pages: Scouting (stats, maps, win types, pistols, buy grid, plant map, sites, setups, opening duels), Operator (profiles, economy, duels, angle arrows), Utility (ability summary, lineup arrows + scores, hover-to-highlight); checked in the browser (owner: claude)
-  - [ ] W5: `nunyaintel serve` = build web/ and serve it from FastAPI; one-command demo (owner: -)
+  - [x] W5: `nunyaintel serve [--build] [--open]`: builds web/ (npm) and serves page + API from one process on :4811 (owner: claude)
 - [ ] D3: Demo video and submission write-up, complete by **6 Jan 2027** (owner: -)

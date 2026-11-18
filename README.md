@@ -52,13 +52,21 @@ printf '#!/bin/sh\nexec .venv/Scripts/python.exe scripts/check_no_data.py\n' > .
 
 ## Web app
 
-Python API (FastAPI) + React frontend (Vite + TypeScript, in `web/`). Everything runs locally only, because the data is licensed.
+**Demo (one command):** builds the React app and serves page + API from one process.
 
 ```powershell
-# terminal 1: the API on http://127.0.0.1:4811  (try /docs)
+.venv\Scripts\nunyaintel serve --build --open     # http://127.0.0.1:4811
+```
+
+After the first build, `nunyaintel serve --open` is enough. Rebuild with `--build` after frontend changes. The server binds to 127.0.0.1 only, because the data is licensed.
+
+**Frontend development** (live reload): run the API and the Vite dev server side by side.
+
+```powershell
+# terminal 1: API on http://127.0.0.1:4811  (try /docs)
 .venv\Scripts\nunyaintel serve
-# terminal 2: the React dev server on http://127.0.0.1:4810
+# terminal 2: React dev server on http://127.0.0.1:4810 (forwards /api/* to 4811)
 cd web; npm install; npm run dev
 ```
 
-Ports 4810 (web) and 4811 (API) avoid the common 5173/8000, which other local projects often use. The dev server forwards `/api/*` to the API.
+Ports 4810/4811 avoid the common 5173/8000, which other local projects often use.

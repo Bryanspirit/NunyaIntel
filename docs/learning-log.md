@@ -4,6 +4,21 @@ One entry per build step: what we built, the key ideas behind it, how to run it,
 
 ---
 
+## W5: One command for the demo (18 Nov 2026)
+
+**What:** `nunyaintel serve --build --open` builds the React app and starts **one** Python process that serves the page at http://127.0.0.1:4811 and the API under `/api`, then opens the browser. After the first build, `nunyaintel serve --open` is enough.
+
+**Key ideas**
+- **Development vs. production:** during development Vite serves the React code with live reload and forwards `/api` to Python, so two processes run. For the demo, `npm run build` turns the app into plain static files (`web/dist/`: one HTML, one JS, one CSS file), and FastAPI serves them itself. That means one process, one address, less memory.
+- **Order of routes matters:** the static files are mounted at `/` **after** all `/api` routes. Requests are matched top to bottom, so `/api/...` reaches the API before the catch-all mount sees it. A test checks that the API isn't shadowed.
+- **No fallback needed:** the app keeps its state in the query string (`?team=79&map=lotus`), not in paths like `/team/79`, so the server only ever needs to serve `index.html` at `/`.
+- **Calling npm from Python:** `shutil.which("npm")` finds `npm.cmd` on Windows, and `subprocess.run(..., check=True)` stops with an error if the build fails.
+- **Orphan processes:** when the low-memory cleanup stopped our dev servers, it stopped the *shell* that launched Vite, but Vite itself kept running on port 4810, using 176 MB. We found it by looking up the process that owned the port and its command line, then stopped it. Closing a terminal doesn't always stop what was started from it.
+
+**Read:** `serve()` and `build_web()` in `src/nunyaintel/__main__.py`, the end of `create_app()` in `src/nunyaintel/api/app.py`, `tests/test_api.py::test_serves_built_web_app`.
+
+---
+
 ## W4: The three pages (18 Nov 2026)
 
 **What:** the web app now has full **Scouting**, **Operator** and **Utility** pages:

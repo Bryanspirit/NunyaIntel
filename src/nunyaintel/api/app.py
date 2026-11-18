@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi.staticfiles import StaticFiles
 
 from nunyaintel import __version__
 from nunyaintel.data.extract import DEFAULT_DB, connect, resolve_team
@@ -67,8 +68,16 @@ def _names(con: sqlite3.Connection) -> dict[str, str]:
 # --- app factory ---------------------------------------------------------------------------
 
 
-def create_app(db_path: Path = DEFAULT_DB, maps_path: Path = DEFAULT_MAPS) -> FastAPI:
-    """Build the app. Tests pass their own small database and map file."""
+def create_app(
+    db_path: Path = DEFAULT_DB,
+    maps_path: Path = DEFAULT_MAPS,
+    static_dir: Path | None = None,
+) -> FastAPI:
+    """Build the app. Tests pass their own small database and map file.
+
+    ``static_dir``: the built React app (``web/dist``). If given and present, it's served at
+    ``/``, so one process serves both the page and the API (the one-command demo).
+    """
     app = FastAPI(title="NunyaIntel API", version=__version__)
 
     def get_con() -> Iterator[sqlite3.Connection]:
@@ -347,5 +356,11 @@ def create_app(db_path: Path = DEFAULT_DB, maps_path: Path = DEFAULT_MAPS) -> Fa
         if score:
             rows.sort(key=lambda r: -r.get("score", 0.0))
         return {"map": m.name, "casts": len(usages), "lineups": rows}
+
+    # The React app: mounted LAST, so every /api/... route above is matched before it.
+    # html=True serves index.html for "/". The app keeps its state in the query string
+    # (?team=79&map=lotus), so there are no client-side paths that would need a fallback.
+    if static_dir is not None and (static_dir / "index.html").exists():
+        app.mount("/", StaticFiles(directory=static_dir, html=True), name="web")
 
     return app

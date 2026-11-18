@@ -38,7 +38,8 @@ def _insert(con, table, **row):
 
 
 @pytest.fixture
-def client(tmp_path):
+def paths(tmp_path):
+    """A tiny synthetic database file and map file: (db_path, maps_path)."""
     db = tmp_path / "test.sqlite"
     con = sqlite3.connect(db)
     for table, cols in SCHEMA.items():
@@ -94,6 +95,12 @@ def client(tmp_path):
     maps = tmp_path / "maps.json"
     maps.write_text(json.dumps(MAPS), encoding="utf-8")
     load_maps.cache_clear()
+    return db, maps
+
+
+@pytest.fixture
+def client(paths):
+    db, maps = paths
     return TestClient(create_app(db_path=db, maps_path=maps))
 
 
@@ -189,3 +196,26 @@ def test_parallel_requests(client):
     with ThreadPoolExecutor(max_workers=8) as pool:
         codes = list(pool.map(lambda u: client.get(u).status_code, urls))
     assert codes == [200] * len(urls)
+
+
+def test_serves_built_web_app(paths, tmp_path):
+    """W5: with a built React app, / serves the page and /api/... still reaches the API."""
+    dist = tmp_path / "dist"
+    (dist / "assets").mkdir(parents=True)
+    (dist / "index.html").write_text("<title>NunyaIntel</title>", encoding="utf-8")
+    (dist / "assets" / "app.js").write_text("console.log('hi')", encoding="utf-8")
+    db, maps = paths
+    app = TestClient(create_app(db_path=db, maps_path=maps, static_dir=dist))
+
+    page = app.get("/")
+    assert page.status_code == 200 and "NunyaIntel" in page.text
+    assert app.get("/assets/app.js").status_code == 200
+    assert app.get("/api/meta").json()["maps"] == ["testmap"]  # API not shadowed by the mount
+    assert app.get("/docs").status_code == 200
+
+
+def test_without_built_web_app(paths, tmp_path):
+    db, maps = paths
+    app = TestClient(create_app(db_path=db, maps_path=maps, static_dir=tmp_path / "missing"))
+    assert app.get("/").status_code == 404
+    assert app.get("/api/meta").status_code == 200
