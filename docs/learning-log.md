@@ -11,6 +11,25 @@ One entry per build step: what we built, the key ideas behind it, how to run it,
 
 ---
 
+## P4: Making every view fast (19 Nov 2026)
+
+**What:** every page now answers in **under 1 s from scratch** (the slowest view, Cloud9's Lotus lineups, takes 0.75 s, down from 1.56 s) and in **~2 ms** when cached. `serve` pre-loads the demo's Cloud9 / Cloud9 GC views in ~5 s in the background.
+
+**Key ideas**
+- **Measure first, then fix what the numbers point at.** We timed every endpoint for three teams. The Operator page took ~1.2 s *for every team, big or small*. A time that doesn't depend on how much data you asked for usually means a **full table scan**.
+- **`EXPLAIN QUERY PLAN` shows how SQLite runs a query.** It showed `SCAN l` (all 427k loadout rows, because there was no index on `team_id`) and an `AUTOMATIC ... INDEX` on `meta_games` built afresh for every query. Adding **indexes** (like a book's index: jump straight to the rows you need) took Operator from 1.2 s to 0.3 s and angles from 0.5 s to 0.07 s.
+- **Upgrade in place:** `CREATE INDEX IF NOT EXISTS` on the existing extract took 6 s instead of a 7-minute rebuild. `ensure_indexes()` runs at `serve` and `build-cache`, and skips an index if a table lacks the column (a test fixture did).
+- **Optimisations can make things slower.** After the indexes and `ANALYZE` (table statistics for the planner), *Scouting with a map* went from 0.39 s to **2.0 s**. The cause was an old join on `game_id, round_num` without `series_id`, so the 3-column index on `rounds` couldn't be used, and the planner now built a temporary index five times per query. Joining on all three key columns fixed it: **0.04 s**. Always re-measure everything after a change, not just the thing you fixed.
+- **Caching the right thing:** lineup scoring is real computation (clustering grows with the square of the number of casts), so it's cached. The extract is read-only, so the same URL always gets the same answer. The cache key is *URL + the extract file's modification time*: rebuilding the extract invalidates everything automatically. The cache is LRU (least recently used goes first) and capped at 32 MB, because memory is tight on this machine. An `X-Cache: HIT/MISS` header makes it visible in the browser's dev tools.
+- **Measuring tools can lie, too:**
+  - My first warm-up timing said **271 s**. The loop waited for the header text `X-Cache: HIT`, but the server sends `x-cache: HIT` (HTTP header names are case-insensitive), so it never matched and ran all 120 rounds.
+  - The second attempt read times from the server log, but Python **buffers** output written to a file, so all the lines appeared at once ("0 s").
+  - Timing the work directly gave the real answer: **5.4 s** for all 48 warm-up requests.
+
+**Read:** `PERF_INDEXES` and `ensure_indexes()` in `src/nunyaintel/data/extract.py`, `ResponseCache` and the middleware in `src/nunyaintel/api/app.py`, `warm_common_views()` in `src/nunyaintel/__main__.py`.
+
+---
+
 ## P9: Checking every number we quote (19 Nov 2026)
 
 **What:** `nunyaintel verify-claims` recomputes every number the README, video and write-up quote, and writes `docs/claims.md` with PASS/FAIL and a *small sample* flag. All **15 claims pass** now, after fixing the ones that didn't.

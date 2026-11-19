@@ -68,6 +68,20 @@ INDEXES = [
     "CREATE INDEX ix_loadouts_round ON loadouts(series_id, game_id, round_num)",
 ]
 
+# Added in P4 after EXPLAIN QUERY PLAN showed full-table scans: Operator queries read all
+# ~427k loadout rows (no index on team_id), and every join to meta_games built a temporary
+# index. "IF NOT EXISTS" lets ensure_indexes() upgrade an existing extract in seconds,
+# without a 7-minute rebuild.
+PERF_INDEXES = [
+    "CREATE INDEX IF NOT EXISTS ix_loadouts_team ON loadouts"
+    "(team_id, series_id, game_id, round_num)",
+    "CREATE INDEX IF NOT EXISTS ix_abilities_team ON abilities(team_id, game_id)",
+    "CREATE INDEX IF NOT EXISTS ix_damage_source ON damage(source, game_id)",
+    "CREATE INDEX IF NOT EXISTS ix_meta_games ON meta_games(game_id)",
+    "CREATE INDEX IF NOT EXISTS ix_meta_teams ON meta_teams(team_id)",
+    "CREATE INDEX IF NOT EXISTS ix_meta_players ON meta_players(player_id)",
+]
+
 # GRID event type -> table whose last matching row a "!"-reversal of it removes
 REVERSIBLE = {
     "player-killed-player": "kills",
@@ -375,6 +389,8 @@ def build_cache(
 
     for ddl in INDEXES:
         con.execute(ddl)
+    _create_optional_indexes(con)
+    con.execute("ANALYZE")  # table statistics help SQLite's query planner pick indexes
     counts = {t: con.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0] for t in SCHEMA}
     con.execute("CREATE TABLE build_info (key TEXT PRIMARY KEY, value TEXT)")
     con.executemany(
@@ -400,6 +416,45 @@ def build_cache(
         "stats": dict(stats),
         "size_mb": round(db_path.stat().st_size / 1e6, 1),
     }
+
+
+def _create_optional_indexes(con: sqlite3.Connection) -> list[str]:
+    """Create PERF_INDEXES that are missing; skip one whose column doesn't exist.
+
+    They only speed things up, so an unusual table (e.g. a minimal test fixture) must not
+    break an otherwise good build.
+    """
+    have = {row[0] for row in con.execute("SELECT name FROM sqlite_master WHERE type='index'")}
+    added = []
+    for ddl in PERF_INDEXES:
+        name = ddl.split()[5]
+        if name in have:
+            continue
+        try:
+            con.execute(ddl)
+            added.append(name)
+        except sqlite3.OperationalError:  # e.g. "no such column"
+            pass
+    return added
+
+
+def ensure_indexes(db_path: Path = DEFAULT_DB) -> list[str]:
+    """Add any missing performance indexes to an existing extract. Returns the ones it added.
+
+    Opens the file read-write just for this. Safe to run repeatedly: existing indexes are
+    skipped. Takes a few seconds the first time on a full extract, then ~nothing.
+    """
+    if not Path(db_path).exists():
+        return []
+    con = sqlite3.connect(db_path)
+    try:
+        added = _create_optional_indexes(con)
+        if added:
+            con.execute("ANALYZE")
+        con.commit()
+        return added
+    finally:
+        con.close()
 
 
 def connect(db_path: Path = DEFAULT_DB, check_same_thread: bool = True) -> sqlite3.Connection:

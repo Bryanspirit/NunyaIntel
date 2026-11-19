@@ -88,6 +88,7 @@ flowchart LR
 1. **Extract:** each match feed is replayed once, in parallel. Every event carries a full match snapshot, so feeds are 50–200× larger uncompressed. The replay undoes reversed events and drops abandoned maps, then keeps only compact rows. It's verified against the data's own index: all 2,078 maps are present, and round winners add up to every map's final score.
 2. **Analysis:** plain Python + SQL over the extract. It runs in seconds, with one module per question.
 3. **Presentation:** a FastAPI server returns JSON (with minimap coordinates already computed), and a React app draws tables and SVG overlays on the minimap. `nunyaintel serve` runs both from one process.
+4. **Speed:** every view answers in under 1 s from scratch (the slowest, lineup scoring, takes 0.75 s) and in ~2 ms once cached. The extract is read-only, so responses are cached per URL and invalidated when it's rebuilt. `serve` pre-loads the Cloud9 and Cloud9 GC views in the background (~5 s).
 
 ## Methods (short version)
 

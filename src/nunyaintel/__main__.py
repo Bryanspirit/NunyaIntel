@@ -52,6 +52,7 @@ def build_parser() -> argparse.ArgumentParser:
     srv.add_argument("--host", default="127.0.0.1", help="Keep local: the data is licensed")
     srv.add_argument("--build", action="store_true", help="Build the React app (npm) first")
     srv.add_argument("--open", action="store_true", help="Open the app in the browser")
+    srv.add_argument("--no-warm", action="store_true", help="Skip pre-loading the demo views")
     build = sub.add_parser(
         "build-cache", help="Extract the GRID data into data/cache/nunyaintel.sqlite"
     )
@@ -75,7 +76,54 @@ def build_web() -> None:
     subprocess.run([npm, "run", "build"], cwd=WEB_DIR, check=True)
 
 
-def serve(host: str, port: int, build: bool = False, open_browser: bool = False) -> int:
+WARM_TEAMS = ("79", "3429")  # Cloud9, Cloud9 GC: what the demo opens first
+
+
+def warm_common_views(base_url: str, teams: tuple[str, ...] = WARM_TEAMS) -> None:
+    """In the background, request the views the demo opens first so they're cached.
+
+    For each team: Key findings, Scouting, Operator, and per most-played map (top 3) every
+    tab's requests. Goes through HTTP like the browser does, so it fills the response cache.
+    """
+    import threading
+    import time
+    import urllib.request
+
+    from nunyaintel.data.extract import connect
+
+    def work() -> None:
+        for _ in range(60):  # wait until the server answers
+            try:
+                urllib.request.urlopen(base_url + "api/meta", timeout=2).read()
+                break
+            except OSError:
+                time.sleep(0.5)
+        con = connect()
+        urls = []
+        for team in teams:
+            maps = [row[0] for row in con.execute(
+                "SELECT lower(map), COUNT(*) FROM meta_games WHERE ? IN (team1_id, team2_id) "
+                "GROUP BY 1 ORDER BY 2 DESC LIMIT 3", (team,))]  # fmt: skip
+            urls += [f"findings?team={team}", f"scout?team={team}",
+                     f"operator?team={team}&min_op_rounds=1"]  # fmt: skip
+            for m in maps:
+                urls += [f"findings?team={team}&map={m}", f"scout?team={team}&map={m}",
+                         f"operator?team={team}&map={m}&min_op_rounds=1",
+                         f"operator/angles?map={m}&team={team}", f"utility?map={m}&team={team}",
+                         f"utility/lineups?map={m}&team={team}", f"maps/{m}"]  # fmt: skip
+        con.close()
+        for u in urls:
+            try:
+                urllib.request.urlopen(base_url + "api/" + u, timeout=120).read()
+            except OSError:
+                pass  # warming is best-effort
+
+    threading.Thread(target=work, name="warm-views", daemon=True).start()
+
+
+def serve(
+    host: str, port: int, build: bool = False, open_browser: bool = False, warm: bool = True
+) -> int:
     """One process serves the built React app at / and the JSON API at /api."""
     import threading
     import webbrowser
@@ -93,9 +141,15 @@ def serve(host: str, port: int, build: bool = False, open_browser: bool = False)
     else:
         print(f"API only on {url}api  (docs: {url}docs)")
         print("The web app isn't built yet: run `nunyaintel serve --build` once.")
+    from nunyaintel.data.extract import ensure_indexes
     from nunyaintel.insights import warm_baselines
 
+    added = ensure_indexes()  # upgrades older extracts in seconds (no rebuild)
+    if added:
+        print(f"Added indexes to the extract: {', '.join(added)}")
     warm_baselines()  # league baselines for Key findings: ~40 s once per extract build, cached
+    if warm:
+        warm_common_views(url)
     if open_browser:
         threading.Timer(1.5, webbrowser.open, args=[url]).start()  # after the server is up
     uvicorn.run(create_app(static_dir=WEB_DIST), host=host, port=port)
@@ -135,7 +189,9 @@ def main(argv: list[str] | None = None) -> int:
 
         return doctor.main()
     if args.command == "serve":
-        return serve(args.host, args.port, build=args.build, open_browser=args.open)
+        return serve(
+            args.host, args.port, build=args.build, open_browser=args.open, warm=not args.no_warm
+        )
     if args.command == "scout":
         from nunyaintel.data.extract import connect, resolve_team
         from nunyaintel.scouting.report import build_report

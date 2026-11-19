@@ -157,21 +157,23 @@ def default_setups(
     # Every event that tells us where one of our players stood, as one long list (UNION ALL)
     sql = f"""
     WITH positions AS (
-        SELECT game_id, round_num, player_id AS pid, team_id AS tid, occurred_at,
+        SELECT series_id, game_id, round_num, player_id AS pid, team_id AS tid, occurred_at,
                grid_x AS x, grid_y AS y FROM abilities WHERE {where}
-        UNION ALL SELECT game_id, round_num, killer_id, killer_team_id, occurred_at,
+        UNION ALL SELECT series_id, game_id, round_num, killer_id, killer_team_id, occurred_at,
                killer_x, killer_y FROM kills WHERE {where}
-        UNION ALL SELECT game_id, round_num, victim_id, victim_team_id, occurred_at,
+        UNION ALL SELECT series_id, game_id, round_num, victim_id, victim_team_id, occurred_at,
                victim_x, victim_y FROM kills WHERE {where}
-        UNION ALL SELECT game_id, round_num, attacker_id, attacker_team_id, occurred_at,
+        UNION ALL SELECT series_id, game_id, round_num, attacker_id, attacker_team_id, occurred_at,
                attacker_x, attacker_y FROM damage WHERE {where}
-        UNION ALL SELECT game_id, round_num, victim_id, victim_team_id, occurred_at,
+        UNION ALL SELECT series_id, game_id, round_num, victim_id, victim_team_id, occurred_at,
                victim_x, victim_y FROM damage WHERE {where}
     )
     SELECT p.game_id, p.round_num, p.pid, p.x, p.y,
            (julianday(p.occurred_at) - julianday(r.buy_ended_at)) * 86400.0 AS t
     FROM positions p
-    JOIN rounds r ON r.game_id = p.game_id AND r.round_num = p.round_num
+    -- join on all three key columns so the ix_rounds (series, game, round) index applies
+    JOIN rounds r ON r.series_id = p.series_id AND r.game_id = p.game_id
+                 AND r.round_num = p.round_num
                  AND r.winner_team_id IS NOT NULL
     WHERE p.tid = ? AND p.x IS NOT NULL
     """

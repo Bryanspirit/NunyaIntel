@@ -2,7 +2,7 @@
 
 Every number NunyaIntel quotes, recomputed from the local extract by `nunyaintel verify-claims`. This file is generated, so don't edit it by hand.
 
-- Checked: 2026-11-19 14:08 UTC; extract built 2026-11-18T02:00:57+00:00
+- Checked: 2026-11-19 14:21 UTC; extract built 2026-11-18T02:00:57+00:00
 - Result: **15 of 15 claims pass**
 - *small sample* = fewer than 30 rounds or duels behind the number: quote it as a lead, not a verdict
 - Data coverage: no VCT (main-team) matches in 2026; Cloud9's VCT data ends Aug 2025.

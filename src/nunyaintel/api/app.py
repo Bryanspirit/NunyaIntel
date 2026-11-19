@@ -21,7 +21,8 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
+from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 
 from nunyaintel import __version__
@@ -65,6 +66,46 @@ def _names(con: sqlite3.Connection) -> dict[str, str]:
     return dict(con.execute("SELECT player_id, name FROM meta_players").fetchall())
 
 
+# --- response cache ------------------------------------------------------------------------
+
+
+class ResponseCache:
+    """Memoize successful GET /api/... responses, least-recently-used first out.
+
+    The extract is read-only, so the same question always gets the same answer until it's
+    rebuilt. The key includes the extract file's modification time, so a rebuild makes every
+    old entry miss automatically. Capped by total bytes (memory is tight on some machines).
+    """
+
+    def __init__(self, max_bytes: int = 32 * 1024 * 1024) -> None:
+        from collections import OrderedDict
+
+        self.max_bytes = max_bytes
+        self.size = 0
+        self.items: OrderedDict[tuple, tuple[bytes, str]] = OrderedDict()
+        self.hits = self.misses = 0
+
+    def get(self, key: tuple) -> tuple[bytes, str] | None:
+        item = self.items.get(key)
+        if item is None:
+            self.misses += 1
+            return None
+        self.items.move_to_end(key)  # most recently used
+        self.hits += 1
+        return item
+
+    def put(self, key: tuple, body: bytes, media_type: str) -> None:
+        if len(body) > self.max_bytes:
+            return
+        if key in self.items:
+            self.size -= len(self.items.pop(key)[0])
+        self.items[key] = (body, media_type)
+        self.size += len(body)
+        while self.size > self.max_bytes:  # evict least recently used
+            _, (old, _) = self.items.popitem(last=False)
+            self.size -= len(old)
+
+
 # --- app factory ---------------------------------------------------------------------------
 
 
@@ -100,6 +141,32 @@ def create_app(
         return maps[name.lower()]
 
     db = Depends(get_con)
+    cache = ResponseCache()
+    app.state.cache = cache
+
+    @app.middleware("http")
+    async def cache_api_responses(request: Request, call_next):
+        """Serve repeated GET /api/... requests from memory; X-Cache says HIT or MISS."""
+        if request.method != "GET" or not request.url.path.startswith("/api/"):
+            return await call_next(request)
+        try:
+            version = Path(db_path).stat().st_mtime_ns  # a rebuilt extract = new version
+        except OSError:
+            version = 0
+        key = (request.url.path, tuple(sorted(request.query_params.multi_items())), version)
+        hit = cache.get(key)
+        if hit is not None:
+            body, media_type = hit
+            return Response(body, media_type=media_type, headers={"X-Cache": "HIT"})
+        response = await call_next(request)
+        body = b"".join([chunk async for chunk in response.body_iterator])
+        media_type = response.media_type or response.headers.get("content-type", "")
+        if response.status_code == 200:
+            cache.put(key, body, media_type)
+        headers = {k: v for k, v in response.headers.items() if k.lower() != "content-length"}
+        headers["X-Cache"] = "MISS"
+        return Response(body, status_code=response.status_code, headers=headers,
+                        media_type=media_type)  # fmt: skip
 
     @app.get("/api/meta")
     def meta(con: sqlite3.Connection = db) -> dict[str, Any]:

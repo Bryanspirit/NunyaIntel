@@ -230,3 +230,37 @@ def test_findings(paths, tmp_path):
     assert isinstance(j["league"], list) and isinstance(j["map_findings"], list)
     assert (tmp_path / "b.json").exists()  # baselines cached on first use
     assert app.get("/api/findings", params={"team": "A", "map": "nowhere"}).status_code == 404
+
+
+def test_response_cache_hit_miss_and_invalidation(paths):
+    import os
+
+    db, maps = paths
+    app = TestClient(create_app(db_path=db, maps_path=maps))
+    first = app.get("/api/scout", params={"team": "A"})
+    again = app.get("/api/scout", params={"team": "A"})
+    assert (first.headers["X-Cache"], again.headers["X-Cache"]) == ("MISS", "HIT")
+    assert first.json() == again.json()
+    # different parameters = a different question
+    assert app.get("/api/scout", params={"team": "B"}).headers["X-Cache"] == "MISS"
+    # errors are never cached
+    for _ in range(2):
+        assert app.get("/api/scout", params={"team": "Nobody"}).headers["X-Cache"] == "MISS"
+    # a rebuilt extract (new modification time) invalidates everything
+    st = os.stat(db)
+    os.utime(db, ns=(st.st_atime_ns, st.st_mtime_ns + 1_000_000_000))
+    assert app.get("/api/scout", params={"team": "A"}).headers["X-Cache"] == "MISS"
+
+
+def test_response_cache_evicts_least_recently_used():
+    from nunyaintel.api.app import ResponseCache
+
+    cache = ResponseCache(max_bytes=10)
+    cache.put(("a",), b"12345", "x")
+    cache.put(("b",), b"12345", "x")
+    assert cache.get(("a",))  # touch "a": now "b" is the least recently used
+    cache.put(("c",), b"12345", "x")  # over 10 bytes: evict "b"
+    assert cache.get(("b",)) is None and cache.get(("a",)) and cache.get(("c",))
+    assert cache.size == 10
+    cache.put(("huge",), b"x" * 11, "x")  # bigger than the whole cache: not stored
+    assert cache.get(("huge",)) is None
