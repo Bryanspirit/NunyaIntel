@@ -2,8 +2,8 @@
 
 Every number NunyaIntel quotes, recomputed from the local extract by `nunyaintel verify-claims`. This file is generated, so don't edit it by hand.
 
-- Checked: 2026-11-19 14:23 UTC; extract built 2026-11-18T02:00:57+00:00
-- Result: **16 of 16 claims pass**
+- Checked: 2026-11-19 15:41 UTC; extract built 2026-11-18T02:00:57+00:00
+- Result: **17 of 17 claims pass**
 - *small sample* = fewer than 30 rounds or duels behind the number: quote it as a lead, not a verdict
 - Data coverage: no VCT (main-team) matches in 2026; Cloud9's VCT data ends Aug 2025.
 
@@ -24,4 +24,5 @@ Every number NunyaIntel quotes, recomputed from the local extract by `nunyaintel
 | PASS | no VCT 2026 data; Cloud9 Jan-Aug 2025; Cloud9 GC 9 series Jul-Sep 2026 | README data coverage | non-GC series in 2026: 0; Cloud9 2025-01 to 2025-08; Cloud9 GC 9 series, 2026-07 to 2026-09 |
 | PASS | plants sit a median 3-18 m from their site's callout and sites are 43-121 m apart, so site labels are unambiguous; 26 plants (0.09%, all Bind) are 70+ m from any site: bad positions, labelled unknown (cut at 50 m, in the gap between 46 and 67 m) | README methods | median plant-to-site 2.9-18.2 m on 13 maps; sites 43-121 m apart; ambiguous 0; over 50 m from any site (labelled unknown) 26/28978 |
 | PASS | Cloud9 Lotus lineups: Omen smoke from C Main on defense, won 28 of 46 rounds (61%) across 11 matches vs. their usual 47%; Fade Haunt from A Lobby on attack, won 11 of 15 (73%) across 7 matches *(small sample)* | demo video (K1) | Omen smoke from C Main (defense): 28/46 = 60.9% in 11 matches, usual 47%; Fade Haunt from A Lobby (attack): 11/15 = 73.3% in 7 matches |
+| PASS | Elo map winner: 66.8% right on 503 unseen maps (Brier 0.213 vs 0.250); next buy: 81.8% vs 73.6% always-full-buy on 22,994 team-rounds, ecos caught 87% | Predict tab, docs/predictive-feasibility.md | Elo: 503 test maps, 66.8% right, Brier 0.213; next buy: 22994 test team-rounds, 81.8% right vs 73.6% always-full-buy; ecos caught 87% |
 | PASS | about 3.7% of kills have no weapon recorded | README caveats | 10989/297521 = 3.7% |

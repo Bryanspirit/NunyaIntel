@@ -60,6 +60,7 @@ Pick a team (the **Cloud9** / **Cloud9 GC** buttons are shortcuts), a map and op
 | **Key findings** (landing view) | The team's most unusual numbers vs. the whole league, ranked by a z-score (how far from the league, given the sample size), each with counts, league rate and rank. Plus site findings for the selected (or most-played) map. **Details →** opens the evidence |
 | **Scouting** | Headline numbers (side win %, pistol conversion, anti-eco losses, eco upsets) · per-map record · how rounds end · a buy-vs-buy win-rate heat grid. With a map: **every spike plant on the minimap**, site tables (where they plant / what they hold), default setups per player, opening-duel areas |
 | **Operator** | Who uses the Op · Op rate by team economy · opening duels with vs. without it. With a map: **angles drawn as arrows** (shooter area → target area) |
+| **Predict** | **Who wins a map?** Elo ratings (the chess system) give a map-win probability vs. any opponent, shown with the model's test results (66.8% right on 503 unseen maps vs. 50% for a coin flip, with a calibration table) and warnings for stale ratings or teams never linked by any chain of matches. **What will they buy next round?** For a chosen situation (last buy, won or lost, loss streak), the team's usual next buy vs. the league (81.8% right vs. 73.6% for always guessing full-buy; ecos caught 87%) |
 | **Utility** | Every ability: casts per round, % set up during the buy phase, median timing. **Lineups drawn as aim arrows** and ranked by effectiveness. Hover a row to highlight its arrow |
 
 Everything is also available on the command line:
@@ -101,6 +102,8 @@ flowchart LR
 - **Operator angles:** each Operator hit has a shooter and a target position. Hits are grouped by named area (shooter area → target area); `--precise` clusters exact spots instead. Hits over 100 m are dropped as bad positions.
 
 - **Key findings:** each metric is compared with the league rate p using z = (team rate − p) ÷ √(p(1−p)/n), so findings are ranked by how unusual *and* how well-supported they are. |z| < 1 is shown as a "tendency" (normal variation). League baselines (~40 s) are cached per extract build in `data/cache/league_baselines.json`.
+
+- **Predictions** are tested the way a coach would use them: trained on earlier matches, scored on the latest 30% they never saw, against a baseline. Predicting a team's *attack site* from its history was tested too, and dropped: it did no better than the map's league-wide habits (`docs/predictive-feasibility.md`).
 
 ## Data, license and caveats
 

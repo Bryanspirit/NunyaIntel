@@ -111,7 +111,8 @@ def warm_common_views(base_url: str, teams: tuple[str, ...] = WARM_TEAMS) -> Non
                 "SELECT lower(map), COUNT(*) FROM meta_games WHERE ? IN (team1_id, team2_id) "
                 "GROUP BY 1 ORDER BY 2 DESC LIMIT 3", (team,))]  # fmt: skip
             urls += [f"findings?team={team}", f"scout?team={team}",
-                     f"operator?team={team}&min_op_rounds=1"]  # fmt: skip
+                     f"operator?team={team}&min_op_rounds=1",
+                     f"predict/matchup?team={team}", f"predict/next-buy?team={team}"]  # fmt: skip
             for m in maps:
                 urls += [f"findings?team={team}&map={m}", f"scout?team={team}&map={m}",
                          f"operator?team={team}&map={m}&min_op_rounds=1",

@@ -298,3 +298,56 @@ export interface Findings {
   league: Finding[];
   map_findings: Finding[];
 }
+
+// ---- /api/predict/* (branch predictive-analytics) --------------------------------------
+
+export interface RatingSide {
+  team_id: string;
+  name: string;
+  rating: number;
+  maps: number;
+  last_played: string | null;
+  rank: number | null;
+  ranked_teams: number;
+  history: [string, number][]; // (date, rating after the map)
+}
+
+export interface Matchup {
+  a: RatingSide;
+  b: RatingSide;
+  p_a_wins_map: number;
+  head_to_head: { a_won: number; maps: number };
+  warnings: string[];
+  model: {
+    test_maps: number;
+    accuracy: number;
+    brier: number;
+    baseline_accuracy: number;
+    baseline_brier: number;
+    calibration: { from: number; to: number; won: number; n: number }[];
+  };
+}
+
+export type BuyState = "eco" | "semi-eco" | "semi-buy" | "full-buy";
+
+export interface BuySituation {
+  last_buy: string;
+  won_last: boolean;
+  loss_streak: number;
+  league: Record<BuyState, number>;
+  league_n: number;
+  team: Record<BuyState, number> | null; // null when the team has < 10 examples
+  team_n: number;
+}
+
+export interface NextBuy {
+  team_id: string;
+  situations: BuySituation[];
+  model: {
+    test_rounds: number;
+    accuracy: number;
+    baseline: string;
+    baseline_accuracy: number;
+    per_class: Record<string, { right: number; n: number }>;
+  };
+}

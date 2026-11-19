@@ -11,6 +11,26 @@ One entry per build step: what we built, the key ideas behind it, how to run it,
 
 ---
 
+## Predictions: Elo matchups and next-round buys (branch `predictive-analytics`, 19 Nov 2026)
+
+**What:** a **Predict** tab with two models:
+- **Who wins a map?** A broadcast-style versus card: Elo ratings, the map-win probability, rating sparklines, head-to-head, warnings, and the model's own test results.
+- **What will they buy next round?** Pick a situation (last buy, won or lost, loss streak) to see the team's usual next buy next to the league's.
+
+**Key ideas**
+- **Only ship what was tested:** a feasibility study came first. Each model was scored on the latest 30% of maps using only earlier ones, against a baseline. Two passed (Elo 66.8% vs. 50%; next buy 81.8% vs. 73.6%). Site prediction failed and was dropped.
+- **One copy of the logic:** the study script now imports the same `nunyaintel.predict` code the app runs, so the numbers on screen are the numbers that were tested. `verify-claims` re-checks them.
+- **Elo in one line:** after each map, `rating += K × (result − expected)`, where `expected = 1 / (1 + 10^((R_opp − R)/400))`. A 400-point gap means 10:1 odds.
+- **Calibration matters more than accuracy for a probability:** "70%" should mean winning about 70% of the time. The table on screen shows it does (70–80% → 80%).
+- **Know when a prediction means nothing:** a **union-find** pass over the match graph shows which teams are linked by any chain of games. VCT and Game Changers teams never meet, so their ratings are on different scales, and the app says so. Ratings older than 120 days before the data ends get a "may be out of date" warning, which covers Cloud9.
+- **Team vs. league:** the team's own pattern is used only with 10+ examples, otherwise the league's. That's the same small-sample idea as everywhere else. For example, after 3+ lost full-buy rounds Cloud9 force-buy **84%** of the time (56 cases).
+- **Tests find what you think you've done:** a test caught that a warning still showed a team ID instead of its name. My earlier text replacement had silently missed it because the formatter had split the line.
+- **The CSS trap, a third time:** a rule that styled the "Elo" label by its position also hit the count-up number next to it. The lasting fix is to **style by class** (`.versus-unit`), not by element position.
+
+**Read:** `src/nunyaintel/predict.py`, `web/src/pages/PredictPage.tsx`, `tests/test_predict.py`, `docs/predictive-feasibility.md`.
+
+---
+
 ## UI: broadcast-style redesign (branch `ui-broadcast`, 19 Nov 2026)
 
 **What:** every page now uses an original sports-broadcast look:

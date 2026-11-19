@@ -39,6 +39,7 @@ If a milestone slips, cut scope (first candidates now: P5 polish extras, K5 blog
 ## Delivery
 - [x] D1: CLI commands wired to each feature: `scout`, `utility` (`--lineups --score`), `operator` (`--economy --duels --angles`), `build-cache` (owner: claude)
 - [~] D2b: **Broadcast-style UI** on branch `ui-broadcast` (all pages restyled; offline minimaps; small-sample tags). Merge into `main` after review (owner: claude)
+- [x] D2c: **Predictions** on branch `predictive-analytics` (merged with `ui-broadcast`): `predict.py` + `/api/predict/matchup`, `/api/predict/next-buy` + Predict tab (Elo versus card with calibration and stale/never-linked warnings; next-round buy by situation, team vs league). Feasibility study reuses the module; claim `predictions` added (17/17 pass). Site prediction dropped (no better than league habits) (owner: claude)
 - [x] D2: Presentation layer = **React web app** (decided 18 Nov): FastAPI JSON API + Vite/React/TypeScript frontend, served together by `nunyaintel serve`
   - [x] W1: FastAPI backend `nunyaintel/api/`: JSON endpoints for meta, maps, scout, operator, angles, utility, lineups; `nunyaintel serve` (owner: claude)
   - [x] W2: React scaffold in `web/` (Vite 8 + React 19 + TS 7, pinned), typed API client (`api.ts`), `useApi` hook, URL-backed selection, team/map/side/since pickers, tabs, first Scouting table end to end (owner: claude)

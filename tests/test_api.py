@@ -49,7 +49,10 @@ def paths(tmp_path):
         "first_seen TEXT, last_seen TEXT)"
     )
     con.execute("CREATE TABLE meta_players (player_id TEXT, name TEXT)")
-    con.execute("CREATE TABLE meta_games (game_id TEXT, map TEXT, started_at TEXT)")
+    con.execute(
+        "CREATE TABLE meta_games (game_id TEXT, map TEXT, started_at TEXT, "
+        "team1_id TEXT, team2_id TEXT, winner_team_id TEXT)"
+    )
     con.execute("CREATE TABLE meta_series (series_id TEXT, event TEXT)")
     _insert(con, "meta_teams", team_id="A", name="Alpha", series_count="2",
             first_seen="2025-01-01", last_seen="2025-02-01")  # fmt: skip
@@ -59,7 +62,8 @@ def paths(tmp_path):
 
     for i, series in enumerate(("s1", "s2"), 1):
         game = f"g{i}"
-        _insert(con, "meta_games", game_id=game, map="Testmap", started_at=f"2025-0{i}-01")
+        _insert(con, "meta_games", game_id=game, map="Testmap", started_at=f"2025-0{i}-01",
+                team1_id="A", team2_id="B", winner_team_id="A")  # fmt: skip
         _insert(con, "meta_series", series_id=series, event="Test Cup 2026")
         for num, winner in ((1, "A"), (2, "B")):
             buy_end = f"2025-0{i}-01T10:0{num}:00.000Z"
@@ -293,3 +297,16 @@ def test_minimap_served_from_local_cache(paths, tmp_path, monkeypatch):
     assert r.headers["x-minimap"] == "drawn-from-data" and r.text.startswith("<svg")
     assert (cache / "testmap.svg").exists()  # cached for next time
     assert client.get("/api/maps/nowhere/minimap").status_code == 404
+
+
+def test_predict_endpoints(client):
+    m = client.get("/api/predict/matchup", params={"team": "A"}).json()
+    assert (m["a"]["name"], m["b"]["name"]) == ("Alpha", "Bravo")  # most frequent opponent
+    assert m["p_a_wins_map"] > 0.5 and m["head_to_head"] == {"a_won": 2, "maps": 2}
+    assert "accuracy" in m["model"] and "calibration" in m["model"]
+    explicit = client.get("/api/predict/matchup", params={"team": "A", "opponent": "B"}).json()
+    assert explicit["p_a_wins_map"] == m["p_a_wins_map"]
+    assert client.get("/api/predict/matchup", params={"team": "Nobody"}).status_code == 404
+
+    nb = client.get("/api/predict/next-buy", params={"team": "A"}).json()
+    assert nb["team_id"] == "A" and "situations" in nb and "accuracy" in nb["model"]

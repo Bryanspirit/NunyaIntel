@@ -288,6 +288,25 @@ def _lotus_lineups(con):
     )
 
 
+def _predictions(con):
+    """Model accuracy figures shown in the Predict tab and docs/predictive-feasibility.md."""
+    from nunyaintel import predict
+
+    elo = predict.evaluate_elo(con)
+    nb = predict.evaluate_next_buy(con)
+    eco = nb["per_class"]["eco"]
+    got = (
+        elo["test_maps"], round(elo["accuracy"] * 100, 1), round(elo["brier"], 3),
+        nb["test_rounds"], round(nb["accuracy"] * 100, 1), round(nb["baseline_accuracy"] * 100, 1),
+        round(100 * eco["right"] / eco["n"]),
+    )  # fmt: skip
+    return Result(
+        got == (503, 66.8, 0.213, 22994, 81.8, 73.6, 87),
+        f"Elo: {got[0]} test maps, {got[1]}% right, Brier {got[2]}; next buy: {got[3]} "
+        f"test team-rounds, {got[4]}% right vs {got[5]}% always-full-buy; ecos caught {got[6]}%",
+    )
+
+
 CLAIMS = [
     Claim("dataset", "README intro",
           "857 series, 2,078 maps, 42,490 rounds, 160 teams (Jan 2025 - Sep 2026)", _dataset),
@@ -328,6 +347,10 @@ CLAIMS = [
           "Cloud9 Lotus lineups: Omen smoke from C Main on defense, won 28 of 46 rounds "
           "(61%) across 11 matches vs. their usual 47%; Fade Haunt from A Lobby on attack, "
           "won 11 of 15 (73%) across 7 matches", _lotus_lineups),
+    Claim("predictions", "Predict tab, docs/predictive-feasibility.md",
+          "Elo map winner: 66.8% right on 503 unseen maps (Brier 0.213 vs 0.250); next buy: "
+          "81.8% vs 73.6% always-full-buy on 22,994 team-rounds, ecos caught 87%",
+          _predictions),
     Claim("ability_kills", "README caveats", "about 3.7% of kills have no weapon recorded",
           _ability_kills),
 ]  # fmt: skip

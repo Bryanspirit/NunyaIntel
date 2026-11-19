@@ -29,112 +29,33 @@ def log_loss(p: float) -> float:
     return -math.log(max(p, 1e-9))
 
 
-# --- A. map winner: Elo -------------------------------------------------------------------
+# --- A and B: the app's own code (nunyaintel.predict) -----------------------------------
 
 
-def study_map_winner(con, k: float = 32.0) -> None:
-    games = con.execute(
-        "SELECT game_id, started_at, team1_id, team2_id, winner_team_id FROM meta_games "
-        "WHERE winner_team_id IN (team1_id, team2_id) ORDER BY started_at"
-    ).fetchall()
-    split = int(len(games) * (1 - TEST_FRACTION))
-    rating: dict[str, float] = defaultdict(lambda: 1500.0)
-    played: Counter[str] = Counter()
-    hits = n = 0
-    brier = ll = 0.0
-    for i, (_, _, t1, t2, winner) in enumerate(games):
-        p1 = 1 / (1 + 10 ** ((rating[t2] - rating[t1]) / 400))  # Elo's win probability
-        won1 = winner == t1
-        if i >= split and played[t1] >= 5 and played[t2] >= 5:  # score only "known" teams
-            n += 1
-            hits += (p1 >= 0.5) == won1
-            brier += (p1 - won1) ** 2
-            ll += log_loss(p1 if won1 else 1 - p1)
-        rating[t1] += k * (won1 - p1)
-        rating[t2] -= k * (won1 - p1)
-        played[t1] += 1
-        played[t2] += 1
+def study_map_winner(con) -> None:
+    from nunyaintel.predict import evaluate_elo
+
+    r = evaluate_elo(con)
     print("A. Who wins a map? (Elo, K=32)")
-    print(f"   test maps: {n} (latest {TEST_FRACTION:.0%}, both teams with 5+ earlier maps)")
-    print(f"   Elo:        accuracy {hits / n:.1%}   Brier {brier / n:.3f}   log loss {ll / n:.3f}")
-    print(f"   coin flip:  accuracy 50.0%   Brier 0.250   log loss {math.log(2):.3f}")
-
-
-# --- B. next-round buy ---------------------------------------------------------------------
-
-
-def _team_round_sequences(con):
-    """{(game_id, team_id): [(round_num, buy, won), ...]} in round order, plus game dates."""
-    economy.register(con)
-    rows = con.execute(
-        """
-        WITH team_buy AS (
-            SELECT series_id, game_id, round_num, team_id, SUM(lv) AS loadout
-            FROM (SELECT series_id, game_id, round_num, team_id, player_id,
-                         MAX(loadout_value) AS lv FROM loadouts
-                  GROUP BY series_id, game_id, round_num, team_id, player_id)
-            GROUP BY series_id, game_id, round_num, team_id
-        )
-        SELECT r.game_id, b.team_id, r.round_num, classify_buy(r.round_num, b.loadout),
-               r.winner_team_id = b.team_id, g.started_at
-        FROM rounds r
-        JOIN meta_games g ON g.game_id = r.game_id
-        JOIN team_buy b ON b.series_id = r.series_id AND b.game_id = r.game_id
-                       AND b.round_num = r.round_num
-        WHERE r.winner_team_id IS NOT NULL
-        ORDER BY r.game_id, b.team_id, r.round_num
-        """
-    ).fetchall()
-    seqs: dict[tuple[str, str], list[tuple[int, str, bool]]] = defaultdict(list)
-    dates: dict[str, str] = {}
-    for game, team, num, buy, won, started in rows:
-        seqs[game, team].append((num, buy, bool(won)))
-        dates[game] = started
-    return seqs, dates
-
-
-def _buy_situations(seq):
-    """(situation, next buy) pairs. Situation = (last buy, won last round, loss streak cap 3)."""
-    streak = 0
-    for (num, buy, won), (next_num, next_buy, _) in zip(seq, seq[1:], strict=False):
-        streak = 0 if won else streak + 1
-        if next_num != num + 1 or next_num in economy.PISTOL_ROUNDS:
-            continue  # gaps (restarted rounds) and pistol rounds aren't predictions
-        yield (buy, won, min(streak, 3)), next_buy
+    print(f"   test maps: {r['test_maps']} (latest {TEST_FRACTION:.0%}, both teams with 5+ maps)")
+    print(f"   Elo:        accuracy {r['accuracy']:.1%}   Brier {r['brier']:.3f}")
+    print("   coin flip:  accuracy 50.0%   Brier 0.250")
 
 
 def study_next_buy(con) -> None:
-    seqs, dates = _team_round_sequences(con)
-    ordered = sorted(dates, key=dates.get)
-    test_games = set(ordered[int(len(ordered) * (1 - TEST_FRACTION)) :])
-    table: dict[tuple, Counter[str]] = defaultdict(Counter)
-    overall: Counter[str] = Counter()
-    for (game, _), seq in seqs.items():
-        if game not in test_games:
-            for situation, nxt in _buy_situations(seq):
-                table[situation][nxt] += 1
-                overall[nxt] += 1
-    majority = overall.most_common(1)[0][0]
-    hits = base = n = 0
-    per_class: dict[str, list[int]] = defaultdict(lambda: [0, 0])
-    for (game, _), seq in seqs.items():
-        if game in test_games:
-            for situation, nxt in _buy_situations(seq):
-                counts = table.get(situation)
-                guess = counts.most_common(1)[0][0] if counts else majority
-                n += 1
-                hits += guess == nxt
-                base += majority == nxt
-                per_class[nxt][0] += guess == nxt
-                per_class[nxt][1] += 1
-    print("\nB. Next-round buy (learned from the league's earlier matches)")
-    print(f"   test team-rounds: {n}")
-    print(f"   model:                 accuracy {hits / n:.1%}")
-    print(f"   always '{majority}':  accuracy {base / n:.1%}")
+    from nunyaintel.predict import evaluate_next_buy
+
+    r = evaluate_next_buy(con)
+    print()
+    print("B. Next-round buy (learned from the league's earlier matches)")
+    print(f"   test team-rounds: {r['test_rounds']}")
+    print(f"   model:                 accuracy {r['accuracy']:.1%}")
+    print(f"   always '{r['baseline']}':  accuracy {r['baseline_accuracy']:.1%}")
     for cls in economy.ECONOMY_STATES[1:]:
-        got, total = per_class[cls]
-        if total:
-            print(f"     actual {cls:<9} {total:>6} rounds, predicted right {got / total:.0%}")
+        c = r["per_class"].get(cls)
+        if c:
+            share = c["right"] / c["n"]
+            print(f"     actual {cls:<9} {c['n']:>6} rounds, predicted right {share:.0%}")
 
 
 # --- C. attack site ------------------------------------------------------------------------

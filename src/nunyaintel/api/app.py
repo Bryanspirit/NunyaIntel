@@ -341,6 +341,26 @@ def create_app(
         )  # fmt: skip
         return {"team": tm, **panel}
 
+    @app.get("/api/predict/matchup")
+    def predict_matchup(
+        team: str, opponent: str | None = None, con: sqlite3.Connection = db
+    ) -> dict[str, Any]:
+        """Elo map-win probability, with the model's tested accuracy and calibration."""
+        from nunyaintel import predict
+
+        a = _team(con, team)["id"]
+        b = _team(con, opponent)["id"] if opponent else predict.frequent_opponent(con, a)
+        if b is None:
+            raise HTTPException(404, "No opponent found for this team")
+        return predict.matchup(con, a, b)
+
+    @app.get("/api/predict/next-buy")
+    def predict_next_buy(team: str, con: sqlite3.Connection = db) -> dict[str, Any]:
+        """Next-round buy by situation: league and team distributions, plus tested accuracy."""
+        from nunyaintel import predict
+
+        return predict.next_buy(con, _team(con, team)["id"])
+
     @app.get("/api/operator")
     def operator(
         team: str | None = None,

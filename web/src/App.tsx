@@ -5,6 +5,7 @@ import { Pickers } from "./components/Pickers";
 import { title } from "./format";
 import { FindingsPage } from "./pages/FindingsPage";
 import { OperatorPage } from "./pages/OperatorPage";
+import { PredictPage } from "./pages/PredictPage";
 import { ScoutingPage } from "./pages/ScoutingPage";
 import { UtilityPage } from "./pages/UtilityPage";
 import { useApi } from "./useApi";
@@ -28,7 +29,7 @@ export function App() {
       <nav className="tabs">
         {TABS.map((tab) => (
           <button key={tab} className={tab === selection.tab ? "tab active" : "tab"} onClick={() => update({ tab })}>
-            {tab === "findings" ? "Key findings" : title(tab)}
+            {tab === "findings" ? "Key findings" : tab === "predict" ? "Predict" : title(tab)}
           </button>
         ))}
       </nav>
@@ -43,6 +44,7 @@ export function App() {
         {selection.tab === "scouting" && <ScoutingPage selection={selection} />}
         {selection.tab === "operator" && <OperatorPage selection={selection} teamName={teamName} />}
         {selection.tab === "utility" && <UtilityPage selection={selection} teamName={teamName} />}
+        {selection.tab === "predict" && <PredictPage selection={selection} meta={meta.data} teamName={teamName} />}
       </main>
 
       <footer className="muted">
