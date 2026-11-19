@@ -113,7 +113,8 @@ def test_meta(client):
 
 def test_map_info(client):
     j = client.get("/api/maps/TESTMAP").json()
-    assert j["minimap_url"].endswith("testmap.png")
+    assert j["minimap_url"] == "/api/maps/testmap/minimap.png"  # served by us, works offline
+    assert j["minimap_source"].endswith("testmap.png")
     site_a = next(c for c in j["callouts"] if c["name"] == "A Site")
     assert (site_a["u"], site_a["v"]) == pytest.approx((0.5, 0.4))  # u from y, v from x
     assert client.get("/api/maps/nowhere").status_code == 404
@@ -264,3 +265,29 @@ def test_response_cache_evicts_least_recently_used():
     assert cache.size == 10
     cache.put(("huge",), b"x" * 11, "x")  # bigger than the whole cache: not stored
     assert cache.get(("huge",)) is None
+
+
+def test_minimap_served_from_local_cache(paths, tmp_path, monkeypatch):
+    from nunyaintel.api import app as app_module
+
+    db, maps = paths
+    cache = tmp_path / "minimaps"
+    cache.mkdir()
+    png = b"\x89PNG\r\n\x1a\n fake image"
+    (cache / "testmap.png").write_bytes(png)
+    client = TestClient(create_app(db_path=db, maps_path=maps, minimap_dir=cache))
+    r = client.get("/api/maps/testmap/minimap.png")
+    assert r.status_code == 200 and r.headers["content-type"] == "image/png"
+    assert r.content == png
+
+    # not cached and the download fails (offline / blocked network): fall back to the source
+    (cache / "testmap.png").unlink()
+
+    def offline(*args, **kwargs):
+        raise OSError("certificate verify failed")
+
+    monkeypatch.setattr(app_module, "download_minimap", offline)
+    client = TestClient(create_app(db_path=db, maps_path=maps, minimap_dir=cache))
+    r = client.get("/api/maps/testmap/minimap.png", follow_redirects=False)
+    assert r.status_code == 307 and r.headers["location"].endswith("testmap.png")
+    assert client.get("/api/maps/nowhere/minimap.png").status_code == 404

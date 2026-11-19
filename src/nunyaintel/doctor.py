@@ -133,6 +133,24 @@ def check_maps() -> Check:
                  "downloads automatically on first use (needs internet once)")  # fmt: skip
 
 
+def check_minimaps() -> Check:
+    from nunyaintel.maps import DEFAULT_PATH, MINIMAP_DIR, load_maps, minimap_path
+
+    if not DEFAULT_PATH.exists():
+        return Check("Minimap images", WARN, "map data not downloaded yet", "nunyaintel serve")
+    names = sorted(load_maps(DEFAULT_PATH))
+    missing = [n for n in names if not minimap_path(n, MINIMAP_DIR).exists()]
+    if not missing:
+        return Check("Minimap images", OK, f"all {len(names)} cached (works offline)")
+    return Check(
+        "Minimap images", WARN,
+        f"{len(names) - len(missing)} of {len(names)} cached; missing: {', '.join(missing[:5])}"
+        + ("..." if len(missing) > 5 else ""),
+        "nunyaintel serve downloads them; if it can't, the network may be blocking "
+        "media.valorant-api.com (e.g. a VPN or TLS inspection): try another network once",
+    )  # fmt: skip
+
+
 def _version_tuple(text: str) -> tuple[int, ...]:
     return tuple(int(p) for p in text.strip().lstrip("v").split(".")[:2])
 
@@ -178,6 +196,7 @@ CHECKS: list[Callable[[], Check]] = [
     check_data_repo,
     check_extract,
     check_maps,
+    check_minimaps,
     check_node,
     check_web_build,
     check_port,

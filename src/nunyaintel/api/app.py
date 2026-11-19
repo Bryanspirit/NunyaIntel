@@ -22,13 +22,13 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
-from fastapi.responses import Response
+from fastapi.responses import FileResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from nunyaintel import __version__
 from nunyaintel.data.extract import DEFAULT_DB, connect, resolve_team
 from nunyaintel.maps import DEFAULT_PATH as DEFAULT_MAPS
-from nunyaintel.maps import MapInfo, load_maps
+from nunyaintel.maps import MINIMAP_DIR, MapInfo, download_minimap, load_maps, minimap_path
 from nunyaintel.operator_profiler import angles as op_angles
 from nunyaintel.operator_profiler import profiler as op_prof
 from nunyaintel.scouting import economy_report, overview, sites
@@ -114,6 +114,7 @@ def create_app(
     maps_path: Path = DEFAULT_MAPS,
     static_dir: Path | None = None,
     baselines_path: Path | None = None,
+    minimap_dir: Path = MINIMAP_DIR,
 ) -> FastAPI:
     """Build the app. Tests pass their own small database and map file.
 
@@ -195,13 +196,34 @@ def create_app(
         assert m is not None
         return {
             "name": m.name,
-            "minimap_url": m.minimap_url,
+            # served by us (cached locally), so the app works offline; original kept for reference
+            "minimap_url": f"/api/maps/{m.name}/minimap.png",
+            "minimap_source": m.minimap_url,
             "callouts": [
                 {"name": c.name, "super_region": c.super_region, "region": c.region,
                  "x": c.x, "y": c.y, **_uv(m, c.x, c.y)}
                 for c in m.callouts
             ],
         }  # fmt: skip
+
+    @app.get("/api/maps/{name}/minimap.png")
+    def minimap(name: str) -> Response:
+        """The minimap image from the local cache, downloading it the first time.
+
+        If it isn't cached and the download fails (offline, or a network that blocks the image
+        server), send the browser to the original URL as a last resort.
+        """
+        m = get_map(name)
+        assert m is not None
+        path = minimap_path(m.name, minimap_dir)
+        if not path.exists():
+            try:
+                download_minimap(m, minimap_dir)
+            except OSError:
+                if not m.minimap_url:
+                    raise HTTPException(404, f"No minimap image for {name!r}") from None
+                return RedirectResponse(m.minimap_url, status_code=307)
+        return FileResponse(path, media_type="image/png")
 
     @app.get("/api/scout")
     def scout(
