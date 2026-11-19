@@ -326,3 +326,9 @@ def test_replay(client):
     assert client.get("/api/replay", params={"team": "A", "map": "nowhere"}).status_code == 404
     attack = client.get("/api/replay", params={"team": "A", "map": "testmap", "side": "defender"})
     assert attack.json()["rounds"] == []  # A only attacked in the fixture
+
+
+def test_map_floor(client):
+    j = client.get("/api/maps/testmap/floor").json()
+    assert j["map"] == "testmap" and j["grid"] > 0 and isinstance(j["runs"], list)
+    assert client.get("/api/maps/nowhere/floor").status_code == 404

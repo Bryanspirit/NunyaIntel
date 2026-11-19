@@ -8,7 +8,7 @@
 // Why <canvas> and not SVG: up to ~7,000 marks redrawn 60 times a second. SVG would create a DOM
 // element per mark; a canvas just paints pixels, so redrawing is cheap.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiUrl, type MapInfo, type Replay, type ReplayEvent, type ReplayKind } from "../api";
 import { PageHero, Panel } from "../components/broadcast";
 import { Empty } from "../components/ui";
@@ -16,6 +16,9 @@ import { SIDE_LABEL, title, WIN_TYPE_LABEL } from "../format";
 import { useReducedMotion } from "../components/motion";
 import { useApi } from "../useApi";
 import type { Selection } from "../useSelection";
+
+// The 3D stage pulls in Three.js (~600 KB): load it only when someone opens the 3D view.
+const Replay3D = lazy(() => import("../components/Replay3D"));
 
 const COLORS: Record<ReplayKind, string> = {
   kill: "#3ddc97", // this team got a kill
@@ -64,6 +67,14 @@ function Player({ replay, map, teamName, selection }: { replay: Replay; map: Map
   const [layers, setLayers] = useState<Record<ReplayKind, boolean>>({ kill: true, death: true, util: true, plant: true, defuse: true });
   const [hover, setHover] = useState<{ x: number; y: number; e: ReplayEvent } | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [view, setView] = useState<"2d" | "3d">("2d");
+  const [autoRotate, setAutoRotate] = useState(false);
+  const [resetKey, setResetKey] = useState(0);
+  const [zoom, setZoom] = useState<{ key: number; dir: 1 | -1 }>({ key: 0, dir: 1 });
+  // floor outline for the 3D walls: fetched only once the 3D view is opened
+  const floor = useApi<{ grid: number; runs: [number, number, number][] }>(
+    view === "3d" ? apiUrl(`/maps/${replay.map}/floor`) : null,
+  );
   const tRef = useRef(t);
   tRef.current = t;
 
@@ -218,14 +229,41 @@ function Player({ replay, map, teamName, selection }: { replay: Replay; map: Map
         aside="Space = play/pause · ← → = 1 s · hover a mark for details · click the strip to jump">
         <div className="replay">
           <div className="replay-stage">
-            <div className="minimap-frame">
-              {map.minimap_url && <img src={map.minimap_url} alt={`${map.name} minimap`} draggable={false} />}
-              <canvas ref={canvasRef} className="replay-canvas" onMouseMove={onMove} onMouseLeave={() => setHover(null)} />
+            <div className="view-bar">
+              <div className="seg">
+                <button className={view === "2d" ? "on" : ""} onClick={() => setView("2d")}>2D</button>
+                <button className={view === "3d" ? "on" : ""} onClick={() => setView("3d")}>3D</button>
+              </div>
+              {view === "3d" && (
+                <>
+                  <button className={autoRotate ? "chip active" : "chip"} onClick={() => setAutoRotate(!autoRotate)}>
+                    ⟳ Broadcast camera
+                  </button>
+                  <button className="chip" onClick={() => setZoom((z) => ({ key: z.key + 1, dir: 1 }))} aria-label="Zoom in">＋</button>
+                  <button className="chip" onClick={() => setZoom((z) => ({ key: z.key + 1, dir: -1 }))} aria-label="Zoom out">－</button>
+                  <button className="chip" onClick={() => setResetKey((k) => k + 1)}>Reset view</button>
+                  <span className="muted view-hint">drag to orbit · right-drag to pan · ＋/－ to zoom</span>
+                </>
+              )}
+            </div>
+            <div className={view === "3d" ? "minimap-frame stage3d" : "minimap-frame"}>
+              {view === "3d" ? (
+                <Suspense fallback={<div className="minimap-missing">Loading 3D…</div>}>
+                  <Replay3D mapUrl={map.minimap_url} floor={floor.data} events={events} t={t} mode={mode}
+                    dense={round === "all"} autoRotate={autoRotate && !reduced} resetKey={resetKey}
+                    zoomKey={zoom.key} zoomDir={zoom.dir} />
+                </Suspense>
+              ) : (
+                <>
+                  {map.minimap_url && <img src={map.minimap_url} alt={`${map.name} minimap`} draggable={false} />}
+                  <canvas ref={canvasRef} className="replay-canvas" onMouseMove={onMove} onMouseLeave={() => setHover(null)} />
+                </>
+              )}
               <div className="replay-clock">
                 {fmtTime(t)}
                 <span>{t < 0 ? "buy phase" : "round time"}</span>
               </div>
-              {hover && (
+              {view === "2d" && hover && (
                 <div className="replay-tip" style={{ left: hover.x + 14, top: hover.y + 10 }}>
                   <b style={{ color: COLORS[hover.e[2]] }}>{LABELS[hover.e[2]].replace(/s$/, "")}</b> at {fmtTime(hover.e[1])}
                   <div>{hover.e[7]}</div>

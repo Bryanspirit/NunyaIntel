@@ -242,6 +242,15 @@ def create_app(
             svg, media_type="image/svg+xml", headers={"X-Minimap": "drawn-from-data"}
         )
 
+    @app.get("/api/maps/{name}/floor")
+    def map_floor(name: str, con: sqlite3.Connection = db) -> dict[str, Any]:
+        """Walkable floor drawn from the data, as runs [row, start, length] on a grid (3D walls)."""
+        from nunyaintel import silhouette
+
+        m = get_map(name)
+        assert m is not None
+        return {"map": m.name, "grid": silhouette.GRID, "runs": silhouette.floor_runs(con, m)}
+
     @app.get("/api/scout")
     def scout(
         team: str,

@@ -329,3 +329,10 @@ button.play { width: 64px; height: 48px; font-size: 22px; background: var(--acce
 .round-result.won { color: var(--good); }
 .round-result.lost { color: var(--bad); }
 .round-result { margin-bottom: 4px !important; }
+
+/* ---- Replay 3D ------------------------------------------------------------------------- */
+.view-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 8px; }
+.view-hint { font-size: 12px; }
+.stage3d { background: radial-gradient(circle at 50% 30%, #182838, #070c11 75%); }
+.replay3d, .replay3d canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; }
+.replay3d canvas:active { cursor: grabbing; }

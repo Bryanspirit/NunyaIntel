@@ -82,3 +82,15 @@ def test_silhouette_clean_removes_specks_and_fills_holes():
     assert (3, 3) in out  # pinhole filled
     assert (9, 9) not in out  # isolated speck dropped
     assert (1, 1) in out  # a corner of the block has 3 neighbours: kept
+
+
+def test_floor_runs_match_the_svg_cells(monkeypatch):
+    """The 3D walls and the 2D drawn map come from the same cleaned floor."""
+    from collections import Counter
+
+    from nunyaintel import silhouette
+
+    block = Counter({(c, r): 5 for c in range(2, 6) for r in range(3, 5)})  # a 4x2 floor patch
+    monkeypatch.setattr(silhouette, "floor_cells", lambda con, info, grid=silhouette.GRID: block)
+    runs = silhouette.floor_runs(con=None, info=None, grid=10)
+    assert runs == [[3, 2, 4], [4, 2, 4]]  # two rows, each one run of 4 cells

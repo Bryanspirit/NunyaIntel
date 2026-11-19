@@ -95,5 +95,22 @@ def render_svg(
     )
 
 
+def floor_runs(con: sqlite3.Connection, info: MapInfo, grid: int = GRID) -> list[list[int]]:
+    """The cleaned floor as horizontal runs [row, start_col, length], for the 3D view's walls."""
+    floor = clean({c for c, n in floor_cells(con, info, grid).items() if n >= MIN_HITS}, grid)
+    runs = []
+    for row in range(grid):
+        col = 0
+        while col < grid:
+            if (col, row) in floor:
+                start = col
+                while col < grid and (col, row) in floor:
+                    col += 1
+                runs.append([row, start, col - start])
+            else:
+                col += 1
+    return runs
+
+
 def build(con: sqlite3.Connection, info: MapInfo) -> str:
     return render_svg(floor_cells(con, info), smooth=True)

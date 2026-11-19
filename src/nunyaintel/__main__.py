@@ -118,7 +118,8 @@ def warm_common_views(base_url: str, teams: tuple[str, ...] = WARM_TEAMS) -> Non
                          f"operator?team={team}&map={m}&min_op_rounds=1",
                          f"operator/angles?map={m}&team={team}", f"utility?map={m}&team={team}",
                          f"utility/lineups?map={m}&team={team}", f"maps/{m}",
-                         f"maps/{m}/minimap", f"replay?team={team}&map={m}"]  # fmt: skip
+                         f"maps/{m}/minimap", f"replay?team={team}&map={m}",
+                         f"maps/{m}/floor"]  # fmt: skip
         con.close()
         for u in urls:
             try:

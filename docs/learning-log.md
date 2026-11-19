@@ -11,6 +11,27 @@ One entry per build step: what we built, the key ideas behind it, how to run it,
 
 ---
 
+## Replay in 3D (branch `replay-3d`, 19 Nov 2026)
+
+**What:** the Replay tab has a **2D / 3D** switch. In 3D the map is a model:
+- the minimap image is the ground, with walls raised along the edges of the walkable floor;
+- kill tracers arc through the air, utility glows, and spike plants shoot up as light beams;
+- you orbit by dragging, pan with right-drag, and zoom with ＋/－;
+- a **broadcast camera** auto-rotates around the action.
+
+**Key ideas**
+- **Three.js / WebGL:** a scene graph (meshes, lights, a camera) rendered by the GPU. `OrbitControls` gives drag-to-orbit with damping, the smooth TV-camera feel.
+- **One coordinate system everywhere:** the map is the unit square on the ground (x = u, z = v), so every event's minimap (u, v) from the API drops straight in. Heights are for readability only, and the page says kill positions are 2D.
+- **Walls from data:** the cleaned floor grid from the offline-minimap work (`/api/maps/{map}/floor`, 401 runs, 4 KB) becomes walls. Any empty cell touching the floor gets a raised block.
+- **Instancing:** thousands of marks are drawn as **one `InstancedMesh` per kind** (one GPU draw call each). Every frame we only update each instance's matrix. Fading is done by shrinking (scale), because all instances share one material.
+- **Code-splitting:** `React.lazy(() => import("…/Replay3D"))` puts Three.js in its own 573 KB chunk that downloads only when someone presses 3D. The main app stays at 272 KB.
+- **Clean up GPU resources:** on unmount we dispose geometries, materials and the renderer. Browsers only allow a limited number of WebGL contexts, so leaks pile up.
+- **UX lesson, scroll hijacking:** the orbit controls zoomed on the mouse wheel, so scrolling down the page got stuck in the 3D view. On a web page the wheel belongs to the page, so zoom moved to buttons.
+
+**Read:** `web/src/components/Replay3D.tsx`, `floor_runs()` in `src/nunyaintel/silhouette.py`.
+
+---
+
 ## Replay: an interactive, animated view (19 Nov 2026)
 
 **What:** a **Replay** tab. Press ▶ and a team's rounds unfold on the minimap, second by second: kills draw a tracer from shooter to victim, deaths and utility appear and fade, and plants pulse. It has a draggable timeline, a kills/deaths density strip (click to jump), speeds 1–8×, layer toggles, Live vs. Build-up views, all rounds or one round, hover tooltips, and Space / ← → shortcuts.
