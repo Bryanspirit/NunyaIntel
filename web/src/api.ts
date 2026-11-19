@@ -351,3 +351,30 @@ export interface NextBuy {
     per_class: Record<string, { right: number; n: number }>;
   };
 }
+
+// ---- /api/replay -------------------------------------------------------------------------
+
+export type ReplayKind = "kill" | "death" | "util" | "plant" | "defuse";
+
+/** [round index, seconds from buy-phase end, kind, u, v, source u, source v, label] */
+export type ReplayEvent = [number, number, ReplayKind, number, number, number | null, number | null, string];
+
+export interface ReplayRound {
+  i: number;
+  date: string;
+  opponent: string;
+  round: number;
+  side: "attacker" | "defender";
+  won: boolean;
+  win_type: string;
+  own_buy: string;
+}
+
+export interface Replay {
+  team: { id: string; name: string };
+  map: string;
+  rounds: ReplayRound[];
+  events: ReplayEvent[];
+  t_min: number;
+  t_max: number;
+}

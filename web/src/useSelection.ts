@@ -4,8 +4,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-export type Tab = "findings" | "scouting" | "operator" | "utility" | "predict";
-export const TABS: Tab[] = ["findings", "scouting", "operator", "utility", "predict"];
+export type Tab = "findings" | "scouting" | "operator" | "utility" | "replay" | "predict";
+export const TABS: Tab[] = ["findings", "scouting", "operator", "utility", "replay", "predict"];
 
 export interface Selection {
   team: string; // team id

@@ -310,3 +310,19 @@ def test_predict_endpoints(client):
 
     nb = client.get("/api/predict/next-buy", params={"team": "A"}).json()
     assert nb["team_id"] == "A" and "situations" in nb and "accuracy" in nb["model"]
+
+
+def test_replay(client):
+    j = client.get("/api/replay", params={"team": "A", "map": "testmap"}).json()
+    assert j["team"] == {"id": "A", "name": "Alpha"} and len(j["rounds"]) == 4
+    kinds = {e[2] for e in j["events"]}
+    assert {"kill", "util", "plant"} <= kinds
+    times = [e[1] for e in j["events"]]
+    assert times == sorted(times)  # sorted by time: the player relies on it
+    kill = next(e for e in j["events"] if e[2] == "kill")
+    rnd, t, _, u, v, us, vs, label = kill
+    assert t == 10.0 and 0 <= u <= 1 and us is not None  # 10 s after the buy phase ended
+    assert "Alice" in label and "operator" in label
+    assert client.get("/api/replay", params={"team": "A", "map": "nowhere"}).status_code == 404
+    attack = client.get("/api/replay", params={"team": "A", "map": "testmap", "side": "defender"})
+    assert attack.json()["rounds"] == []  # A only attacked in the fixture

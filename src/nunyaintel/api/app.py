@@ -341,6 +341,26 @@ def create_app(
         )  # fmt: skip
         return {"team": tm, **panel}
 
+    @app.get("/api/replay")
+    def replay(
+        team: str,
+        map: str,
+        side: str | None = None,
+        since: str | None = None,
+        con: sqlite3.Connection = db,
+    ) -> dict[str, Any]:
+        """Every event of the team's rounds on a map, timed from the buy-phase end (Replay tab)."""
+        from nunyaintel import timeline
+
+        m = get_map(map)
+        assert m is not None
+        tm = _team(con, team)
+        return {
+            "team": tm,
+            "map": m.name,
+            **timeline.replay(con, tm["id"], m, side=side, since=since),
+        }
+
     @app.get("/api/predict/matchup")
     def predict_matchup(
         team: str, opponent: str | None = None, con: sqlite3.Connection = db

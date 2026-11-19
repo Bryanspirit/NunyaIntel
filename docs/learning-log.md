@@ -11,6 +11,25 @@ One entry per build step: what we built, the key ideas behind it, how to run it,
 
 ---
 
+## Replay: an interactive, animated view (19 Nov 2026)
+
+**What:** a **Replay** tab. Press ▶ and a team's rounds unfold on the minimap, second by second: kills draw a tracer from shooter to victim, deaths and utility appear and fade, and plants pulse. It has a draggable timeline, a kills/deaths density strip (click to jump), speeds 1–8×, layer toggles, Live vs. Build-up views, all rounds or one round, hover tooltips, and Space / ← → shortcuts.
+
+**Key ideas**
+- **Be honest about the data:** we only know positions when something happens, so the replay animates *events*, not moving players, and the page says so.
+- **Canvas for many moving things:** ~7,000 marks redrawn 60 times a second. SVG would create a DOM element per mark, while `<canvas>` just paints pixels. The canvas is scaled by `devicePixelRatio` so it's crisp on high-DPI screens.
+- **An animation loop:** `requestAnimationFrame` advances the clock by `elapsed × speed`. Events are sorted by time, so drawing stops at the first future event (`break`).
+- **A compact payload:** each event is a short array `[round, t, kind, u, v, u_src, v_src, label]`, not an object with field names. That's ~500 KB for a whole map, cached like every other response.
+- **Interaction without libraries:**
+  - hover = find the nearest visible event within 12 px;
+  - the density strip is an SVG histogram you can click to seek;
+  - keyboard shortcuts are skipped while you're typing in an input.
+- **Motion that respects people:** it never autoplays, and the plant pulse is turned off for reduced motion.
+
+**Read:** `src/nunyaintel/timeline.py`, `web/src/pages/ReplayPage.tsx`.
+
+---
+
 ## Predictions: Elo matchups and next-round buys (branch `predictive-analytics`, 19 Nov 2026)
 
 **What:** a **Predict** tab with two models:
