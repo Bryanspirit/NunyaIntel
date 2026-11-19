@@ -2,6 +2,34 @@
 
 One entry per build step: what we built, the key ideas behind it, how to run it, and which code to read. Newest first.
 
+> **Errata (corrected in P9, 19 Nov 2026).** Some earlier entries quote figures that the claims check (`nunyaintel verify-claims`, results in `docs/claims.md`) showed to be wrong or overstated. Use the corrected versions:
+> - O2: OXY holds the Op "only on full buys". In fact it's **94 of 97** Op rounds; 3 were semi-buys.
+> - O2/W4: OXY's "75% Op opening duels on Pearl" is **6 of 8**, too few to headline. Use all maps: **20 of 30 (67%)**.
+> - T3/W3: plants sit "a median 3–10 m" from their site. Across all 13 maps it's **3–18 m**, and **26 Bind plants** (67–170 m away) are bad position records, now labelled "unknown".
+> - S4: feeds are "~200×" larger uncompressed. That was one match. The data README says **50–150×**, so "50–200×" is safer.
+> - T2: "pistols convert reliably (85%)". The league converts **86.2%**, so it's average, not a strength.
+
+---
+
+## P9: Checking every number we quote (19 Nov 2026)
+
+**What:** `nunyaintel verify-claims` recomputes every number the README, video and write-up quote, and writes `docs/claims.md` with PASS/FAIL and a *small sample* flag. All **15 claims pass** now, after fixing the ones that didn't.
+
+**Key ideas**
+- **Claims as code:** each claim is stored with its exact wording, where it appears, and a function that recomputes it. A rebuilt extract or a changed definition can make a quoted number stale without anyone noticing. Re-running the check before submitting (K7) catches that.
+- **Match the counts, not the percentage:** a claim passes only if the recomputed counts equal the ones we state. "30%" could be 3 of 10 or 300 of 1,000, and only the counts tell you how much to trust it.
+- **What the check caught:**
+  - "OXY uses the Op only on full buys": actually 94 of 97.
+  - "Plants are 3–10 m from their site": that was true for the 5 maps checked, but the range is 3–18 m across all 13.
+  - "Pistols convert reliably": average for the league.
+  - "~200× larger": one match, not typical.
+  - **And the check caught my own new claim:** "no plant is ambiguous" held for 5 maps but not 13. 26 Bind plants sat 67–170 m from *both* sites.
+- **Bad data shouldn't be guessed:** a spike can only be planted on a site, so a "plant" 70 m from every site is a bad position record. The code had silently assigned those plants to whichever site was marginally closer. Now they're labelled "unknown".
+- **Put thresholds in the gaps:** the far-off plants split into 36–46 m (plausible: Bind's sites are big) and 67–170 m (impossible), with nothing in between. A 40 m cut-off would have mislabelled real plants. **50 m sits in the gap** and catches exactly the 26 bad records.
+- **Correct the record openly:** earlier learning-log entries keep their original text, with an errata box at the top, because the write-up (K3) will be drafted from this log.
+
+**Read:** `src/nunyaintel/claims.py`, `docs/claims.md`, `site_of(max_m=...)` in `src/nunyaintel/maps.py`.
+
 ---
 
 ## P3: Key findings (19 Nov 2026)

@@ -23,6 +23,10 @@ from nunyaintel.scouting.overview import SIDES, SideRecord
 from nunyaintel.scouting.team_rounds import TeamRound
 
 SETUP_WINDOW_S = 20.0
+# Plants farther than this from every site are bad position records: labelled "unknown"
+# rather than guessed. 50 m sits in a natural gap: real plants reach 46 m (Bind's big sites),
+# the next are 67-170 m away (26 Bind plants: bad position records). See docs/claims.md.
+MAX_PLANT_TO_SITE_M = 50.0
 
 
 @dataclass(slots=True)
@@ -88,7 +92,15 @@ def plants(con: sqlite3.Connection, rounds: Sequence[TeamRound], map_info: MapIn
         if r is None or (game, num) in found:
             continue  # not one of our rounds, or a later plant in the same round
         found[game, num] = Plant(
-            game, num, r.side, r.won, planter_team, map_info.site_of(x, y), x, y, t
+            game,
+            num,
+            r.side,
+            r.won,
+            planter_team,
+            map_info.site_of(x, y, MAX_PLANT_TO_SITE_M),
+            x,
+            y,
+            t,
         )
     return list(found.values())
 

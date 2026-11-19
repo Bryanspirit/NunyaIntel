@@ -52,3 +52,10 @@ def test_to_minimap(path):
 def test_unknown_map(path):
     with pytest.raises(KeyError, match="No callout data"):
         get_map("bind", path)
+
+
+def test_site_of_refuses_to_guess_far_positions(path):
+    m = get_map("testmap", path)  # sites at x = +1000 and -1000
+    assert m.site_of(900, 0, max_m=40) == "A"
+    assert m.site_of(0, 9000, max_m=40) == "unknown"  # 90 m from both: bad position
+    assert m.site_of(0, 9000) in {"A", "B"}  # without a limit it still picks the nearest

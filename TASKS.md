@@ -74,7 +74,7 @@ Assumptions until R1 is done: the previous edition (Dec 2025–Feb 2026) was run
 - [ ] P6: **CI:** a GitHub Actions workflow running ruff + pytest (synthetic data only, never the licensed data) + `npm run build` on every push, with a status badge in the README (owner: junie)
 - [ ] P7: **License:** choose and add a code license (MIT suggested). It covers our code only; the GRID data is not ours to license and is never in the repo (owner: user decides, claude adds)
 - [ ] P8: **JetBrains/Junie usage, done for real:** Junie completes P5 and P6 from this board in PyCharm. Keep notes in `docs/junie-notes.md` (what worked, what didn't, prompts used) as raw material for K6 and the write-up (owner: user + junie)
-- [ ] P9: **Claims check:** re-verify every number the video and write-up will quote, with sample sizes, against the extract. Mark small-sample claims as such, and keep "Cloud9 VCT data ends Aug 2025; 2026 = Game Changers only" visible (owner: claude)
+- [x] P9: **Claims check:** `nunyaintel verify-claims` → `docs/claims.md` (15/15 pass, small samples flagged). Fixed README (pistols league-average, OXY 94/97 full buys, plant distances 3–18 m, 50–200×). Bad Bind plant positions (26, 67–170 m from any site) now labelled unknown (50 m cut in the data's gap). Errata box in the learning log (owner: claude)
 
 ### D3: Submission kit (K)
 - [ ] K1: **Demo video script** (assume ≤ 3 min until R1 confirms): 20 s problem → 60 s Cloud9 story via Key findings → 60 s tour (plant map, Operator angles, lineup hover) → 20 s how it's built (GRID, PyCharm + Junie, FastAPI, React) → 10 s close. Show only small data excerpts on screen, as the data license allows (owner: claude drafts, user approves)
@@ -84,7 +84,7 @@ Assumptions until R1 is done: the previous edition (Dec 2025–Feb 2026) was run
 - [ ] K5: **Blog post** (bonus category, if R1 confirms it): "Scouting Cloud9 with GRID data: what I learned building NunyaIntel", from the learning log (owner: user writes, claude edits)
 - [ ] K6: **JetBrains/Junie feedback** (bonus category, if R1 confirms it): concrete, reproducible feedback from P8's notes (owner: user, claude helps)
 - [ ] K7: **Final checklist (Mon 4 – Wed 6 Jan):**
-  - repo public; fresh-clone rehearsal (P1) passes; CI green;
+  - repo public; fresh-clone rehearsal (P1) passes; CI green; `nunyaintel verify-claims` all PASS (re-run after any rebuild);
   - no data tracked (`git ls-files | grep -Ei '\.(zst|jsonl|parquet|sqlite|duckdb)$'` prints nothing);
   - LICENSE present; video linked; tag `v1.0.0` + GitHub release;
   - Devpost form submitted by **Wed 6 Jan**, with a confirmation screenshot saved (owner: user + claude)

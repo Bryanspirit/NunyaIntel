@@ -14,12 +14,12 @@ NunyaIntel answers three questions a coach asks before playing a team:
 
 ## What it finds: Cloud9 (VCT Americas 2025)
 
-These are examples from 45 maps / 961 rounds. Sample sizes are in brackets; treat small ones as leads, not verdicts.
+These are examples from 45 maps / 961 rounds. Sample sizes are in brackets; treat small ones as leads, not verdicts. **Every number here is recomputed from the data by `nunyaintel verify-claims`**, with results in [`docs/claims.md`](docs/claims.md).
 
 - **Anti-eco is a weakness.** On a full buy against an eco or semi-eco, Cloud9 lost **30% of rounds (15 of 50)**. The league average is **17.5% (888 of 5,067)**, which makes it the **worst of the 55 teams** with 30+ such rounds.
-- **Pistols convert reliably.** After winning a pistol round they won the next round **85% of the time (40 of 47)**. After losing one, they broke the opponent's bonus round only **21% (9 of 42)**.
+- **Pistol rounds are league-average.** After winning a pistol they won the next round **85% of the time (40 of 47)**, which sounds strong, but the league converts **86.2% (3,546 of 4,114)**. That's why NunyaIntel compares with the league, not with 50%.
 - **Lotus has a clear attack plan and a weak spot on defense.** On attack they play **A**: 35% of rounds, won **76% (42 of 55)** after planting there. In **23% of attack rounds they never plant, and win 1 of 35**. On defense, **C** is hit most and is their weakest hold: **33% (16 of 49)**.
-- **The Operator is a role, not a crutch.** OXY holds an Op in **10% of rounds (97 of 961)**, only on full buys, and wins **67% of his opening duels with it (20 of 30)**.
+- **The Operator is a role, not a crutch.** OXY holds an Op in **10% of rounds (97 of 961)**, almost only on full buys (94 of the 97), and wins **67% of his opening duels with it (20 of 30)**.
 
 > **Data coverage:** the dataset has no VCT (main-team) matches in 2026; all 2026 data is Game Changers. Cloud9's VCT data runs Jan–Aug 2025. Cloud9 GC (Game Changers) has 9 series from Jul–Sep 2026.
 
@@ -85,7 +85,7 @@ flowchart LR
     D --> F["React + TypeScript<br/>tables + SVG minimaps"]
 ```
 
-1. **Extract:** each match feed is replayed once, in parallel. Every event carries a full match snapshot, so feeds are ~200× larger uncompressed. The replay undoes reversed events and drops abandoned maps, then keeps only compact rows. It's verified against the data's own index: all 2,078 maps are present, and round winners add up to every map's final score.
+1. **Extract:** each match feed is replayed once, in parallel. Every event carries a full match snapshot, so feeds are 50–200× larger uncompressed. The replay undoes reversed events and drops abandoned maps, then keeps only compact rows. It's verified against the data's own index: all 2,078 maps are present, and round winners add up to every map's final score.
 2. **Analysis:** plain Python + SQL over the extract. It runs in seconds, with one module per question.
 3. **Presentation:** a FastAPI server returns JSON (with minimap coordinates already computed), and a React app draws tables and SVG overlays on the minimap. `nunyaintel serve` runs both from one process.
 
@@ -95,7 +95,7 @@ flowchart LR
 - **Utility timing** is measured from the **end of the buy phase**, so a negative time = set up before the round starts (e.g. Cypher Trapwire −20 s).
 - **Lineups:** **DBSCAN** clustering on cast position (±1.5 m) and aim direction (±10°), per team / map / side / agent / ability, kept only if repeated in ≥ 2 matches. Cast positions come from the GRID ability supplement.
 - **Lineup score:** the round win rate when the lineup was used vs. the team's usual rate on that map and side, **shrunk toward the usual rate** (10 imaginary average rounds) so that a 3-for-3 lineup can't outrank strong evidence. Also reported: ability damage per cast and team kills/deaths in the 10 s after the cast. It's correlation, not causation.
-- **Sites and areas:** positions are named by the nearest map callout from valorant-api.com. Verified: plants sit a median 3–10 m from their site's callout, and site callouts land on the minimap's site areas.
+- **Sites and areas:** positions are named by the nearest map callout from valorant-api.com. Verified: plants sit a median 3–18 m from their site's callout, sites are 43–121 m apart (so no plant's site is ambiguous), and site callouts land on the minimap's site areas. 26 plants (0.09%, all on Bind) were recorded 67–170 m from any site. A spike can only be planted on a site, so these are bad position records and are labelled "unknown" (cut at 50 m, in the gap after the farthest real plant at 46 m).
 - **Default setups:** each player's first known position in the first 20 s of the round. Players are only "seen" when they act, so coverage is shown next to each one.
 - **Operator angles:** each Operator hit has a shooter and a target position. Hits are grouped by named area (shooter area → target area); `--precise` clusters exact spots instead. Hits over 100 m are dropped as bad positions.
 

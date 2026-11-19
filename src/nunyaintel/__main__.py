@@ -45,6 +45,7 @@ def build_parser() -> argparse.ArgumentParser:
     fi.add_argument("--team", required=True, help="Team ID or exact name, e.g. 79 or Cloud9")
     fi.add_argument("--map", dest="map_name", help="Map for site findings (default: most played)")
     fi.add_argument("--since", help="Only maps played on/after this date, e.g. 2025-06-01")
+    sub.add_parser("verify-claims", help="Recompute every quoted number -> docs/claims.md")
     sub.add_parser("doctor", help="Check the setup (Python, data, extract, Node, port)")
     srv = sub.add_parser("serve", help="Run the web app (React page + API) on one address")
     srv.add_argument("--port", type=int, default=4811)
@@ -125,6 +126,10 @@ def main(argv: list[str] | None = None) -> int:
         panel = insights.key_findings(con, team_id, map_name=args.map_name, since=args.since)
         print(insights.format_findings(panel, name[0] if name else team_id))
         return 0
+    if args.command == "verify-claims":
+        from nunyaintel import claims
+
+        return claims.main()
     if args.command == "doctor":
         from nunyaintel import doctor
 

@@ -57,9 +57,17 @@ class MapInfo:
     def sites(self) -> tuple[Callout, ...]:
         return tuple(c for c in self.callouts if c.region == "Site")
 
-    def site_of(self, x: float, y: float) -> str:
-        """Nearest bomb site letter ("A", "B", "C") to a game position."""
+    def site_of(self, x: float, y: float, max_m: float | None = None) -> str:
+        """Nearest bomb site letter ("A", "B", "C") to a game position.
+
+        With ``max_m``, a position farther than that from every site returns "unknown"
+        instead of a guess. A spike can only be planted on a site, so a "plant" 70 m from
+        both sites is a bad position record (26 such plants, all on Bind), not a real plant
+        location.
+        """
         site = min(self.sites, key=lambda c: (c.x - x) ** 2 + (c.y - y) ** 2)
+        if max_m is not None and math.dist((x, y), (site.x, site.y)) / 100 > max_m:
+            return "unknown"
         return site.super_region
 
     def distance_to_site_m(self, x: float, y: float) -> float:
