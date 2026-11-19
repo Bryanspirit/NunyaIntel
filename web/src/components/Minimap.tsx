@@ -11,7 +11,7 @@
 //     <MapArrow u={a.u} v={a.v} u2={a.target_u} v2={a.target_v} color="cyan" />
 //   </Minimap>
 
-import { useState, type ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import type { MapInfo } from "../api";
 
 const SIZE = 1000; // viewBox size; u, v in 0..1 are scaled by this
@@ -81,12 +81,16 @@ interface DotProps {
   /** tooltip shown on hover */
   title?: string;
   opacity?: number;
+  /** entrance delay in ms (staggered animation) */
+  delay?: number;
 }
 
-export function MapDot({ u, v, color, hollow = false, r = 7, title, opacity = 0.85 }: DotProps) {
+export function MapDot({ u, v, color, hollow = false, r = 7, title, opacity = 0.85, delay = 0 }: DotProps) {
+  // className "pop" + --delay: dots pop in one after another (broadcast.css; off for reduced motion)
   return (
     <circle cx={u * SIZE} cy={v * SIZE} r={r} fill={hollow ? "none" : color} stroke={color}
-      strokeWidth={hollow ? 2.5 : 1} opacity={opacity}>
+      strokeWidth={hollow ? 2.5 : 1} opacity={opacity} className="pop"
+      style={{ "--delay": `${delay}ms` } as CSSProperties}>
       {title && <title>{title}</title>}
     </circle>
   );
@@ -101,10 +105,11 @@ interface ArrowProps {
   width?: number;
   title?: string;
   opacity?: number;
+  delay?: number;
 }
 
 /** A line from (u, v) to (u2, v2) with an arrowhead at the end and a dot at the start. */
-export function MapArrow({ u, v, u2, v2, color, width = 3, title, opacity = 0.9 }: ArrowProps) {
+export function MapArrow({ u, v, u2, v2, color, width = 3, title, opacity = 0.9, delay = 0 }: ArrowProps) {
   const [x1, y1, x2, y2] = [u * SIZE, v * SIZE, u2 * SIZE, v2 * SIZE];
   // Arrowhead = a triangle at the tip. (dx, dy) is the unit vector along the line; (-dy, dx)
   // is perpendicular to it, which gives the two back corners of the triangle.
@@ -120,9 +125,13 @@ export function MapArrow({ u, v, u2, v2, color, width = 3, title, opacity = 0.9 
   return (
     <g opacity={opacity}>
       {title && <title>{title}</title>}
-      <line x1={x1} y1={y1} x2={back[0]} y2={back[1]} stroke={color} strokeWidth={width} strokeLinecap="round" />
-      <polygon points={corners.map((c) => c.join(",")).join(" ")} fill={color} />
-      <circle cx={x1} cy={y1} r={width * 2} fill={color} />
+      {/* pathLength=1 lets CSS "draw" the line from 0 to 1 regardless of its real length */}
+      <line x1={x1} y1={y1} x2={back[0]} y2={back[1]} stroke={color} strokeWidth={width} strokeLinecap="round"
+        pathLength={1} className="draw" style={{ "--delay": `${delay}ms` } as CSSProperties} />
+      <polygon points={corners.map((c) => c.join(",")).join(" ")} fill={color} className="pop"
+        style={{ "--delay": `${delay + 500}ms` } as CSSProperties} />
+      <circle cx={x1} cy={y1} r={width * 2} fill={color} className="pop"
+        style={{ "--delay": `${delay}ms` } as CSSProperties} />
     </g>
   );
 }

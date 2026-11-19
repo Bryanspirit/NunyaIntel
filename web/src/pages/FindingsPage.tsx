@@ -1,13 +1,17 @@
-// Key findings (P3): the landing view. The server ranks findings by how unusual and how
-// reliable they are vs. the league (z-score), so the most important facts come first.
+// Key findings (P3), broadcast style (branch ui-broadcast): a scoreboard banner, then stat tiles
+// that slide in one after another with count-up numbers and animated team-vs-league bars.
+// The server ranks findings by how unusual and how reliable they are (z-score vs. the league).
 
+import type { CSSProperties } from "react";
 import { apiUrl, type Finding, type Findings } from "../api";
+import { CountUp, Reveal } from "../components/motion";
 import { Empty } from "../components/ui";
 import { pct, title } from "../format";
 import { useApi } from "../useApi";
 import type { Selection, Tab } from "../useSelection";
 
 const KIND_LABEL = { strength: "Strength", weakness: "Weakness", tendency: "Tendency" } as const;
+const STAGGER_MS = 110;
 
 interface Props {
   selection: Selection;
@@ -30,76 +34,125 @@ export function FindingsPage({ selection, onNavigate }: Props) {
   if (data.rounds === 0) return <Empty>No rounds for {data.team.name} with these filters.</Empty>;
 
   const go = (f: Finding) => onNavigate({ tab: f.tab as Tab, map: f.map ?? selection.map });
+  const weaknesses = data.league.filter((f) => f.kind === "weakness").length;
+  const strengths = data.league.filter((f) => f.kind === "strength").length;
 
   return (
-    <section className={loading ? "stale" : ""}>
-      <h2>Key findings: {data.team.name}</h2>
-      <p className="muted">
-        {data.maps} maps · {data.rounds} rounds · compared with every team in the data. Most unusual (and best-supported) first.
-      </p>
+    // key = team: re-mount (and re-animate) when the team changes
+    <section key={data.team.id + (data.map ?? "")} className={loading ? "stale" : ""}>
+      <Reveal className="hero">
+        <div className="hero-kicker">Scouting report · key findings</div>
+        <div className="hero-title">{data.team.name}</div>
+        <div className="hero-strip">
+          <HeroStat label="Maps" value={data.maps} />
+          <HeroStat label="Rounds" value={data.rounds} />
+          <HeroStat label="Weaknesses" value={weaknesses} tone="bad" />
+          <HeroStat label="Strengths" value={strengths} tone="good" />
+        </div>
+      </Reveal>
 
-      <div className="findings">
-        {data.league.map((f) => (
-          <FindingCard key={f.key} f={f} onDetails={() => go(f)} />
+      <div className="tiles">
+        {data.league.map((f, i) => (
+          <Tile key={f.key} f={f} delay={200 + i * STAGGER_MS} onDetails={() => go(f)} />
         ))}
       </div>
 
       {data.map && data.map_findings.length > 0 && (
         <>
-          <h3>
-            On {title(data.map)}
-            {!data.map_was_chosen && <span className="muted"> (their most-played map; pick a map to change)</span>}
-          </h3>
-          <div className="findings">
-            {data.map_findings.map((f) => (
-              <FindingCard key={f.key} f={f} onDetails={() => go(f)} />
+          <Reveal delay={200 + data.league.length * STAGGER_MS} as="section">
+            <h3>
+              On {title(data.map)}
+              {!data.map_was_chosen && <span className="muted"> · their most-played map</span>}
+            </h3>
+          </Reveal>
+          <div className="tiles">
+            {data.map_findings.map((f, i) => (
+              <Tile key={f.key} f={f} delay={300 + (data.league.length + i) * STAGGER_MS} onDetails={() => go(f)} />
             ))}
           </div>
         </>
       )}
 
       <p className="note">
-        How findings are ranked: each rate is compared with the league using a z-score (how many standard errors the team is
-        from the league average, given its sample size). So 15 of 50 beats 3 of 4, even though 3 of 4 is the bigger
-        percentage. "Tendency" = within normal variation, shown for context.
+        Ranked by z-score: how many standard errors the team is from the league average, given its sample size. So 15
+        of 50 beats 3 of 4, even though 3 of 4 is the bigger percentage. "Tendency" = within normal variation.
       </p>
     </section>
   );
 }
 
-function FindingCard({ f, onDetails }: { f: Finding; onDetails: () => void }) {
+function HeroStat({ label, value, tone }: { label: string; value: number; tone?: "good" | "bad" }) {
   return (
-    <article className={`finding ${f.kind}`}>
-      <div className="finding-top">
-        <span className={`kind ${f.kind}`}>{KIND_LABEL[f.kind]}</span>
-        {f.rank !== null && f.ranked_teams !== null && (
-          <span className="muted">
-            #{f.rank} of {f.ranked_teams}
-          </span>
-        )}
-      </div>
-      <h4>{f.headline}</h4>
-      <p className="finding-detail">{f.detail}</p>
-      {f.league_rate !== null && <CompareBar team={f.rate} league={f.league_rate} />}
-      <button className="link" onClick={onDetails}>
-        Details →
-      </button>
-    </article>
+    <div className={`hero-stat ${tone ?? ""}`}>
+      <b>
+        <CountUp value={value} delay={350} />
+      </b>
+      <span>{label}</span>
+    </div>
   );
 }
 
-/** Team rate vs. league rate on one 0–100% track. */
-function CompareBar({ team, league }: { team: number; league: number }) {
+function Tile({ f, delay, onDetails }: { f: Finding; delay: number; onDetails: () => void }) {
+  const style = { "--delay": `${delay}ms` } as CSSProperties;
+  const big = bigNumber(f);
   return (
-    <div className="compare" title={`team ${pct(team)} vs league ${pct(league, 1)}`}>
-      <div className="compare-track">
-        <span className="compare-team" style={{ width: `${team * 100}%` }} />
-        <span className="compare-league" style={{ left: `${league * 100}%` }} />
+    <Reveal as="article" className={`tile ${f.kind}`} delay={delay}>
+      <div className="tile-top">
+        <span className="tile-kind">{KIND_LABEL[f.kind]}</span>
+        {f.rank !== null && f.ranked_teams !== null && (
+          <span className="rank-badge" title="rank among teams with enough rounds (1 = best)">
+            <span>
+              #{f.rank} / {f.ranked_teams}
+            </span>
+          </span>
+        )}
       </div>
-      <div className="compare-legend muted">
-        <span>team {pct(team)}</span>
-        <span>league {pct(league, 1)}</span>
+      <div className="tile-big">
+        <CountUp value={big.value} delay={delay + 150} format={(v) => `${v.toFixed(0)}%`} />
+        {big.caption && <span className="tile-caption">{big.caption}</span>}
       </div>
-    </div>
+      <div className="tile-label">{big.label}</div>
+      {big.evidence && (
+        <div className="tile-evidence">
+          {f.hits} of {f.n}
+          {f.league_rate !== null && <span className="muted"> · league {pct(f.league_rate, 1)}</span>}
+        </div>
+      )}
+      {f.league_rate !== null && (
+        <div className="vs" style={style}>
+          <div className="vs-track">
+            <span className="vs-fill" style={{ width: `${f.rate * 100}%` }} />
+            <span className="vs-league" style={{ left: `${f.league_rate * 100}%` }} />
+          </div>
+          <div className="vs-legend">
+            <span>Team</span>
+            <span>│ League</span>
+          </div>
+        </div>
+      )}
+      {/* league tiles already show counts, league rate and rank above: only add the z-score */}
+      <p className="tile-detail">
+        {f.league_rate !== null
+          ? `${Math.abs(f.z).toFixed(1)} standard errors ${f.z > 0 ? "above" : "below"} the league`
+          : f.detail}
+      </p>
+      <button className="link" onClick={onDetails}>
+        Details →
+      </button>
+    </Reveal>
   );
+}
+
+/** What the tile shows in big type, and what that number means.
+ *
+ * League findings read "30% of full-buy rounds lost…", and their `rate` is that 30%. Some map
+ * findings put a *different* percentage in the headline: "23% of attack rounds end without a
+ * plant" stores the win rate in those rounds (3%) as `rate`. So the big number always comes
+ * from the headline when it starts with one, and hits/n are only shown when they back it. */
+const CAPTION: Record<string, string> = { weakest_site: "held / retook", attack_site: "won after planting" };
+
+function bigNumber(f: Finding): { value: number; label: string; caption?: string; evidence: boolean } {
+  const m = f.headline.match(/^(\d+)% of (.*)$/);
+  if (m) return { value: Number(m[1]), label: m[2], evidence: f.key !== "no_plant" };
+  return { value: f.rate * 100, label: f.headline, caption: CAPTION[f.key], evidence: true };
 }
