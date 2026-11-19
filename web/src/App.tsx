@@ -3,6 +3,7 @@
 import { apiUrl, type Meta } from "./api";
 import { Pickers } from "./components/Pickers";
 import { title } from "./format";
+import { FindingsPage } from "./pages/FindingsPage";
 import { OperatorPage } from "./pages/OperatorPage";
 import { ScoutingPage } from "./pages/ScoutingPage";
 import { UtilityPage } from "./pages/UtilityPage";
@@ -26,7 +27,7 @@ export function App() {
       <nav className="tabs">
         {TABS.map((tab) => (
           <button key={tab} className={tab === selection.tab ? "tab active" : "tab"} onClick={() => update({ tab })}>
-            {title(tab)}
+            {tab === "findings" ? "Key findings" : title(tab)}
           </button>
         ))}
       </nav>
@@ -37,6 +38,7 @@ export function App() {
             Can't reach the API ({meta.error}). Start it with <code>nunyaintel serve</code>.
           </p>
         )}
+        {selection.tab === "findings" && <FindingsPage selection={selection} onNavigate={update} />}
         {selection.tab === "scouting" && <ScoutingPage selection={selection} />}
         {selection.tab === "operator" && <OperatorPage selection={selection} />}
         {selection.tab === "utility" && <UtilityPage selection={selection} />}

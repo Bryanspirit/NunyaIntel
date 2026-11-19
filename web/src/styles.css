@@ -84,3 +84,23 @@ tbody tr { cursor: default; }
 .matrix td.cell { border-radius: 3px; }
 .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
 .tag { font-size: 11px; padding: 1px 6px; border-radius: 3px; border: 1px solid var(--line); color: var(--muted); }
+
+/* ---- Key findings ---- */
+.findings { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin: 12px 0 20px; }
+.finding { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--muted);
+  border-radius: 6px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.finding.strength { border-left-color: var(--good); }
+.finding.weakness { border-left-color: var(--bad); }
+.finding h4 { margin: 0; font-size: 17px; line-height: 1.3; }
+.finding-top { display: flex; justify-content: space-between; font-size: 12px; }
+.finding-detail { margin: 0; font-size: 13px; color: var(--muted); }
+.kind { text-transform: uppercase; letter-spacing: 1px; font-weight: 700; font-size: 11px; }
+.kind.strength { color: var(--good); }
+.kind.weakness { color: var(--bad); }
+.kind.tendency { color: var(--muted); }
+.compare-track { position: relative; height: 8px; background: var(--line); border-radius: 4px; margin-top: 4px; }
+.compare-team { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); border-radius: 4px; }
+.compare-league { position: absolute; top: -3px; width: 2px; height: 14px; background: var(--text); }
+.compare-legend { display: flex; justify-content: space-between; font-size: 11px; margin-top: 2px; }
+button.link { align-self: flex-start; background: none; border: none; padding: 0; color: var(--accent); }
+button.link:hover { text-decoration: underline; }

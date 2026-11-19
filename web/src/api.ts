@@ -267,3 +267,34 @@ export async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> 
   }
   return (await response.json()) as T;
 }
+
+// ---- /api/findings (P3 Key findings) ----------------------------------------------------
+
+export interface Finding {
+  key: string;
+  kind: "strength" | "weakness" | "tendency";
+  headline: string;
+  detail: string;
+  hits: number;
+  n: number;
+  rate: number;
+  league_rate: number | null;
+  rank: number | null; // 1 = best in the league among ranked teams
+  ranked_teams: number | null;
+  z: number; // standard errors from the league rate
+  tab: "scouting" | "operator" | "utility";
+  map: string | null;
+  extra: Record<string, unknown>;
+}
+
+export interface Findings {
+  team: { id: string; name: string };
+  team_id: string;
+  rounds: number;
+  maps: number;
+  map: string | null; // the map used for map findings
+  map_was_chosen: boolean; // false = the team's most-played map was picked automatically
+  since: string | null;
+  league: Finding[];
+  map_findings: Finding[];
+}

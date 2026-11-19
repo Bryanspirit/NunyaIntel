@@ -72,6 +72,7 @@ def create_app(
     db_path: Path = DEFAULT_DB,
     maps_path: Path = DEFAULT_MAPS,
     static_dir: Path | None = None,
+    baselines_path: Path | None = None,
 ) -> FastAPI:
     """Build the app. Tests pass their own small database and map file.
 
@@ -79,6 +80,8 @@ def create_app(
     ``/``, so one process serves both the page and the API (the one-command demo).
     """
     app = FastAPI(title="NunyaIntel API", version=__version__)
+    if baselines_path is None:
+        from nunyaintel.insights import BASELINES_PATH as baselines_path
 
     def get_con() -> Iterator[sqlite3.Connection]:
         # one connection per request; opened and used on possibly different worker threads
@@ -212,6 +215,25 @@ def create_app(
                 },
             }  # fmt: skip
         return out
+
+    @app.get("/api/findings")
+    def findings(
+        team: str,
+        map: str | None = None,
+        since: str | None = None,
+        con: sqlite3.Connection = db,
+    ) -> dict[str, Any]:
+        """P3 Key findings: the team's most unusual numbers vs. the league, plus map findings."""
+        from nunyaintel import insights
+
+        tm = _team(con, team)
+        if map:
+            get_map(map)  # 404 for an unknown map
+        panel = insights.key_findings(
+            con, tm["id"], map_name=map, since=since,
+            baselines=insights.load_baselines(con, baselines_path), maps_path=maps_path,
+        )  # fmt: skip
+        return {"team": tm, **panel}
 
     @app.get("/api/operator")
     def operator(

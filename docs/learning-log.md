@@ -4,6 +4,24 @@ One entry per build step: what we built, the key ideas behind it, how to run it,
 
 ---
 
+## P3: Key findings (19 Nov 2026)
+
+**What:** the web app now opens on **Key findings**: a handful of cards, each with the team's rate, the league rate, the sample size and its rank among teams. Weaknesses are marked red and strengths green. Site findings for a map follow, and **Details →** opens the evidence. On the command line: `nunyaintel findings --team Cloud9`.
+
+**Key ideas**
+- **Rank by how unusual *and* how reliable:** the z-score `z = (team − league) / √(league·(1−league)/n)` counts standard errors from the league average. It grows with the gap *and* the sample size, so 15/50 at 30% vs. 17.5% (z = 2.3) outranks 3/4 at 75% vs. 50% (z = 1.0). |z| < 1 is labelled a **tendency**: within normal variation.
+- **Impressive ≠ unusual:** Cloud9's 85% pistol conversion *sounds* like a strength, but the league converts 86%, so it's average and doesn't make the list. Comparing to the league, not to 50%, is the point.
+- **Cache expensive work, keyed by what it depends on:** league baselines take ~40 s, but the extract only changes when rebuilt. So they're stored with the extract's `built_at`, and a rebuild invalidates them automatically (tested). The second run took 1.4 s.
+- **Warm up before the demo:** `serve` computes the baselines in a background thread at startup. A `threading.Lock` makes a request that arrives meanwhile *wait* for that computation instead of starting a second 40-second one.
+- **Be tolerant of missing pieces:** the API test's small database had no `build_info` table, and the page crashed. The lookup now falls back to "unknown build" instead.
+- **Links carry context:** "Details →" on a Lotus card sets `tab=scouting&map=lotus`. On a league-wide card it keeps "all maps", which we checked in the browser.
+
+**What it showed:** Cloud9's only real outlier is anti-eco (worst of 55 teams). Cloud9 GC is the opposite case: the Operator is a strength (79% of Op opening duels, top 6 of 76) and pistol conversion a weakness (76% vs. 86%).
+
+**Read:** `src/nunyaintel/insights.py` → `/api/findings` in `api/app.py` → `web/src/pages/FindingsPage.tsx` → `tests/test_insights.py`.
+
+---
+
 ## P2: A README for judges (18 Nov 2026)
 
 **What:** the README now leads with what a judge needs, in order: what NunyaIntel answers → what it found for Cloud9 (with sample sizes) → a tested Quickstart → a tour → how it works (diagram) → methods → data license and caveats.

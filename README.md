@@ -57,6 +57,7 @@ Pick a team (the **Cloud9** / **Cloud9 GC** buttons are shortcuts), a map and op
 
 | Tab | What you see |
 |---|---|
+| **Key findings** (landing view) | The team's most unusual numbers vs. the whole league, ranked by a z-score (how far from the league, given the sample size), each with counts, league rate and rank. Plus site findings for the selected (or most-played) map. **Details →** opens the evidence |
 | **Scouting** | Headline numbers (side win %, pistol conversion, anti-eco losses, eco upsets) · per-map record · how rounds end · a buy-vs-buy win-rate heat grid. With a map: **every spike plant on the minimap**, site tables (where they plant / what they hold), default setups per player, opening-duel areas |
 | **Operator** | Who uses the Op · Op rate by team economy · opening duels with vs. without it. With a map: **angles drawn as arrows** (shooter area → target area) |
 | **Utility** | Every ability: casts per round, % set up during the buy phase, median timing. **Lineups drawn as aim arrows** and ranked by effectiveness. Hover a row to highlight its arrow |
@@ -64,6 +65,7 @@ Pick a team (the **Cloud9** / **Cloud9 GC** buttons are shortcuts), a map and op
 Everything is also available on the command line:
 
 ```powershell
+nunyaintel findings --team Cloud9 [--map lotus]
 nunyaintel scout    --team Cloud9 [--map lotus] [--since 2025-06-01]
 nunyaintel operator --team Cloud9 [--economy | --duels | --map pearl --angles]
 nunyaintel utility  --team Cloud9 --map lotus [--side defender] [--lineups --score]
@@ -96,6 +98,8 @@ flowchart LR
 - **Sites and areas:** positions are named by the nearest map callout from valorant-api.com. Verified: plants sit a median 3–10 m from their site's callout, and site callouts land on the minimap's site areas.
 - **Default setups:** each player's first known position in the first 20 s of the round. Players are only "seen" when they act, so coverage is shown next to each one.
 - **Operator angles:** each Operator hit has a shooter and a target position. Hits are grouped by named area (shooter area → target area); `--precise` clusters exact spots instead. Hits over 100 m are dropped as bad positions.
+
+- **Key findings:** each metric is compared with the league rate p using z = (team rate − p) ÷ √(p(1−p)/n), so findings are ranked by how unusual *and* how well-supported they are. |z| < 1 is shown as a "tendency" (normal variation). League baselines (~40 s) are cached per extract build in `data/cache/league_baselines.json`.
 
 ## Data, license and caveats
 

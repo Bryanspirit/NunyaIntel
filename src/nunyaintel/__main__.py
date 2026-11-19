@@ -39,6 +39,12 @@ def build_parser() -> argparse.ArgumentParser:
     op.add_argument("--side", choices=["attacker", "defender"], help="With --angles: one side")
     op.add_argument("--player", help="With --angles: only this player ID")
     op.add_argument("--precise", action="store_true", help="With --angles: exact-spot clusters")
+    fi = sub.add_parser(
+        "findings", help="Key findings: a team's most unusual numbers vs. the league"
+    )
+    fi.add_argument("--team", required=True, help="Team ID or exact name, e.g. 79 or Cloud9")
+    fi.add_argument("--map", dest="map_name", help="Map for site findings (default: most played)")
+    fi.add_argument("--since", help="Only maps played on/after this date, e.g. 2025-06-01")
     sub.add_parser("doctor", help="Check the setup (Python, data, extract, Node, port)")
     srv = sub.add_parser("serve", help="Run the web app (React page + API) on one address")
     srv.add_argument("--port", type=int, default=4811)
@@ -86,6 +92,9 @@ def serve(host: str, port: int, build: bool = False, open_browser: bool = False)
     else:
         print(f"API only on {url}api  (docs: {url}docs)")
         print("The web app isn't built yet: run `nunyaintel serve --build` once.")
+    from nunyaintel.insights import warm_baselines
+
+    warm_baselines()  # league baselines for Key findings: ~40 s once per extract build, cached
     if open_browser:
         threading.Timer(1.5, webbrowser.open, args=[url]).start()  # after the server is up
     uvicorn.run(create_app(static_dir=WEB_DIST), host=host, port=port)
@@ -106,6 +115,16 @@ def main(argv: list[str] | None = None) -> int:
         summary = build_cache(series_ids=args.series, workers=args.workers)
         print(json.dumps(summary, indent=2))
         return 1 if summary["failures"] else 0
+    if args.command == "findings":
+        from nunyaintel import insights
+        from nunyaintel.data.extract import connect, resolve_team
+
+        con = connect()
+        team_id = resolve_team(con, args.team)
+        name = con.execute("SELECT name FROM meta_teams WHERE team_id = ?", (team_id,)).fetchone()
+        panel = insights.key_findings(con, team_id, map_name=args.map_name, since=args.since)
+        print(insights.format_findings(panel, name[0] if name else team_id))
+        return 0
     if args.command == "doctor":
         from nunyaintel import doctor
 

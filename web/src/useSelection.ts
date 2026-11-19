@@ -4,8 +4,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-export type Tab = "scouting" | "operator" | "utility";
-export const TABS: Tab[] = ["scouting", "operator", "utility"];
+export type Tab = "findings" | "scouting" | "operator" | "utility";
+export const TABS: Tab[] = ["findings", "scouting", "operator", "utility"];
 
 export interface Selection {
   team: string; // team id
@@ -15,7 +15,7 @@ export interface Selection {
   tab: Tab;
 }
 
-const DEFAULTS: Selection = { team: "79", map: "", side: "", since: "", tab: "scouting" };
+const DEFAULTS: Selection = { team: "79", map: "", side: "", since: "", tab: "findings" };
 
 function read(): Selection {
   const q = new URLSearchParams(window.location.search);

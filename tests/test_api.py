@@ -219,3 +219,14 @@ def test_without_built_web_app(paths, tmp_path):
     app = TestClient(create_app(db_path=db, maps_path=maps, static_dir=tmp_path / "missing"))
     assert app.get("/").status_code == 404
     assert app.get("/api/meta").status_code == 200
+
+
+def test_findings(paths, tmp_path):
+    db, maps = paths
+    app = TestClient(create_app(db_path=db, maps_path=maps, baselines_path=tmp_path / "b.json"))
+    j = app.get("/api/findings", params={"team": "A", "map": "testmap"}).json()
+    assert j["team"] == {"id": "A", "name": "Alpha"}
+    assert (j["rounds"], j["map"], j["map_was_chosen"]) == (4, "testmap", True)
+    assert isinstance(j["league"], list) and isinstance(j["map_findings"], list)
+    assert (tmp_path / "b.json").exists()  # baselines cached on first use
+    assert app.get("/api/findings", params={"team": "A", "map": "nowhere"}).status_code == 404
