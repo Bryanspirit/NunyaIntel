@@ -11,6 +11,20 @@ One entry per build step: what we built, the key ideas behind it, how to run it,
 
 ---
 
+## Presentation mode: a guided tour (branch `interactive`, 19 Nov 2026)
+
+**What:** **▶ Presentation** in the header starts a 7-step tour of the Cloud9 story: findings → Lotus scouting → the Omen smoke → Replay → OXY → Cloud9 vs NRG → predictions. Each step opens the right view and shows a broadcast lower-third caption.
+
+**Key ideas**
+- **The app is the slide deck:** a step is just a URL selection (`{tab, map, …}`). The tour sets it and the pages do the rest, so the demo always shows live data, never screenshots.
+- **Every caption is a checked claim:** the steps quote numbers from `docs/claims.md`. The new Cloud9 vs NRG numbers got their own check (`matchup_nrg`), so `verify-claims` now passes 18 of 18.
+- **Keys that don't fight:** the Replay already uses ← → to scrub time, so the tour also listens to PageDown / PageUp (what presentation clickers send) and N / P. Arrows only work outside the Replay.
+- **Scroll anchoring:** Chrome tries to keep your scroll position when a page grows, so new views opened halfway down. The fix: jump to the top again after the data loads, and turn off `overflow-anchor` during the tour.
+
+**Read:** `web/src/components/Tour.tsx`, `_matchup_nrg` in `src/nunyaintel/claims.py`.
+
+---
+
 ## Player pages + draw-on-map area stats (branch `interactive`, 19 Nov 2026)
 
 **What:** click a player's name (Scouting setups, Operator tables) to open their profile: agents, kills by weapon, opening duels, Operator use, utility, and a heatmap of where they shoot, die and cast. In the 2D Replay, **▭ Select an area** lets you drag a box on the map. You get stats for that area, and you can filter the replay to it.

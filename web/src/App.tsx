@@ -1,7 +1,9 @@
 // App shell: header with pickers, tabs, and the active page.
 
+import { useCallback, useState } from "react";
 import { apiUrl, type Meta } from "./api";
 import { Pickers } from "./components/Pickers";
+import { Tour } from "./components/Tour";
 import { title } from "./format";
 import { FindingsPage } from "./pages/FindingsPage";
 import { MatchupPage } from "./pages/MatchupPage";
@@ -18,14 +20,17 @@ export function App() {
   const [selection, update] = useSelection();
   const meta = useApi<Meta>(apiUrl("/meta"));
   const teamName = meta.data?.teams.find((t) => t.id === selection.team)?.name ?? selection.team;
+  const [tour, setTour] = useState<number | null>(null); // presentation mode: current step
+  const closeTour = useCallback(() => setTour(null), []);
 
   return (
-    <div className="app">
+    <div className={tour !== null ? "app touring" : "app"}>
       <header>
         <h1>
           Nunya<span>Intel</span>
         </h1>
         <p className="tagline">VALORANT scouting · utility · Operator profiler</p>
+        <button className="tour-start" onClick={() => setTour(0)} disabled={tour !== null}>▶ Presentation</button>
         {meta.data && <Pickers meta={meta.data} selection={selection} onChange={update} />}
       </header>
 
@@ -52,6 +57,8 @@ export function App() {
         {selection.tab === "matchup" && <MatchupPage selection={selection} meta={meta.data} onNavigate={update} />}
         {selection.tab === "predict" && <PredictPage selection={selection} meta={meta.data} teamName={teamName} />}
       </main>
+
+      {tour !== null && <Tour step={tour} onStep={setTour} onClose={closeTour} onNavigate={update} tab={selection.tab} />}
 
       <footer className="muted">
         NunyaIntel {meta.data?.version} · GRID data licensed for the Sky's The Limit 2026 hackathon (local use only)

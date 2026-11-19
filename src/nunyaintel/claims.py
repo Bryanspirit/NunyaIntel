@@ -307,6 +307,31 @@ def _predictions(con):
     )
 
 
+def _matchup_nrg(con):
+    """Cloud9 vs NRG on Lotus, shown in the Matchup tab and the presentation tour."""
+    from nunyaintel import matchup_report, predict
+    from nunyaintel.maps import get_map
+
+    opp = predict.frequent_opponent(con, "79")
+    r = matchup_report.report(con, "79", opp, map_info=get_map("lotus"))
+    a_att = max(r["sites"]["a_attacks"], key=lambda x: x["attack_share"])
+    b_att = max(r["sites"]["b_attacks"], key=lambda x: x["attack_share"])
+    a_hold_hits = round(a_att["hold_win"] * a_att["hold_n"])
+    h2h = r["head_to_head"]
+    got = (
+        r["b"]["name"], a_att["site"], round(a_att["attack_share"] * 100), a_hold_hits,
+        a_att["hold_n"], b_att["site"], round(b_att["attack_share"] * 100),
+        round(b_att["hold_win"] * 100), sum(h["winner"] == "a" for h in h2h), len(h2h),
+    )  # fmt: skip
+    return Result(
+        got == ("NRG", "A", 35, 11, 37, "C", 36, 33, 5, 8),
+        f"opponent {got[0]}; C9 attacks {got[1]} most ({got[2]}%), NRG holds it "
+        f"{_rate(got[3], got[4])}; NRG attacks {got[5]} most ({got[6]}%), C9 holds it "
+        f"{got[7]}%; C9 won {got[8]} of {got[9]} head-to-head maps",
+        a_att["hold_n"],
+    )
+
+
 CLAIMS = [
     Claim("dataset", "README intro",
           "857 series, 2,078 maps, 42,490 rounds, 160 teams (Jan 2025 - Sep 2026)", _dataset),
@@ -351,6 +376,10 @@ CLAIMS = [
           "Elo map winner: 66.8% right on 503 unseen maps (Brier 0.213 vs 0.250); next buy: "
           "81.8% vs 73.6% always-full-buy on 22,994 team-rounds, ecos caught 87%",
           _predictions),
+    Claim("matchup_nrg", "Matchup tab, presentation tour",
+          "Cloud9 vs NRG on Lotus: C9's most-attacked site A (35%) is held by NRG only 30% "
+          "(11 of 37); NRG's most-attacked site C (36%) is C9's 33% hold; C9 won 5 of 8 "
+          "head-to-head maps", _matchup_nrg),
     Claim("ability_kills", "README caveats", "about 3.7% of kills have no weapon recorded",
           _ability_kills),
 ]  # fmt: skip

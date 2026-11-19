@@ -378,3 +378,28 @@ button.name-link:hover { color: var(--accent); }
 .area-row b { font-family: var(--display); font-size: 22px; margin-right: 3px; }
 .area-list { font-size: 12px; color: var(--muted); margin-top: 3px; }
 .area-small { display: inline-block; margin-left: 8px; vertical-align: middle; }
+
+/* ---- Presentation mode (lower-third caption) ------------------------------------------- */
+header { position: relative; }
+.tour-start { position: absolute; top: 4px; right: 0; padding: 8px 16px; border: 1px solid var(--accent); background: rgba(255, 70, 85, 0.12);
+  color: var(--text); font-family: var(--display); font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+.tour-start:hover:not(:disabled) { background: var(--accent); }
+.tour-start:disabled { opacity: 0.4; }
+.app.touring main { padding-bottom: 240px; } /* room so the caption never covers the end of a page */
+.tour { position: fixed; left: 0; right: 0; bottom: 18px; display: flex; justify-content: center; z-index: 50; pointer-events: none; padding: 0 16px; }
+.tour-card { pointer-events: auto; width: min(920px, 100%); padding: 14px 22px 12px; border-left: 6px solid var(--accent);
+  background: linear-gradient(100deg, rgba(15, 25, 35, 0.97), rgba(25, 38, 52, 0.97)); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+  clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%); animation: tour-in 0.45s cubic-bezier(0.2, 0.8, 0.2, 1); }
+@keyframes tour-in { from { transform: translateX(-40px); opacity: 0; } to { transform: none; opacity: 1; } }
+.tour-kicker { font-family: var(--display); font-weight: 700; letter-spacing: 3px; text-transform: uppercase; font-size: 12px; color: var(--accent); }
+.tour-count { color: var(--muted); margin-left: 10px; }
+.tour-title { font-family: var(--display); font-weight: 800; text-transform: uppercase; font-size: 34px; line-height: 1.05; letter-spacing: 1px; }
+.tour-text { margin: 6px 0 10px; font-size: 15px; line-height: 1.5; max-width: 80ch; }
+.tour-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.tour-dots { display: flex; gap: 6px; margin-right: auto; }
+.tour-dots button { width: 22px; height: 5px; padding: 0; border: none; background: rgba(255, 255, 255, 0.2); }
+.tour-dots button.on { background: var(--accent); }
+.tour-keys { font-size: 12px; }
+@media (prefers-reduced-motion: reduce) { .tour-card { animation: none; } }
+@media (max-width: 640px) { .tour-start { position: static; margin-top: 8px; } .tour-title { font-size: 24px; } }
+.app.touring { overflow-anchor: none; } html:has(.app.touring) { overflow-anchor: none; }
