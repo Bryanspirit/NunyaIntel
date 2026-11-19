@@ -256,6 +256,38 @@ def _ability_kills(con):
     return Result(round(100 * null / n, 1) == 3.7, _rate(null, n))
 
 
+def _lotus_lineups(con):
+    """The two Cloud9 Lotus lineups the demo video shows (U2 clustering + U3 scores)."""
+    from nunyaintel.maps import get_map
+    from nunyaintel.utility import effectiveness, lineups, placement
+
+    m = get_map("lotus")
+    usages = placement.load_utility(con, map_name="lotus", team_id="79")
+    scores = effectiveness.score_lineups(con, lineups.find_lineups(usages))
+
+    def pick(side, agent, ability, region):
+        return next(
+            s for s in scores
+            if (s.lineup.side, s.lineup.agent, s.lineup.ability) == (side, agent, ability)
+            and m.region_of(s.lineup.x, s.lineup.y).name == region
+        )  # fmt: skip
+
+    omen = pick("defender", "omen", "dark-cover", "C Main")
+    fade = pick("attacker", "fade", "haunt", "A Lobby")
+    got = (
+        omen.lineup.rounds_won, omen.lineup.rounds, omen.lineup.series, round(omen.baseline * 100),
+        fade.lineup.rounds_won, fade.lineup.rounds, fade.lineup.series,
+    )  # fmt: skip
+    return Result(
+        got == (28, 46, 11, 47, 11, 15, 7),
+        f"Omen smoke from C Main (defense): {_rate(omen.lineup.rounds_won, omen.lineup.rounds)} "
+        f"in {omen.lineup.series} matches, usual {omen.baseline:.0%}; Fade Haunt from A Lobby "
+        f"(attack): {_rate(fade.lineup.rounds_won, fade.lineup.rounds)} in "
+        f"{fade.lineup.series} matches",
+        fade.lineup.rounds,
+    )
+
+
 CLAIMS = [
     Claim("dataset", "README intro",
           "857 series, 2,078 maps, 42,490 rounds, 160 teams (Jan 2025 - Sep 2026)", _dataset),
@@ -292,6 +324,10 @@ CLAIMS = [
           "so site labels are unambiguous; 26 plants (0.09%, all Bind) are 70+ m from any "
           "site: bad positions, labelled unknown (cut at 50 m, in the gap between 46 and 67 m)",
           _plant_distances),
+    Claim("lotus_lineups", "demo video (K1)",
+          "Cloud9 Lotus lineups: Omen smoke from C Main on defense, won 28 of 46 rounds "
+          "(61%) across 11 matches vs. their usual 47%; Fade Haunt from A Lobby on attack, "
+          "won 11 of 15 (73%) across 7 matches", _lotus_lineups),
     Claim("ability_kills", "README caveats", "about 3.7% of kills have no weapon recorded",
           _ability_kills),
 ]  # fmt: skip
