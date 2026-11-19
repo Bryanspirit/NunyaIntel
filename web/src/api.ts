@@ -426,3 +426,25 @@ export interface MatchupReport {
   sites: { a_attacks: SiteBattleRow[]; b_attacks: SiteBattleRow[] } | null;
   head_to_head: { game_id: string; date: string; map: string; winner: "a" | "b"; score_a: number; score_b: number; first_round: string }[];
 }
+
+// ---- /api/player -------------------------------------------------------------------------
+
+export interface PlayerProfile {
+  player_id: string;
+  name: string;
+  team: { id: string; name: string };
+  series: number;
+  first_seen: string;
+  last_seen: string;
+  map: string | null;
+  maps: Record<string, number>; // map -> maps played
+  agents: Record<string, number>;
+  kills: number;
+  deaths: number;
+  first_kills: number;
+  first_deaths: number;
+  weapons: { weapon: string; kills: number }[];
+  operator: { rounds_with_op: number; rounds_played: number; op_kills: number; op_round_win_rate: number } | null;
+  utility: { agent: string; ability: string; casts: number; per_round: number; buy_phase_share: number; median_time_s: number | null }[];
+  points: [number, number, "kill" | "death" | "util"][]; // u, v, kind (heatmap)
+}

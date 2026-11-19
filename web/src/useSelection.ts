@@ -4,8 +4,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-export type Tab = "findings" | "scouting" | "operator" | "utility" | "replay" | "matchup" | "predict";
+export type Tab = "findings" | "scouting" | "operator" | "utility" | "replay" | "matchup" | "predict" | "player";
 export const TABS: Tab[] = ["findings", "scouting", "operator", "utility", "replay", "matchup", "predict"];
+// "player" is a page you reach by clicking a name, not a tab in the bar
+export const ALL_TABS: Tab[] = [...TABS, "player"];
 
 export interface Selection {
   team: string; // team id
@@ -16,9 +18,10 @@ export interface Selection {
   round: string; // "" = none, else "<game_id>:<round_num>": a deep link into the Replay
   t: string; // "" = none, else seconds from the buy-phase end
   opp: string; // "" = most frequent opponent, else the opponent's team id (Matchup tab)
+  player: string; // player id on the Player page
 }
 
-const DEFAULTS: Selection = { team: "79", map: "", side: "", since: "", tab: "findings", round: "", t: "", opp: "" };
+const DEFAULTS: Selection = { team: "79", map: "", side: "", since: "", tab: "findings", round: "", t: "", opp: "", player: "" };
 
 function read(): Selection {
   const q = new URLSearchParams(window.location.search);
@@ -28,10 +31,11 @@ function read(): Selection {
     map: q.get("map") ?? DEFAULTS.map,
     side: q.get("side") ?? DEFAULTS.side,
     since: q.get("since") ?? DEFAULTS.since,
-    tab: TABS.includes(tab as Tab) ? (tab as Tab) : DEFAULTS.tab,
+    tab: ALL_TABS.includes(tab as Tab) ? (tab as Tab) : DEFAULTS.tab,
     round: q.get("round") ?? "",
     t: q.get("t") ?? "",
     opp: q.get("opp") ?? "",
+    player: q.get("player") ?? "",
   };
 }
 
@@ -64,3 +68,6 @@ export const replayAt = (key: string, t: number): Partial<Selection> => ({
   round: key,
   t: String(Math.round(t * 10) / 10),
 });
+
+/** Link target for a player's profile page. */
+export const playerPage = (playerId: string): Partial<Selection> => ({ tab: "player", player: playerId });

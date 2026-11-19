@@ -48,7 +48,14 @@ def paths(tmp_path):
         "CREATE TABLE meta_teams (team_id TEXT, name TEXT, series_count TEXT, "
         "first_seen TEXT, last_seen TEXT)"
     )
-    con.execute("CREATE TABLE meta_players (player_id TEXT, name TEXT)")
+    con.execute(
+        "CREATE TABLE meta_players (player_id TEXT, name TEXT, latest_team_id TEXT, "
+        "latest_team_name TEXT, series_count TEXT, first_seen TEXT, last_seen TEXT)"
+    )
+    con.execute(
+        "CREATE TABLE meta_rosters (game_id TEXT, team_id TEXT, player_id TEXT, "
+        "character_name TEXT)"
+    )
     con.execute(
         "CREATE TABLE meta_games (game_id TEXT, map TEXT, started_at TEXT, "
         "team1_id TEXT, team2_id TEXT, winner_team_id TEXT, team1_score TEXT, team2_score TEXT)"
@@ -58,7 +65,9 @@ def paths(tmp_path):
             first_seen="2025-01-01", last_seen="2025-02-01")  # fmt: skip
     _insert(con, "meta_teams", team_id="B", name="Bravo", series_count="2",
             first_seen="2025-01-01", last_seen="2025-02-01")  # fmt: skip
-    _insert(con, "meta_players", player_id="p1", name="Alice")
+    _insert(con, "meta_players", player_id="p1", name="Alice", latest_team_id="A",
+            latest_team_name="Alpha", series_count="2", first_seen="2025-01-01",
+            last_seen="2025-02-01")  # fmt: skip
 
     for i, series in enumerate(("s1", "s2"), 1):
         game = f"g{i}"
@@ -66,6 +75,8 @@ def paths(tmp_path):
                 team1_id="A", team2_id="B", winner_team_id="A",
                 team1_score="13", team2_score="7")  # fmt: skip
         _insert(con, "meta_series", series_id=series, event="Test Cup 2026")
+        _insert(con, "meta_rosters", game_id=game, team_id="A", player_id="p1",
+                character_name="sova")  # fmt: skip
         for num, winner in ((1, "A"), (2, "B")):
             buy_end = f"2025-0{i}-01T10:0{num}:00.000Z"
             _insert(con, "rounds", series_id=series, game_id=game, round_num=num,
@@ -347,3 +358,17 @@ def test_matchup_report(client, paths, tmp_path):
     assert len(j["head_to_head"]) == 2 and j["head_to_head"][0]["first_round"].endswith(":1")
     explicit = app.get("/api/matchup-report", params={"team": "A", "opponent": "Bravo"})
     assert explicit.status_code == 200 and explicit.json()["sites"] is None  # no map chosen
+
+
+def test_player_profile(client):
+    j = client.get("/api/player", params={"player": "p1", "map": "testmap"}).json()
+    assert (j["name"], j["team"]["name"], j["agents"]) == ("Alice", "Alpha", {"sova": 2})
+    assert (j["kills"], j["deaths"], j["first_kills"]) == (4, 0, 4)
+    assert j["weapons"] == [{"weapon": "operator", "kills": 4}]
+    assert j["maps"] == {"testmap": 2}
+    kinds = {p[2] for p in j["points"]}
+    assert kinds == {"kill", "util"} and all(0 <= p[0] <= 1 for p in j["points"])
+    assert j["utility"] and j["utility"][0]["ability"] == "recon-bolt"
+    no_map = client.get("/api/player", params={"player": "p1"}).json()
+    assert no_map["points"] == [] and no_map["map"] is None
+    assert client.get("/api/player", params={"player": "nobody"}).status_code == 404

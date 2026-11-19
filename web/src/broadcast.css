@@ -360,3 +360,21 @@ tr.ban td { background: rgba(255, 107, 107, 0.08); }
 .ban-tag { color: var(--bad); border-color: rgba(255, 107, 107, 0.5); margin-right: 6px; }
 tr.h2h-win td:first-child { box-shadow: inset 3px 0 0 var(--good); }
 tr.h2h-loss td:first-child { box-shadow: inset 3px 0 0 var(--bad); }
+
+/* ---- Player page / name links ------------------------------------------------------------ */
+button.name-link { background: none; border: none; padding: 0; color: var(--text); font: inherit; text-decoration: underline;
+  text-decoration-color: rgba(255, 70, 85, 0.5); text-underline-offset: 3px; }
+button.name-link:hover { color: var(--accent); }
+.map-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.heat-layers { flex-direction: column; align-items: flex-start; }
+
+/* ---- Replay area tool -------------------------------------------------------------------- */
+.replay-canvas.selecting { cursor: crosshair; }
+.area-tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 13px; margin-top: 8px; }
+.area-tools label { display: inline-flex; gap: 6px; align-items: center; }
+.area-stats { margin-top: 8px; padding: 10px 14px; border-left: 4px solid #fff; background: rgba(255, 255, 255, 0.04); }
+.area-title { font-family: var(--display); font-weight: 800; letter-spacing: 2px; text-transform: uppercase; font-size: 18px; }
+.area-row { display: flex; flex-wrap: wrap; gap: 16px; margin: 4px 0; font-size: 13px; }
+.area-row b { font-family: var(--display); font-size: 22px; margin-right: 3px; }
+.area-list { font-size: 12px; color: var(--muted); margin-top: 3px; }
+.area-small { display: inline-block; margin-left: 8px; vertical-align: middle; }

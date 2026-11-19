@@ -7,7 +7,7 @@ import { PlantMap } from "../components/PlantMap";
 import { Empty, WinBar } from "../components/ui";
 import { nice, pct, secs, SIDE_LABEL, title, WIN_TYPE_LABEL } from "../format";
 import { useApi } from "../useApi";
-import { replayAt, type Selection } from "../useSelection";
+import { playerPage, replayAt, type Selection } from "../useSelection";
 
 const SIDES: Side[] = ["attacker", "defender"];
 
@@ -155,7 +155,9 @@ export function ScoutingPage({ selection, onNavigate }: { selection: Selection; 
                   .map((s) => (
                     <tr key={s.player_id + s.side}>
                       <td>{SIDE_LABEL[s.side]}</td>
-                      <td className="left">{s.name}</td>
+                      <td className="left">
+                        <button className="name-link" onClick={() => onNavigate(playerPage(s.player_id))}>{s.name}</button>
+                      </td>
                       <td className="left">{nice(s.agent)}</td>
                       <td>{s.rounds_seen}/{s.rounds_played}</td>
                       <td className="left">

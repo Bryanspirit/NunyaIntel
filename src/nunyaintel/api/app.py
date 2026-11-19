@@ -371,6 +371,16 @@ def create_app(
             **timeline.replay(con, tm["id"], m, side=side, since=since),
         }
 
+    @app.get("/api/player")
+    def player(player: str, map: str | None = None, con: sqlite3.Connection = db) -> dict[str, Any]:
+        """One player's profile (agents, fights, weapons, Op, utility, heatmap points)."""
+        from nunyaintel import player as player_mod
+
+        try:
+            return player_mod.profile(con, player, map_info=get_map(map))
+        except KeyError:
+            raise HTTPException(404, f"Unknown player: {player!r}") from None
+
     @app.get("/api/matchup-report")
     def matchup_report(
         team: str,

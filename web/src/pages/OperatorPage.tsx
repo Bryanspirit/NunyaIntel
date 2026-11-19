@@ -7,7 +7,7 @@ import { MapArrow, Minimap } from "../components/Minimap";
 import { Empty, WinBar } from "../components/ui";
 import { pct, secs, SIDE_COLOR, SIDE_LABEL, title } from "../format";
 import { useApi } from "../useApi";
-import { replayAt, type Selection } from "../useSelection";
+import { playerPage, replayAt, type Selection } from "../useSelection";
 
 type Nav = (change: Partial<Selection>) => void;
 
@@ -55,7 +55,8 @@ export function OperatorPage({ selection, teamName, onNavigate }: { selection: S
 
       {main ? (
         <>
-          <Panel title={`Main Op player: ${main.name}`} index={section++}>
+          <Panel title={`Main Op player: ${main.name}`} index={section++}
+            aside={<button className="link" onClick={() => onNavigate(playerPage(main.player_id))}>open {main.name}'s profile →</button>}>
             <div className="bigstats">
               <BigStat label="Rounds with an Op" value={main.op_buy_rate} delay={200} n={main.rounds_played}
                 sub={`${main.rounds_with_op} of ${main.rounds_played}`} />
@@ -84,7 +85,9 @@ export function OperatorPage({ selection, teamName, onNavigate }: { selection: S
               <tbody>
                 {profiles.map((p) => (
                   <tr key={p.player_id + p.team_id}>
-                    <td className="left">{p.name}</td>
+                    <td className="left">
+                      <button className="name-link" onClick={() => onNavigate(playerPage(p.player_id))}>{p.name}</button>
+                    </td>
                     <td>{p.rounds_played}</td>
                     <td>{p.rounds_with_op}</td>
                     <td>{pct(p.op_buy_rate)}</td>
@@ -143,7 +146,9 @@ export function OperatorPage({ selection, teamName, onNavigate }: { selection: S
             <tbody>
               {duels.slice(0, 15).map((d) => (
                 <tr key={d.player_id + d.team_id}>
-                  <td className="left">{d.name}</td>
+                  <td className="left">
+                    <button className="name-link" onClick={() => onNavigate(playerPage(d.player_id))}>{d.name}</button>
+                  </td>
                   <td>{d.op_rounds}</td>
                   <td>{pct(d.op_duel_rate)}</td>
                   <td><WinBar rate={d.op_duel_win_rate} played={d.op_duels} /></td>

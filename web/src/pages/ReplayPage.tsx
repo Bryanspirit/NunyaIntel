@@ -70,6 +70,11 @@ function Player({ replay, map, teamName, selection }: { replay: Replay; map: Map
   const [round, setRound] = useState<number | "all">(linked ? linked.i : "all");
   const [layers, setLayers] = useState<Record<ReplayKind, boolean>>({ kill: true, death: true, util: true, plant: true, defuse: true });
   const [hover, setHover] = useState<{ x: number; y: number; e: ReplayEvent } | null>(null);
+  // area tool: drag a box on the 2D map (in minimap u, v) to get stats for that area / filter to it
+  const [selecting, setSelecting] = useState(false);
+  const [area, setArea] = useState<Area | null>(null);
+  const [areaOnly, setAreaOnly] = useState(false);
+  const dragFrom = useRef<{ u: number; v: number } | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [view, setView] = useState<"2d" | "3d">("2d");
   const [autoRotate, setAutoRotate] = useState(false);
@@ -84,8 +89,16 @@ function Player({ replay, map, teamName, selection }: { replay: Replay; map: Map
 
   // events for the chosen round(s) and layers, already sorted by time (server sorts)
   const events = useMemo(
-    () => replay.events.filter((e) => (round === "all" || e[0] === round) && layers[e[2]]),
-    [replay.events, round, layers],
+    () =>
+      replay.events.filter(
+        (e) => (round === "all" || e[0] === round) && layers[e[2]] && (!areaOnly || !area || inArea(e, area)),
+      ),
+    [replay.events, round, layers, area, areaOnly],
+  );
+  // every event of the chosen round(s) inside the box, all layers and all times: the area stats
+  const areaEvents = useMemo(
+    () => (area ? replay.events.filter((e) => (round === "all" || e[0] === round) && inArea(e, area)) : []),
+    [replay.events, round, area],
   );
   const roundInfo = round === "all" ? null : replay.rounds[round];
   const tEnd = round === "all" ? replay.t_max : Math.min(replay.t_max, Math.max(...events.map((e) => e[1]), 10) + 3);
@@ -173,7 +186,17 @@ function Player({ replay, map, teamName, selection }: { replay: Replay; map: Map
       }
     }
     ctx.globalAlpha = 1;
-  }, [events, t, mode, round, reduced]);
+    if (area) {
+      const ax = area.u1 * W, ay = area.v1 * W, aw = (area.u2 - area.u1) * W, ah = (area.v2 - area.v1) * W;
+      ctx.fillStyle = "rgba(255, 255, 255, 0.06)";
+      ctx.fillRect(ax, ay, aw, ah);
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([6, 4]);
+      ctx.strokeRect(ax, ay, aw, ah);
+      ctx.setLineDash([]);
+    }
+  }, [events, t, mode, round, reduced, area]);
 
   useEffect(draw, [draw]);
   useEffect(() => {
@@ -260,7 +283,20 @@ function Player({ replay, map, teamName, selection }: { replay: Replay; map: Map
               ) : (
                 <>
                   {map.minimap_url && <img src={map.minimap_url} alt={`${map.name} minimap`} draggable={false} />}
-                  <canvas ref={canvasRef} className="replay-canvas" onMouseMove={onMove} onMouseLeave={() => setHover(null)} />
+                  <canvas ref={canvasRef} className={selecting ? "replay-canvas selecting" : "replay-canvas"}
+                    onMouseDown={(ev) => { if (selecting) { dragFrom.current = uvOf(ev); setArea(null); } }}
+                    onMouseMove={(ev) => {
+                      if (selecting && dragFrom.current) setArea(boxFrom(dragFrom.current, uvOf(ev)));
+                      else onMove(ev);
+                    }}
+                    onMouseUp={(ev) => {
+                      if (!selecting || !dragFrom.current) return;
+                      const box = boxFrom(dragFrom.current, uvOf(ev));
+                      setArea(box.u2 - box.u1 > 0.01 && box.v2 - box.v1 > 0.01 ? box : null); // ignore a plain click
+                      dragFrom.current = null;
+                      setSelecting(false);
+                    }}
+                    onMouseLeave={() => setHover(null)} />
                 </>
               )}
               <div className="replay-clock">
@@ -280,6 +316,22 @@ function Player({ replay, map, teamName, selection }: { replay: Replay; map: Map
                 <span key={k} style={{ color: COLORS[k] }}><b>{counts[k]}</b> {LABELS[k]}</span>
               ))}
             </div>
+            {view === "2d" && (
+              <div className="area-tools">
+                <button className={selecting ? "chip active" : "chip"} onClick={() => setSelecting(!selecting)}>
+                  ▭ {selecting ? "Drag a box on the map…" : "Select an area"}
+                </button>
+                {area && (
+                  <>
+                    <label>
+                      <input type="checkbox" checked={areaOnly} onChange={(e) => setAreaOnly(e.target.checked)} /> Only show this area
+                    </label>
+                    <button className="chip" onClick={() => { setArea(null); setAreaOnly(false); }}>✕ Clear area</button>
+                  </>
+                )}
+              </div>
+            )}
+            {view === "2d" && area && <AreaStats events={areaEvents} region={regionName(map, area)} />}
           </div>
 
           <div className="replay-controls">
@@ -339,6 +391,70 @@ function Player({ replay, map, teamName, selection }: { replay: Replay; map: Map
         </div>
       </Panel>
     </section>
+  );
+}
+
+// ---- area tool ---------------------------------------------------------------------------------
+
+interface Area { u1: number; v1: number; u2: number; v2: number } // minimap 0..1, top-left to bottom-right
+
+const inArea = (e: ReplayEvent, a: Area) => e[3] >= a.u1 && e[3] <= a.u2 && e[4] >= a.v1 && e[4] <= a.v2;
+
+function uvOf(ev: React.MouseEvent<HTMLCanvasElement>): { u: number; v: number } {
+  const r = ev.currentTarget.getBoundingClientRect();
+  return { u: (ev.clientX - r.left) / r.width, v: (ev.clientY - r.top) / r.height };
+}
+
+function boxFrom(a: { u: number; v: number }, b: { u: number; v: number }): Area {
+  return { u1: Math.min(a.u, b.u), v1: Math.min(a.v, b.v), u2: Math.max(a.u, b.u), v2: Math.max(a.v, b.v) };
+}
+
+/** Name the box after the callout nearest its centre, e.g. "A Main". */
+function regionName(map: MapInfo, a: Area): string {
+  const cu = (a.u1 + a.u2) / 2, cv = (a.v1 + a.v2) / 2;
+  let best = "", bestD = Infinity;
+  for (const c of map.callouts) {
+    const d = (c.u - cu) ** 2 + (c.v - cv) ** 2;
+    if (d < bestD) { bestD = d; best = `${c.super_region} ${c.region}`.trim(); }
+  }
+  return best || "this area";
+}
+
+/** Fights, plants and utility inside the box. Labels: "killer → victim (weapon)", "player: ability". */
+function AreaStats({ events, region }: { events: ReplayEvent[]; region: string }) {
+  const kills = events.filter((e) => e[2] === "kill");
+  const deaths = events.filter((e) => e[2] === "death");
+  const fights = kills.length + deaths.length;
+  const times = [...kills, ...deaths].map((e) => e[1]).sort((x, y) => x - y);
+  const median = times.length ? times[Math.floor(times.length / 2)] : null;
+  const ours = new Map<string, { k: number; d: number }>(); // this team's players: kills and deaths here
+  const bump = (name: string, key: "k" | "d") => {
+    const v = ours.get(name) ?? { k: 0, d: 0 };
+    v[key]++;
+    ours.set(name, v);
+  };
+  for (const e of kills) bump(e[7].split(" → ")[0], "k");
+  for (const e of deaths) bump((e[7].split(" → ")[1] ?? "?").split(" (")[0], "d");
+  const abilities = new Map<string, number>();
+  for (const e of events) if (e[2] === "util") { const a = e[7].split(": ")[1] ?? "?"; abilities.set(a, (abilities.get(a) ?? 0) + 1); }
+  const players = [...ours.entries()].sort((a, b) => b[1].k + b[1].d - (a[1].k + a[1].d)).slice(0, 5);
+  const utility = [...abilities.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+  return (
+    <div className="area-stats">
+      <div className="area-title">
+        Around {region} {fights > 0 && fights < 30 && <span className="bigstat-small area-small">small sample</span>}
+      </div>
+      <div className="area-row">
+        <span><b style={{ color: COLORS.kill }}>{kills.length}</b> kills</span>
+        <span><b style={{ color: COLORS.death }}>{deaths.length}</b> deaths</span>
+        <span><b>{fights ? Math.round((kills.length / fights) * 100) : 0}%</b> fights won</span>
+        <span><b>{median !== null ? fmtTime(median) : "–"}</b> median fight time</span>
+        <span><b style={{ color: COLORS.plant }}>{events.filter((e) => e[2] === "plant").length}</b> plants</span>
+      </div>
+      {players.length > 0 && <div className="area-list">Players (kills–deaths here): {players.map(([n, v]) => `${n} ${v.k}–${v.d}`).join(" · ")}</div>}
+      {utility.length > 0 && <div className="area-list">Utility cast here: {utility.map(([a, n]) => `${a} ×${n}`).join(" · ")}</div>}
+      <div className="area-list">Kills and deaths count where the victim fell.</div>
+    </div>
   );
 }
 

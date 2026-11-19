@@ -6,6 +6,7 @@ import { title } from "./format";
 import { FindingsPage } from "./pages/FindingsPage";
 import { MatchupPage } from "./pages/MatchupPage";
 import { OperatorPage } from "./pages/OperatorPage";
+import { PlayerPage } from "./pages/PlayerPage";
 import { PredictPage } from "./pages/PredictPage";
 import { ReplayPage } from "./pages/ReplayPage";
 import { ScoutingPage } from "./pages/ScoutingPage";
@@ -47,6 +48,7 @@ export function App() {
         {selection.tab === "operator" && <OperatorPage selection={selection} teamName={teamName} onNavigate={update} />}
         {selection.tab === "utility" && <UtilityPage selection={selection} teamName={teamName} onNavigate={update} />}
         {selection.tab === "replay" && <ReplayPage selection={selection} teamName={teamName} />}
+        {selection.tab === "player" && <PlayerPage selection={selection} onNavigate={update} />}
         {selection.tab === "matchup" && <MatchupPage selection={selection} meta={meta.data} onNavigate={update} />}
         {selection.tab === "predict" && <PredictPage selection={selection} meta={meta.data} teamName={teamName} />}
       </main>

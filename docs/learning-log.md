@@ -11,6 +11,47 @@ One entry per build step: what we built, the key ideas behind it, how to run it,
 
 ---
 
+## Player pages + draw-on-map area stats (branch `interactive`, 19 Nov 2026)
+
+**What:** click a player's name (Scouting setups, Operator tables) to open their profile: agents, kills by weapon, opening duels, Operator use, utility, and a heatmap of where they shoot, die and cast. In the 2D Replay, **▭ Select an area** lets you drag a box on the map. You get stats for that area, and you can filter the replay to it.
+
+**Key ideas**
+- **A page that isn't a tab:** `player` is in the URL (`?tab=player&player=10636`), so Back works and the link can be shared. It isn't in the tab bar, because you reach it by clicking a name.
+- **Heatmap with additive blending:** each position is a soft radial glow, and the canvas mode `globalCompositeOperation = "lighter"` *adds* overlapping colours. Spots they visit often become bright with no counting code.
+- **Brushing (cross-filtering):** the box is stored in minimap units (0..1). One test, `inArea`, drives both the stats panel and the "only show this area" filter. The box stays correct when the window resizes.
+- **Naming the box:** the nearest callout to the box's centre ("A Site") is the label. That's cheap and good enough.
+- **Read the data's meaning:** a kill mark sits where the *victim* fell, so the panel says so. It's honest about what "fights here" means.
+
+**Read:** `src/nunyaintel/player.py`, `web/src/pages/PlayerPage.tsx`, `AreaStats` in `web/src/pages/ReplayPage.tsx`.
+
+---
+
+## Matchup report: Team A vs Team B (branch `interactive`, 19 Nov 2026)
+
+**What:** a **Matchup** tab. It shows the Elo odds, "where they collide" cards, the map pool with a pick and a ban, the site battle on the chosen map, and every head-to-head map with ▶ replay.
+
+**Key ideas**
+- **Compose, don't re-derive:** `matchup_report.py` only lines up functions that are already tested (Elo, league metrics, map records, site holds). The new code is small, and the numbers match the other pages.
+- **Collisions:** pair a habit with its counter, e.g. A's full-buy losses to ecos vs. B's eco-upset rate. Each side becomes a z-score against the league, flipped so that + means "good for that team". The edge goes to whoever is further in their favour (gap > 0.5).
+- **Pick/ban** = the biggest and smallest round-win gap, counted only when both teams have ≥ 20 rounds on the map (no picks from 1 game).
+- **Example:** Cloud9's favourite attack site on Lotus is A (35%), and A is NRG's weakest hold (30% won). NRG goes C most (36%), and C is Cloud9's weakest hold (33%).
+
+**Read:** `src/nunyaintel/matchup_report.py`, `web/src/pages/MatchupPage.tsx`.
+
+---
+
+## Click-through: every mark opens the Replay (branch `interactive`, 19 Nov 2026)
+
+**What:** plants, lineups, Operator angles and table rows link to the exact round and second in the Replay.
+
+**Key ideas**
+- **A stable key per round:** `"<game_id>:<round_num>"` is sent with every plant, lineup use and angle use.
+- **State in the URL:** `?tab=replay&round=<key>&t=<s>`. The Replay reads it on load, starts 3 s before the moment and plays. Reduced motion turns off the autoplay.
+
+**Read:** `replayAt` in `web/src/useSelection.ts`, the deep-link lines at the top of `Player` in `ReplayPage.tsx`.
+
+---
+
 ## Replay in 3D (branch `replay-3d`, 19 Nov 2026)
 
 **What:** the Replay tab has a **2D / 3D** switch. In 3D the map is a model:
