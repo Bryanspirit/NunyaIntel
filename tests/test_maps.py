@@ -59,3 +59,26 @@ def test_site_of_refuses_to_guess_far_positions(path):
     assert m.site_of(900, 0, max_m=40) == "A"
     assert m.site_of(0, 9000, max_m=40) == "unknown"  # 90 m from both: bad position
     assert m.site_of(0, 9000) in {"A", "B"}  # without a limit it still picks the nearest
+
+
+def test_silhouette_merges_runs_and_drops_rare_cells():
+    from collections import Counter
+
+    from nunyaintel.silhouette import render_svg
+
+    cells = Counter({(0, 0): 5, (1, 0): 5, (2, 0): 5, (5, 0): 3, (9, 9): 1})
+    svg = render_svg(cells, grid=10, min_hits=3)
+    assert '<rect x="0" y="0" width="3" height="1"/>' in svg  # 3 neighbours -> one rectangle
+    assert '<rect x="5" y="0" width="1" height="1"/>' in svg
+    assert 'x="9" y="9"' not in svg  # seen once: probably a bad position, not floor
+
+
+def test_silhouette_clean_removes_specks_and_fills_holes():
+    from nunyaintel.silhouette import clean
+
+    block = {(c, r) for c in range(1, 6) for r in range(1, 6)} - {(3, 3)}  # 5x5 with a pinhole
+    speck = {(9, 9)}
+    out = clean(block | speck, grid=12)
+    assert (3, 3) in out  # pinhole filled
+    assert (9, 9) not in out  # isolated speck dropped
+    assert (1, 1) in out  # a corner of the block has 3 neighbours: kept

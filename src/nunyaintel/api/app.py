@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
-from fastapi.responses import FileResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from nunyaintel import __version__
@@ -197,7 +197,7 @@ def create_app(
         return {
             "name": m.name,
             # served by us (cached locally), so the app works offline; original kept for reference
-            "minimap_url": f"/api/maps/{m.name}/minimap.png",
+            "minimap_url": f"/api/maps/{m.name}/minimap",
             "minimap_source": m.minimap_url,
             "callouts": [
                 {"name": c.name, "super_region": c.super_region, "region": c.region,
@@ -206,24 +206,41 @@ def create_app(
             ],
         }  # fmt: skip
 
-    @app.get("/api/maps/{name}/minimap.png")
-    def minimap(name: str) -> Response:
-        """The minimap image from the local cache, downloading it the first time.
+    @app.get("/api/maps/{name}/minimap")
+    def minimap(name: str, source: str | None = None, con: sqlite3.Connection = db) -> Response:
+        """The map's background image, in order of preference:
 
-        If it isn't cached and the download fails (offline, or a network that blocks the image
-        server), send the browser to the original URL as a last resort.
+        1. the real minimap image, cached locally (downloaded once);
+        2. downloaded now, if the image server is reachable;
+        3. a map drawn from our own position data (``silhouette.py``), cached as SVG. This
+           works fully offline, e.g. behind a firewall that blocks the image server.
         """
+        from nunyaintel import silhouette
+
         m = get_map(name)
         assert m is not None
-        path = minimap_path(m.name, minimap_dir)
-        if not path.exists():
-            try:
-                download_minimap(m, minimap_dir)
-            except OSError:
-                if not m.minimap_url:
-                    raise HTTPException(404, f"No minimap image for {name!r}") from None
-                return RedirectResponse(m.minimap_url, status_code=307)
-        return FileResponse(path, media_type="image/png")
+        png = minimap_path(m.name, minimap_dir)
+        svg = png.with_suffix(".svg")
+        if source == "data":  # ?source=data: always the data-drawn map (to compare / demo)
+            if not svg.exists():
+                svg.parent.mkdir(parents=True, exist_ok=True)
+                svg.write_text(silhouette.build(con, m), encoding="utf-8")
+            return FileResponse(
+                svg, media_type="image/svg+xml", headers={"X-Minimap": "drawn-from-data"}
+            )
+        if png.exists():
+            return FileResponse(png, media_type="image/png")
+        try:
+            download_minimap(m, minimap_dir)
+            return FileResponse(png, media_type="image/png")
+        except OSError:
+            pass
+        if not svg.exists():
+            svg.parent.mkdir(parents=True, exist_ok=True)
+            svg.write_text(silhouette.build(con, m), encoding="utf-8")
+        return FileResponse(
+            svg, media_type="image/svg+xml", headers={"X-Minimap": "drawn-from-data"}
+        )
 
     @app.get("/api/scout")
     def scout(

@@ -139,15 +139,16 @@ def check_minimaps() -> Check:
     if not DEFAULT_PATH.exists():
         return Check("Minimap images", WARN, "map data not downloaded yet", "nunyaintel serve")
     names = sorted(load_maps(DEFAULT_PATH))
-    missing = [n for n in names if not minimap_path(n, MINIMAP_DIR).exists()]
-    if not missing:
-        return Check("Minimap images", OK, f"all {len(names)} cached (works offline)")
+    images = [n for n in names if minimap_path(n, MINIMAP_DIR).exists()]
+    drawn = [n for n in names if n not in images]
+    if not drawn:
+        return Check("Minimap images", OK, f"all {len(names)} real images cached (works offline)")
     return Check(
         "Minimap images", WARN,
-        f"{len(names) - len(missing)} of {len(names)} cached; missing: {', '.join(missing[:5])}"
-        + ("..." if len(missing) > 5 else ""),
-        "nunyaintel serve downloads them; if it can't, the network may be blocking "
-        "media.valorant-api.com (e.g. a VPN or TLS inspection): try another network once",
+        f"{len(images)} of {len(names)} real images cached; the other {len(drawn)} are drawn "
+        "from the data instead (works, but plainer)",
+        "run nunyaintel serve once on a network that reaches media.valorant-api.com "
+        "(a firewall doing TLS inspection, e.g. FortiGate, blocks it)",
     )  # fmt: skip
 
 

@@ -113,7 +113,7 @@ def test_meta(client):
 
 def test_map_info(client):
     j = client.get("/api/maps/TESTMAP").json()
-    assert j["minimap_url"] == "/api/maps/testmap/minimap.png"  # served by us, works offline
+    assert j["minimap_url"] == "/api/maps/testmap/minimap"  # served by us, works offline
     assert j["minimap_source"].endswith("testmap.png")
     site_a = next(c for c in j["callouts"] if c["name"] == "A Site")
     assert (site_a["u"], site_a["v"]) == pytest.approx((0.5, 0.4))  # u from y, v from x
@@ -273,14 +273,14 @@ def test_minimap_served_from_local_cache(paths, tmp_path, monkeypatch):
     db, maps = paths
     cache = tmp_path / "minimaps"
     cache.mkdir()
-    png = b"\x89PNG\r\n\x1a\n fake image"
+    png = b"PNG-BYTES-PLACEHOLDER"
     (cache / "testmap.png").write_bytes(png)
     client = TestClient(create_app(db_path=db, maps_path=maps, minimap_dir=cache))
-    r = client.get("/api/maps/testmap/minimap.png")
+    r = client.get("/api/maps/testmap/minimap")
     assert r.status_code == 200 and r.headers["content-type"] == "image/png"
     assert r.content == png
 
-    # not cached and the download fails (offline / blocked network): fall back to the source
+    # not cached and the download fails (offline / firewall): draw the map from the data
     (cache / "testmap.png").unlink()
 
     def offline(*args, **kwargs):
@@ -288,6 +288,8 @@ def test_minimap_served_from_local_cache(paths, tmp_path, monkeypatch):
 
     monkeypatch.setattr(app_module, "download_minimap", offline)
     client = TestClient(create_app(db_path=db, maps_path=maps, minimap_dir=cache))
-    r = client.get("/api/maps/testmap/minimap.png", follow_redirects=False)
-    assert r.status_code == 307 and r.headers["location"].endswith("testmap.png")
-    assert client.get("/api/maps/nowhere/minimap.png").status_code == 404
+    r = client.get("/api/maps/testmap/minimap")
+    assert r.status_code == 200 and r.headers["content-type"].startswith("image/svg+xml")
+    assert r.headers["x-minimap"] == "drawn-from-data" and r.text.startswith("<svg")
+    assert (cache / "testmap.svg").exists()  # cached for next time
+    assert client.get("/api/maps/nowhere/minimap").status_code == 404
