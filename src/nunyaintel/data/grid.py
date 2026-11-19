@@ -64,9 +64,7 @@ class GridRepo:
     def series_for_team(self, team_id: str) -> list[str]:
         """Series IDs a team played in, using meta/games.csv (join on team ID, not name)."""
         ids = {
-            g["series_id"]
-            for g in self.meta("games")
-            if team_id in (g["team1_id"], g["team2_id"])
+            g["series_id"] for g in self.meta("games") if team_id in (g["team1_id"], g["team2_id"])
         }
         return sorted(ids)
 
