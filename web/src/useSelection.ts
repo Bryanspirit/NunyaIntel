@@ -4,8 +4,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-export type Tab = "findings" | "scouting" | "operator" | "utility" | "replay" | "predict";
-export const TABS: Tab[] = ["findings", "scouting", "operator", "utility", "replay", "predict"];
+export type Tab = "findings" | "scouting" | "operator" | "utility" | "replay" | "matchup" | "predict";
+export const TABS: Tab[] = ["findings", "scouting", "operator", "utility", "replay", "matchup", "predict"];
 
 export interface Selection {
   team: string; // team id
@@ -15,9 +15,10 @@ export interface Selection {
   tab: Tab;
   round: string; // "" = none, else "<game_id>:<round_num>": a deep link into the Replay
   t: string; // "" = none, else seconds from the buy-phase end
+  opp: string; // "" = most frequent opponent, else the opponent's team id (Matchup tab)
 }
 
-const DEFAULTS: Selection = { team: "79", map: "", side: "", since: "", tab: "findings", round: "", t: "" };
+const DEFAULTS: Selection = { team: "79", map: "", side: "", since: "", tab: "findings", round: "", t: "", opp: "" };
 
 function read(): Selection {
   const q = new URLSearchParams(window.location.search);
@@ -30,6 +31,7 @@ function read(): Selection {
     tab: TABS.includes(tab as Tab) ? (tab as Tab) : DEFAULTS.tab,
     round: q.get("round") ?? "",
     t: q.get("t") ?? "",
+    opp: q.get("opp") ?? "",
   };
 }
 

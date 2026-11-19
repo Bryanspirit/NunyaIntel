@@ -382,3 +382,47 @@ export interface Replay {
   t_min: number;
   t_max: number;
 }
+
+// ---- /api/matchup-report ----------------------------------------------------------------
+
+export interface CollisionSide {
+  key: string;
+  label: string;
+  hits: number;
+  n: number;
+  rate: number;
+  league_rate: number | null;
+  z: number;
+  good_z: number; // positive = in this team's favour
+  enough: boolean; // enough rounds to compare with the league
+}
+
+export interface MapPoolSide {
+  games: number;
+  games_won: number;
+  rounds: number;
+  round_win_rate: number;
+  attack: number;
+  defense: number;
+}
+
+export interface SiteBattleRow {
+  site: string;
+  attack_share: number;
+  attack_win: number;
+  attack_n: number;
+  hold_win: number | null;
+  hold_n: number;
+}
+
+export interface MatchupReport {
+  a: { id: string; name: string };
+  b: { id: string; name: string };
+  elo: Matchup;
+  collisions: { label: string; a: CollisionSide; b: CollisionSide; edge: "a" | "b" | "even" | null }[];
+  map_pool: { map: string; a: MapPoolSide | null; b: MapPoolSide | null; gap: number | null }[];
+  pick: string | null;
+  ban: string | null;
+  sites: { a_attacks: SiteBattleRow[]; b_attacks: SiteBattleRow[] } | null;
+  head_to_head: { game_id: string; date: string; map: string; winner: "a" | "b"; score_a: number; score_b: number; first_round: string }[];
+}

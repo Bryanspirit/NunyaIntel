@@ -51,7 +51,7 @@ def paths(tmp_path):
     con.execute("CREATE TABLE meta_players (player_id TEXT, name TEXT)")
     con.execute(
         "CREATE TABLE meta_games (game_id TEXT, map TEXT, started_at TEXT, "
-        "team1_id TEXT, team2_id TEXT, winner_team_id TEXT)"
+        "team1_id TEXT, team2_id TEXT, winner_team_id TEXT, team1_score TEXT, team2_score TEXT)"
     )
     con.execute("CREATE TABLE meta_series (series_id TEXT, event TEXT)")
     _insert(con, "meta_teams", team_id="A", name="Alpha", series_count="2",
@@ -63,7 +63,8 @@ def paths(tmp_path):
     for i, series in enumerate(("s1", "s2"), 1):
         game = f"g{i}"
         _insert(con, "meta_games", game_id=game, map="Testmap", started_at=f"2025-0{i}-01",
-                team1_id="A", team2_id="B", winner_team_id="A")  # fmt: skip
+                team1_id="A", team2_id="B", winner_team_id="A",
+                team1_score="13", team2_score="7")  # fmt: skip
         _insert(con, "meta_series", series_id=series, event="Test Cup 2026")
         for num, winner in ((1, "A"), (2, "B")):
             buy_end = f"2025-0{i}-01T10:0{num}:00.000Z"
@@ -332,3 +333,17 @@ def test_map_floor(client):
     j = client.get("/api/maps/testmap/floor").json()
     assert j["map"] == "testmap" and j["grid"] > 0 and isinstance(j["runs"], list)
     assert client.get("/api/maps/nowhere/floor").status_code == 404
+
+
+def test_matchup_report(client, paths, tmp_path):
+    db, maps = paths
+    app = TestClient(create_app(db_path=db, maps_path=maps, baselines_path=tmp_path / "b.json"))
+    j = app.get("/api/matchup-report", params={"team": "A", "map": "testmap"}).json()
+    assert (j["a"]["name"], j["b"]["name"]) == ("Alpha", "Bravo")  # most frequent opponent
+    assert "p_a_wins_map" in j["elo"]
+    assert {c["label"] for c in j["collisions"]} >= {"Pistol rounds"}
+    assert [m["map"] for m in j["map_pool"]] == ["testmap"]
+    assert j["sites"] is not None and j["sites"]["a_attacks"][0]["site"] == "A"
+    assert len(j["head_to_head"]) == 2 and j["head_to_head"][0]["first_round"].endswith(":1")
+    explicit = app.get("/api/matchup-report", params={"team": "A", "opponent": "Bravo"})
+    assert explicit.status_code == 200 and explicit.json()["sites"] is None  # no map chosen

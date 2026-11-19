@@ -105,7 +105,7 @@ function MatchupSection({ selection, meta }: { selection: Selection; meta: Meta 
   );
 }
 
-function TeamSide({ side, align }: { side: RatingSide; align: "left" | "right" }) {
+export function TeamSide({ side, align }: { side: RatingSide; align: "left" | "right" }) {
   return (
     <div className={`versus-team ${align}`}>
       <div className="versus-name">{side.name}</div>

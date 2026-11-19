@@ -371,6 +371,24 @@ def create_app(
             **timeline.replay(con, tm["id"], m, side=side, since=since),
         }
 
+    @app.get("/api/matchup-report")
+    def matchup_report(
+        team: str,
+        opponent: str | None = None,
+        map: str | None = None,
+        since: str | None = None,
+        con: sqlite3.Connection = db,
+    ) -> dict[str, Any]:
+        """Two teams side by side: Elo, habit collisions, map pool, sites, head-to-head."""
+        from nunyaintel import matchup_report as mr
+        from nunyaintel import predict
+
+        a = _team(con, team)["id"]
+        b = _team(con, opponent)["id"] if opponent else predict.frequent_opponent(con, a)
+        if b is None:
+            raise HTTPException(404, "No opponent found for this team")
+        return mr.report(con, a, b, map_info=get_map(map), since=since)
+
     @app.get("/api/predict/matchup")
     def predict_matchup(
         team: str, opponent: str | None = None, con: sqlite3.Connection = db
