@@ -7,11 +7,13 @@ import { MapArrow, Minimap } from "../components/Minimap";
 import { Empty, WinBar } from "../components/ui";
 import { pct, secs, SIDE_COLOR, SIDE_LABEL, title } from "../format";
 import { useApi } from "../useApi";
-import type { Selection } from "../useSelection";
+import { replayAt, type Selection } from "../useSelection";
+
+type Nav = (change: Partial<Selection>) => void;
 
 const ECONOMY = ["pistol", "eco", "semi-eco", "semi-buy", "full-buy"];
 
-export function OperatorPage({ selection, teamName }: { selection: Selection; teamName: string }) {
+export function OperatorPage({ selection, teamName, onNavigate }: { selection: Selection; teamName: string; onNavigate: Nav }) {
   const op = useApi<Operator>(
     apiUrl("/operator", { team: selection.team, map: selection.map, min_op_rounds: 1 }),
   );
@@ -155,7 +157,7 @@ export function OperatorPage({ selection, teamName }: { selection: Selection; te
       )}
 
       {selection.map ? (
-        <AnglesSection selection={selection} index={section++} />
+        <AnglesSection selection={selection} index={section++} onNavigate={onNavigate} />
       ) : (
         <p className="muted">Pick a map to see where Operator players hold angles.</p>
       )}
@@ -163,7 +165,7 @@ export function OperatorPage({ selection, teamName }: { selection: Selection; te
   );
 }
 
-function AnglesSection({ selection, index }: { selection: Selection; index: number }) {
+function AnglesSection({ selection, index, onNavigate }: { selection: Selection; index: number; onNavigate: Nav }) {
   const [highlight, setHighlight] = useState<number | null>(null);
   const mapInfo = useApi<MapInfo>(apiUrl(`/maps/${selection.map}`));
   const angles = useApi<OpAngles>(
@@ -191,12 +193,14 @@ function AnglesSection({ selection, index }: { selection: Selection; index: numb
             {rows.map((a, i) => (
               <MapArrow key={i} u={a.u} v={a.v} u2={a.target_u} v2={a.target_v} color={SIDE_COLOR[a.side]}
                 width={highlight === i ? 5 : 2.5} opacity={highlight === null || highlight === i ? 0.95 : 0.2}
-                delay={markDelay(i, 70)} title={`${a.name}: ${a.from_region} → ${a.to_region}, ${a.kills} kills`} />
+                delay={markDelay(i, 70)}
+                onClick={a.uses[0] ? () => onNavigate(replayAt(a.uses[0][0], a.uses[0][1])) : undefined}
+                title={`${a.name}: ${a.from_region} → ${a.to_region}, ${a.kills} kills`} />
             ))}
           </Minimap>
           <table>
             <thead>
-              <tr><th className="left">Player</th><th className="left">From → to</th><th>Kills</th><th>Matches</th><th>Dist</th><th>When</th></tr>
+              <tr><th className="left">Player</th><th className="left">From → to</th><th>Kills</th><th>Matches</th><th>Dist</th><th>When</th><th /></tr>
             </thead>
             <tbody>
               {rows.map((a, i) => (
@@ -211,6 +215,12 @@ function AnglesSection({ selection, index }: { selection: Selection; index: numb
                   <td>{a.series}</td>
                   <td>{a.median_distance_m.toFixed(0)} m</td>
                   <td>{secs(a.median_time_s)}</td>
+                  <td>
+                    {a.uses[0] && (
+                      <button className="replay-link" title="Replay a round with this angle"
+                        onClick={() => onNavigate(replayAt(a.uses[0][0], a.uses[0][1]))}>▶</button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

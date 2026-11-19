@@ -59,11 +59,15 @@ function ReplayForMap({ selection, teamName }: { selection: Selection; teamName:
 
 function Player({ replay, map, teamName, selection }: { replay: Replay; map: MapInfo; teamName: string; selection: Selection }) {
   const reduced = useReducedMotion();
-  const [t, setT] = useState(-5);
-  const [playing, setPlaying] = useState(false); // never autoplay
+  // deep link (?round=<game>:<round>&t=<s>): open that round, 3 s before the moment, and play it.
+  // Playing is fine here: the viewer just clicked "replay this". Reduced motion: don't autoplay.
+  const linked = replay.rounds.find((r) => r.key === selection.round);
+  const linkedT = selection.t ? Number(selection.t) : null;
+  const [t, setT] = useState(linked && linkedT !== null ? Math.max(replay.t_min, linkedT - 3) : -5);
+  const [playing, setPlaying] = useState(Boolean(linked) && !reduced);
   const [speed, setSpeed] = useState(2);
   const [mode, setMode] = useState<"live" | "buildup">("live");
-  const [round, setRound] = useState<number | "all">("all");
+  const [round, setRound] = useState<number | "all">(linked ? linked.i : "all");
   const [layers, setLayers] = useState<Record<ReplayKind, boolean>>({ kill: true, death: true, util: true, plant: true, defuse: true });
   const [hover, setHover] = useState<{ x: number; y: number; e: ReplayEvent } | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);

@@ -7,11 +7,11 @@ import { PlantMap } from "../components/PlantMap";
 import { Empty, WinBar } from "../components/ui";
 import { nice, pct, secs, SIDE_LABEL, title, WIN_TYPE_LABEL } from "../format";
 import { useApi } from "../useApi";
-import type { Selection } from "../useSelection";
+import { replayAt, type Selection } from "../useSelection";
 
 const SIDES: Side[] = ["attacker", "defender"];
 
-export function ScoutingPage({ selection }: { selection: Selection }) {
+export function ScoutingPage({ selection, onNavigate }: { selection: Selection; onNavigate: (c: Partial<Selection>) => void }) {
   const { data, error, loading } = useApi<Scout>(
     apiUrl("/scout", { team: selection.team, map: selection.map, since: selection.since }),
   );
@@ -86,9 +86,10 @@ export function ScoutingPage({ selection }: { selection: Selection }) {
       </Panel>
 
       {selection.map && data.sites && (
-        <Panel title="Spike plants and sites" index={section++} aside="red = their plants · blue = opponents' · hollow = planting team lost">
+        <Panel title="Spike plants and sites" index={section++} aside="red = their plants · blue = opponents' · hollow = planting team lost · click a plant to replay that round">
           <div className="grid-2">
-            <PlantMap map={selection.map} plants={data.sites.plants} side={selection.side} teamName={data.team.name} />
+            <PlantMap map={selection.map} plants={data.sites.plants} side={selection.side} teamName={data.team.name}
+              onOpen={(key, t) => onNavigate(replayAt(key, t))} />
             <div>
               {(!selection.side || selection.side === "attacker") && (
                 <SiteTable title={`Attack: where ${data.team.name} plants`} rows={data.sites.attack}

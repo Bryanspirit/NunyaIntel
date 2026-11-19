@@ -66,6 +66,7 @@ export interface SiteRow extends Rec {
 }
 
 export interface Plant extends UV {
+  key: string; // "<game_id>:<round_num>" for "open in Replay"
   side: Side;
   won: boolean;
   site: string;
@@ -180,6 +181,7 @@ export interface OpAngle extends UV {
   target_y: number;
   target_u: number;
   target_v: number;
+  uses: [string, number][]; // [round key, seconds] of its shots
 }
 
 export interface OpAngles {
@@ -225,6 +227,7 @@ export interface Lineup extends UV {
   aim_u: number;
   aim_v: number;
   region: string;
+  uses: [string, number][]; // [round key, seconds], newest first
   // U3 scores (present when score=true, the default)
   baseline?: number;
   adjusted_win_rate?: number;
@@ -361,6 +364,7 @@ export type ReplayEvent = [number, number, ReplayKind, number, number, number | 
 
 export interface ReplayRound {
   i: number;
+  key: string; // "<game_id>:<round_num>"
   date: string;
   opponent: string;
   round: number;

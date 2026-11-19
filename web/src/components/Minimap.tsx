@@ -83,13 +83,15 @@ interface DotProps {
   opacity?: number;
   /** entrance delay in ms (staggered animation) */
   delay?: number;
+  /** makes the mark clickable (e.g. "open this round in the Replay") */
+  onClick?: () => void;
 }
 
-export function MapDot({ u, v, color, hollow = false, r = 7, title, opacity = 0.85, delay = 0 }: DotProps) {
+export function MapDot({ u, v, color, hollow = false, r = 7, title, opacity = 0.85, delay = 0, onClick }: DotProps) {
   // className "pop" + --delay: dots pop in one after another (broadcast.css; off for reduced motion)
   return (
     <circle cx={u * SIZE} cy={v * SIZE} r={r} fill={hollow ? "none" : color} stroke={color}
-      strokeWidth={hollow ? 2.5 : 1} opacity={opacity} className="pop"
+      strokeWidth={hollow ? 2.5 : 1} opacity={opacity} className={onClick ? "pop clickable" : "pop"} onClick={onClick}
       style={{ "--delay": `${delay}ms` } as CSSProperties}>
       {title && <title>{title}</title>}
     </circle>
@@ -106,10 +108,11 @@ interface ArrowProps {
   title?: string;
   opacity?: number;
   delay?: number;
+  onClick?: () => void;
 }
 
 /** A line from (u, v) to (u2, v2) with an arrowhead at the end and a dot at the start. */
-export function MapArrow({ u, v, u2, v2, color, width = 3, title, opacity = 0.9, delay = 0 }: ArrowProps) {
+export function MapArrow({ u, v, u2, v2, color, width = 3, title, opacity = 0.9, delay = 0, onClick }: ArrowProps) {
   const [x1, y1, x2, y2] = [u * SIZE, v * SIZE, u2 * SIZE, v2 * SIZE];
   // Arrowhead = a triangle at the tip. (dx, dy) is the unit vector along the line; (-dy, dx)
   // is perpendicular to it, which gives the two back corners of the triangle.
@@ -123,7 +126,7 @@ export function MapArrow({ u, v, u2, v2, color, width = 3, title, opacity = 0.9,
     [back[0] + dy * head * 0.5, back[1] - dx * head * 0.5],
   ];
   return (
-    <g opacity={opacity}>
+    <g opacity={opacity} onClick={onClick} className={onClick ? "clickable" : undefined}>
       {title && <title>{title}</title>}
       {/* pathLength=1 lets CSS "draw" the line from 0 to 1 regardless of its real length */}
       <line x1={x1} y1={y1} x2={back[0]} y2={back[1]} stroke={color} strokeWidth={width} strokeLinecap="round"

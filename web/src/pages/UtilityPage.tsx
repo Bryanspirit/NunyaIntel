@@ -7,14 +7,16 @@ import { MapArrow, Minimap } from "../components/Minimap";
 import { Empty, WinBar } from "../components/ui";
 import { nice, pct, secs, SIDE_COLOR, SIDE_LABEL, title } from "../format";
 import { useApi } from "../useApi";
-import type { Selection } from "../useSelection";
+import { replayAt, type Selection } from "../useSelection";
 
-export function UtilityPage({ selection, teamName }: { selection: Selection; teamName: string }) {
+type Nav = (change: Partial<Selection>) => void;
+
+export function UtilityPage({ selection, teamName, onNavigate }: { selection: Selection; teamName: string; onNavigate: Nav }) {
   if (!selection.map) return <Empty>Pick a map to see how {teamName} uses its utility.</Empty>;
-  return <UtilityForMap key={`${selection.team}|${selection.map}|${selection.side}`} selection={selection} teamName={teamName} />;
+  return <UtilityForMap key={`${selection.team}|${selection.map}|${selection.side}`} selection={selection} teamName={teamName} onNavigate={onNavigate} />;
 }
 
-function UtilityForMap({ selection, teamName }: { selection: Selection; teamName: string }) {
+function UtilityForMap({ selection, teamName, onNavigate }: { selection: Selection; teamName: string; onNavigate: Nav }) {
   const util = useApi<Utility>(
     apiUrl("/utility", { map: selection.map, team: selection.team, side: selection.side }),
   );
@@ -39,7 +41,7 @@ function UtilityForMap({ selection, teamName }: { selection: Selection; teamName
         ]}
       />
 
-      <LineupsSection selection={selection} index={0} />
+      <LineupsSection selection={selection} index={0} onNavigate={onNavigate} />
 
       <Panel title="Every ability" index={1} aside="time from the end of the buy phase: negative = set up before the round starts">
         <table>
@@ -67,7 +69,7 @@ function UtilityForMap({ selection, teamName }: { selection: Selection; teamName
   );
 }
 
-function LineupsSection({ selection, index }: { selection: Selection; index: number }) {
+function LineupsSection({ selection, index, onNavigate }: { selection: Selection; index: number; onNavigate: Nav }) {
   const [highlight, setHighlight] = useState<number | null>(null);
   const mapInfo = useApi<MapInfo>(apiUrl(`/maps/${selection.map}`));
   const lineups = useApi<Lineups>(
@@ -80,7 +82,7 @@ function LineupsSection({ selection, index }: { selection: Selection; index: num
 
   return (
     <Panel title="Lineups: repeated setups, best score first" index={index}
-      aside={`${lineups.data.lineups.length} lineups: same ability, same spot (±1.5 m) and aim (±10°), in 2+ matches · hover a row`}>
+      aside={`${lineups.data.lineups.length} lineups: same ability, same spot (±1.5 m) and aim (±10°), in 2+ matches · hover a row · ▶ or click an arrow to replay it`}>
       {rows.length === 0 ? (
         <Empty>No repeated lineups with these filters.</Empty>
       ) : (
@@ -96,6 +98,7 @@ function LineupsSection({ selection, index }: { selection: Selection; index: num
               <MapArrow key={i} u={l.u} v={l.v} u2={l.aim_u} v2={l.aim_v} color={SIDE_COLOR[l.side]}
                 width={highlight === i ? 5 : 2.5} opacity={highlight === null || highlight === i ? 0.95 : 0.15}
                 delay={markDelay(i, 45)}
+                onClick={l.uses[0] ? () => onNavigate(replayAt(l.uses[0][0], l.uses[0][1])) : undefined}
                 title={`${nice(l.agent)} ${nice(l.ability)} from ${l.region}: ${l.casts} casts, ${pct(l.round_win_rate)} rounds won`} />
             ))}
           </Minimap>
@@ -103,7 +106,7 @@ function LineupsSection({ selection, index }: { selection: Selection; index: num
             <thead>
               <tr>
                 <th className="left">Agent / ability</th><th className="left">Spot</th><th>Rounds</th>
-                <th>Win %</th><th>Usual</th><th title="win % lift vs. usual, shrunk for small samples">Score</th>
+                <th>Win %</th><th>Usual</th><th title="win % lift vs. usual, shrunk for small samples">Score</th><th />
               </tr>
             </thead>
             <tbody>
@@ -120,6 +123,12 @@ function LineupsSection({ selection, index }: { selection: Selection; index: num
                   <td><WinBar rate={l.round_win_rate} played={l.rounds} /></td>
                   <td>{pct(l.baseline)}</td>
                   <td className="score">{l.score !== undefined ? `${l.score >= 0 ? "+" : ""}${(l.score * 100).toFixed(1)}` : "–"}</td>
+                  <td>
+                    {l.uses[0] && (
+                      <button className="replay-link" title="Replay the latest round it was used"
+                        onClick={() => onNavigate(replayAt(l.uses[0][0], l.uses[0][1]))}>▶</button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

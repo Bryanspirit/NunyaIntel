@@ -29,7 +29,7 @@ export function App() {
 
       <nav className="tabs">
         {TABS.map((tab) => (
-          <button key={tab} className={tab === selection.tab ? "tab active" : "tab"} onClick={() => update({ tab })}>
+          <button key={tab} className={tab === selection.tab ? "tab active" : "tab"} onClick={() => update({ tab, round: "", t: "" })}>
             {tab === "findings" ? "Key findings" : tab === "predict" ? "Predict" : title(tab)}
           </button>
         ))}
@@ -42,9 +42,9 @@ export function App() {
           </p>
         )}
         {selection.tab === "findings" && <FindingsPage selection={selection} onNavigate={update} />}
-        {selection.tab === "scouting" && <ScoutingPage selection={selection} />}
-        {selection.tab === "operator" && <OperatorPage selection={selection} teamName={teamName} />}
-        {selection.tab === "utility" && <UtilityPage selection={selection} teamName={teamName} />}
+        {selection.tab === "scouting" && <ScoutingPage selection={selection} onNavigate={update} />}
+        {selection.tab === "operator" && <OperatorPage selection={selection} teamName={teamName} onNavigate={update} />}
+        {selection.tab === "utility" && <UtilityPage selection={selection} teamName={teamName} onNavigate={update} />}
         {selection.tab === "replay" && <ReplayPage selection={selection} teamName={teamName} />}
         {selection.tab === "predict" && <PredictPage selection={selection} meta={meta.data} teamName={teamName} />}
       </main>

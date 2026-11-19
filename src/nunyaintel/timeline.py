@@ -120,6 +120,7 @@ def replay(
         "rounds": [
             {
                 "i": i,
+                "key": f"{r.game_id}:{r.round_num}",  # stable id for links: ?round=<key>
                 "date": r.game_started_at[:10],
                 "opponent": names.get(r.opponent_id, r.opponent_id),
                 "round": r.round_num,

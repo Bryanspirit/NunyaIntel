@@ -13,9 +13,11 @@ export interface Selection {
   side: string; // "" = both sides
   since: string; // "" = all dates, else YYYY-MM-DD
   tab: Tab;
+  round: string; // "" = none, else "<game_id>:<round_num>": a deep link into the Replay
+  t: string; // "" = none, else seconds from the buy-phase end
 }
 
-const DEFAULTS: Selection = { team: "79", map: "", side: "", since: "", tab: "findings" };
+const DEFAULTS: Selection = { team: "79", map: "", side: "", since: "", tab: "findings", round: "", t: "" };
 
 function read(): Selection {
   const q = new URLSearchParams(window.location.search);
@@ -26,6 +28,8 @@ function read(): Selection {
     side: q.get("side") ?? DEFAULTS.side,
     since: q.get("since") ?? DEFAULTS.since,
     tab: TABS.includes(tab as Tab) ? (tab as Tab) : DEFAULTS.tab,
+    round: q.get("round") ?? "",
+    t: q.get("t") ?? "",
   };
 }
 
@@ -51,3 +55,10 @@ export function useSelection(): [Selection, (change: Partial<Selection>) => void
 
   return [selection, update];
 }
+
+/** Link target for "open this moment in the Replay". */
+export const replayAt = (key: string, t: number): Partial<Selection> => ({
+  tab: "replay",
+  round: key,
+  t: String(Math.round(t * 10) / 10),
+});

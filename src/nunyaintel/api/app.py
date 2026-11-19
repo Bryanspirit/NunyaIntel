@@ -312,7 +312,8 @@ def create_app(
                 "attack": site_rows(rep.attack),
                 "defense": site_rows(rep.defense),
                 "plants": [
-                    {"side": p.side, "won": p.won, "site": p.site, "time_s": p.time_s,
+                    {"key": f"{p.game_id}:{p.round_num}", "side": p.side, "won": p.won,
+                     "site": p.site, "time_s": p.time_s,
                      "by_us": p.planter_team_id == tm["id"], "x": p.x, "y": p.y,
                      **_uv(m, p.x, p.y)}
                     for p in sites.plants(con, rounds, m)
@@ -457,7 +458,9 @@ def create_app(
                  "median_distance_m": a.median_distance_m, "median_time_s": a.median_time_s,
                  "x": x, "y": y, **_uv(m, x, y),
                  "target_x": tx, "target_y": ty,
-                 "target_u": target["u"], "target_v": target["v"]}
+                 "target_u": target["u"], "target_v": target["v"],
+                 "uses": [[f"{sh.game_id}:{sh.round_num}", round(sh.time_s or 0, 1)]
+                          for sh in a.shots[:20]]}
             )  # fmt: skip
         return {"map": m.name, "shots": len(shots), "angles": rows}
 
@@ -517,6 +520,11 @@ def create_app(
                 "yaw_deg": lu.yaw_deg, "x": lu.x, "y": lu.y, "z": lu.z, **_uv(m, lu.x, lu.y),
                 "aim_u": aim["u"], "aim_v": aim["v"],
                 "region": m.region_of(lu.x, lu.y).name,
+                # where it was used, for "open in Replay": [round key, seconds], newest first
+                "uses": [
+                    [f"{u.game_id}:{u.round_num}", round(u.time_s or 0, 1)]
+                    for u in sorted(lu.members, key=lambda u: u.occurred_at, reverse=True)[:20]
+                ],
             }  # fmt: skip
             s = scored.get(id(lu))
             if s is not None:

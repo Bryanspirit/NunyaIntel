@@ -11,13 +11,15 @@ const US = "#ff4655"; // our plants (we attacked)
 const THEM = "#4fc3f7"; // their plants (we defended)
 
 interface Props {
+  /** click a plant to open that round in the Replay */
+  onOpen?: (key: string, t: number) => void;
   map: string;
   plants: Plant[];
   side: string; // "" = both, else only rounds where the scouted team was on this side
   teamName: string;
 }
 
-export function PlantMap({ map, plants, side, teamName }: Props) {
+export function PlantMap({ map, plants, side, teamName, onOpen }: Props) {
   const mapInfo = useApi<MapInfo>(apiUrl(`/maps/${map}`));
   if (mapInfo.error) return <p className="error">{mapInfo.error}</p>;
   if (!mapInfo.data) return <p className="muted">Loading map…</p>;
@@ -41,13 +43,14 @@ export function PlantMap({ map, plants, side, teamName }: Props) {
           <MapDot
             key={i}
             delay={markDelay(i, 4)}
+            onClick={onOpen ? () => onOpen(p.key, p.time_s ?? 0) : undefined}
             u={p.u}
             v={p.v}
             color={color}
             hollow={!planterWon}
             title={`${p.by_us ? teamName : "Opponent"} planted ${p.site} at ${secs(p.time_s)}, ${
               planterWon ? "won" : "lost"
-            } the round`}
+            } the round${onOpen ? " (click to replay)" : ""}`}
           />
         );
       })}
