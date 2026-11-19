@@ -11,6 +11,31 @@ One entry per build step: what we built, the key ideas behind it, how to run it,
 
 ---
 
+## UI: broadcast-style redesign (branch `ui-broadcast`, 19 Nov 2026)
+
+**What:** every page now uses an original sports-broadcast look:
+- condensed display type (Barlow Condensed, bundled so it works offline);
+- angled scoreboard banners with count-up stats, and angled stat tiles with glowing good/bad stripes;
+- sections that slide in one after another;
+- win bars that grow in, minimap dots that pop in, and arrows that draw themselves.
+
+**Key ideas**
+- **A small design system:** `PageHero`, `BigStat`, `Panel` (in `components/broadcast.tsx`) plus `CountUp`/`Reveal` (in `components/motion.tsx`). Every page is built from the same few pieces, so the look stays consistent and each page stays short.
+- **Motion with restraint:** easing (fast, then settling), short staggers, and `prefers-reduced-motion` support. If the viewer's system asks for less motion, numbers appear instantly and nothing slides.
+- **The design must carry the evidence rule too:** a big green "75%" says "strength" louder than a small "6 of 8" caption. So any number behind fewer than 30 rounds/duels (the same threshold as `verify-claims`) loses its colour and gets a **SMALL SAMPLE** tag.
+- **Bugs a type checker can't see:**
+  - a count formatter turned 0.51 kills/round into **"1"** (fixed with a `decimal` format);
+  - a tile would have shown the no-plant *win rate* (3%) as the no-plant *share* (23%);
+  - a CSS rule `.hero-stat span` also shrank the number nested inside (a space means *any descendant*; `>` means *direct child*).
+- **Don't depend on the internet at demo time:** the minimap images came from an outside server. Today a network with TLS inspection made it unreachable ("certificate chain issued by an authority that is not trusted"). We did **not** switch off certificate checks. Instead, minimaps are cached in `data/cache/minimaps/`, served by our API (`/api/maps/{map}/minimap.png`), downloaded in the background at `serve`, and fall back to the original URL. `doctor` reports how many are cached.
+- **Maps drawn from the data (no internet needed):** the firewall turned out to be a **FortiGate doing TLS "deep inspection"** (the certificate presented for valorant-api.com was issued by Fortinet). Certificate checks stay on. Instead, when the real image can't be fetched, the server **draws the map from the data**: 400k–700k recorded positions per map are projected into minimap coordinates, binned into a 160×160 grid, and cells with 3+ positions become floor. Then a **neighbour filter** drops isolated specks (< 3 floor neighbours) and fills pinholes (6+ floor neighbours). Horizontal runs merge into one rectangle each, giving SVGs of only 20–40 KB. The drawn Lotus matches the real Lotus image, which independently confirms our coordinate conversion. Order of preference: cached image → download → drawn map. `?source=data` forces the drawn version.
+- **Escaping pitfalls:** writing `` or `
+` through a shell *and* a Python string lost the backslashes twice, putting invisible characters into the code. The linter caught it. Building the backslash from its code point (`chr(92)`), or editing the file directly, avoids the problem.
+
+**Read:** `web/src/components/broadcast.tsx`, `web/src/components/motion.tsx`, `web/src/broadcast.css`, `minimap()` in `src/nunyaintel/api/app.py`.
+
+---
+
 ## P4: Making every view fast (19 Nov 2026)
 
 **What:** every page now answers in **under 1 s from scratch** (the slowest view, Cloud9's Lotus lineups, takes 0.75 s, down from 1.56 s) and in **~2 ms** when cached. `serve` pre-loads the demo's Cloud9 / Cloud9 GC views in ~5 s in the background.

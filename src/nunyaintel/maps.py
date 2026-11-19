@@ -25,6 +25,9 @@ from nunyaintel.config import DATA_DIR
 
 MAPS_URL = "https://valorant-api.com/v1/maps"
 DEFAULT_PATH = DATA_DIR / "cache" / "maps.json"
+# Minimap images, downloaded once so the app works offline (and when a network blocks the
+# image server: on 19 Nov a TLS-inspecting network made media.valorant-api.com unreachable).
+MINIMAP_DIR = DATA_DIR / "cache" / "minimaps"
 
 
 @dataclass(frozen=True, slots=True)
@@ -107,6 +110,43 @@ def download(path: Path = DEFAULT_PATH) -> Path:
     with urllib.request.urlopen(request, timeout=60) as response:
         path.write_bytes(response.read())
     return path
+
+
+def minimap_path(name: str, directory: Path = MINIMAP_DIR) -> Path:
+    return directory / f"{name.lower()}.png"
+
+
+def download_minimap(info: MapInfo, directory: Path = MINIMAP_DIR, timeout: float = 15) -> Path:
+    """Fetch one minimap image into the local cache. Raises OSError on any network problem.
+
+    Certificate checks stay on: a network that breaks HTTPS gets an error, not a silent bypass.
+    """
+    if not info.minimap_url:
+        raise OSError(f"no minimap URL for {info.name}")
+    request = urllib.request.Request(info.minimap_url, headers={"User-Agent": "nunyaintel"})
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        data = response.read()
+    if not data.startswith(b"\x89PNG"):  # every PNG file starts with these bytes
+        raise OSError(f"{info.name}: not a PNG image")
+    directory.mkdir(parents=True, exist_ok=True)
+    target = minimap_path(info.name, directory)
+    target.write_bytes(data)
+    return target
+
+
+def cache_minimaps(maps_path: Path | None = None, directory: Path = MINIMAP_DIR) -> dict[str, str]:
+    """Download every minimap not cached yet. Returns {map: "cached" / "downloaded" / error}."""
+    result = {}
+    for name, info in load_maps(maps_path or DEFAULT_PATH).items():
+        if minimap_path(name, directory).exists():
+            result[name] = "cached"
+            continue
+        try:
+            download_minimap(info, directory)
+            result[name] = "downloaded"
+        except OSError as exc:
+            result[name] = f"failed: {exc}"
+    return result
 
 
 @cache

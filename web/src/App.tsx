@@ -13,6 +13,7 @@ import { TABS, useSelection } from "./useSelection";
 export function App() {
   const [selection, update] = useSelection();
   const meta = useApi<Meta>(apiUrl("/meta"));
+  const teamName = meta.data?.teams.find((t) => t.id === selection.team)?.name ?? selection.team;
 
   return (
     <div className="app">
@@ -40,8 +41,8 @@ export function App() {
         )}
         {selection.tab === "findings" && <FindingsPage selection={selection} onNavigate={update} />}
         {selection.tab === "scouting" && <ScoutingPage selection={selection} />}
-        {selection.tab === "operator" && <OperatorPage selection={selection} />}
-        {selection.tab === "utility" && <UtilityPage selection={selection} />}
+        {selection.tab === "operator" && <OperatorPage selection={selection} teamName={teamName} />}
+        {selection.tab === "utility" && <UtilityPage selection={selection} teamName={teamName} />}
       </main>
 
       <footer className="muted">

@@ -22,13 +22,13 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
-from fastapi.responses import Response
+from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from nunyaintel import __version__
 from nunyaintel.data.extract import DEFAULT_DB, connect, resolve_team
 from nunyaintel.maps import DEFAULT_PATH as DEFAULT_MAPS
-from nunyaintel.maps import MapInfo, load_maps
+from nunyaintel.maps import MINIMAP_DIR, MapInfo, download_minimap, load_maps, minimap_path
 from nunyaintel.operator_profiler import angles as op_angles
 from nunyaintel.operator_profiler import profiler as op_prof
 from nunyaintel.scouting import economy_report, overview, sites
@@ -114,6 +114,7 @@ def create_app(
     maps_path: Path = DEFAULT_MAPS,
     static_dir: Path | None = None,
     baselines_path: Path | None = None,
+    minimap_dir: Path = MINIMAP_DIR,
 ) -> FastAPI:
     """Build the app. Tests pass their own small database and map file.
 
@@ -195,13 +196,51 @@ def create_app(
         assert m is not None
         return {
             "name": m.name,
-            "minimap_url": m.minimap_url,
+            # served by us (cached locally), so the app works offline; original kept for reference
+            "minimap_url": f"/api/maps/{m.name}/minimap",
+            "minimap_source": m.minimap_url,
             "callouts": [
                 {"name": c.name, "super_region": c.super_region, "region": c.region,
                  "x": c.x, "y": c.y, **_uv(m, c.x, c.y)}
                 for c in m.callouts
             ],
         }  # fmt: skip
+
+    @app.get("/api/maps/{name}/minimap")
+    def minimap(name: str, source: str | None = None, con: sqlite3.Connection = db) -> Response:
+        """The map's background image, in order of preference:
+
+        1. the real minimap image, cached locally (downloaded once);
+        2. downloaded now, if the image server is reachable;
+        3. a map drawn from our own position data (``silhouette.py``), cached as SVG. This
+           works fully offline, e.g. behind a firewall that blocks the image server.
+        """
+        from nunyaintel import silhouette
+
+        m = get_map(name)
+        assert m is not None
+        png = minimap_path(m.name, minimap_dir)
+        svg = png.with_suffix(".svg")
+        if source == "data":  # ?source=data: always the data-drawn map (to compare / demo)
+            if not svg.exists():
+                svg.parent.mkdir(parents=True, exist_ok=True)
+                svg.write_text(silhouette.build(con, m), encoding="utf-8")
+            return FileResponse(
+                svg, media_type="image/svg+xml", headers={"X-Minimap": "drawn-from-data"}
+            )
+        if png.exists():
+            return FileResponse(png, media_type="image/png")
+        try:
+            download_minimap(m, minimap_dir)
+            return FileResponse(png, media_type="image/png")
+        except OSError:
+            pass
+        if not svg.exists():
+            svg.parent.mkdir(parents=True, exist_ok=True)
+            svg.write_text(silhouette.build(con, m), encoding="utf-8")
+        return FileResponse(
+            svg, media_type="image/svg+xml", headers={"X-Minimap": "drawn-from-data"}
+        )
 
     @app.get("/api/scout")
     def scout(

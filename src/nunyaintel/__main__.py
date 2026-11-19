@@ -92,6 +92,12 @@ def warm_common_views(base_url: str, teams: tuple[str, ...] = WARM_TEAMS) -> Non
     from nunyaintel.data.extract import connect
 
     def work() -> None:
+        from nunyaintel.maps import cache_minimaps
+
+        try:  # offline minimaps: download any that aren't cached yet (best-effort)
+            cache_minimaps()
+        except OSError:
+            pass
         for _ in range(60):  # wait until the server answers
             try:
                 urllib.request.urlopen(base_url + "api/meta", timeout=2).read()
@@ -110,7 +116,8 @@ def warm_common_views(base_url: str, teams: tuple[str, ...] = WARM_TEAMS) -> Non
                 urls += [f"findings?team={team}&map={m}", f"scout?team={team}&map={m}",
                          f"operator?team={team}&map={m}&min_op_rounds=1",
                          f"operator/angles?map={m}&team={team}", f"utility?map={m}&team={team}",
-                         f"utility/lineups?map={m}&team={team}", f"maps/{m}"]  # fmt: skip
+                         f"utility/lineups?map={m}&team={team}", f"maps/{m}",
+                         f"maps/{m}/minimap"]  # fmt: skip
         con.close()
         for u in urls:
             try:

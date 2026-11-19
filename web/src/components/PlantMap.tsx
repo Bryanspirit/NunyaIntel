@@ -4,6 +4,7 @@
 import { apiUrl, type MapInfo, type Plant } from "../api";
 import { secs } from "../format";
 import { useApi } from "../useApi";
+import { markDelay } from "./broadcast";
 import { MapDot, Minimap } from "./Minimap";
 
 const US = "#ff4655"; // our plants (we attacked)
@@ -39,6 +40,7 @@ export function PlantMap({ map, plants, side, teamName }: Props) {
         return (
           <MapDot
             key={i}
+            delay={markDelay(i, 4)}
             u={p.u}
             v={p.v}
             color={color}
