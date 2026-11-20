@@ -11,6 +11,21 @@ One entry per build step: what we built, the key ideas behind it, how to run it,
 
 ---
 
+## Glossary and help for non-players (branch `interactive`, 20 Nov 2026)
+
+**What:** a **? Help** button opens "VALORANT in 30 seconds" and a searchable glossary (game, money, statistics). VALORANT and stats terms are linked automatically with plain-language tooltips (in Key findings tiles, game plan lines, tour captions and the help notes). Every page starts with a collapsible **How to read this page**.
+
+**Key ideas**
+- **One source of truth:** `glossary.ts` holds every explanation once. The drawer, the tooltips and the page notes all read from it.
+- **Auto-linking with care:** a regular expression finds glossary words (longest first, so "first blood" beats "first"). Each entry is linked only once per text, and very common words ("round", "side", "pick") don't link at all, or every sentence would be underlined.
+- **Accessible tooltips:** the term is focusable (`tabIndex`) and linked to its tip with `aria-describedby`, so keyboard and screen-reader users get the explanation too. Esc closes the drawer.
+- **Portals beat clipping:** the angled cards use `clip-path`, which cut off tooltips that stuck out. The tip is now drawn at page level (`createPortal` to `<body>`) with `position: fixed` next to the word, and opens downwards near the top of the screen.
+- **Remembered choices:** closing a "How to read this page" note is saved in `localStorage` (in a try/catch, since storage can be blocked), so returning users aren't nagged.
+
+**Read:** `web/src/glossary.ts`, `web/src/components/Help.tsx`.
+
+---
+
 ## Player impact: round wins added (branch `interactive`, 20 Nov 2026)
 
 **What:** every player's **round wins added per 100 rounds**, in a "Who wins rounds" panel on Key findings, on player pages and in player compare.

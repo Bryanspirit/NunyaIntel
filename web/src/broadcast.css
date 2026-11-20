@@ -500,3 +500,36 @@ tr.clickable-row:hover td { background: rgba(255, 255, 255, 0.04); }
 .impact-bar .pos { position: absolute; left: 50%; height: 100%; background: var(--good); }
 .impact-bar .neg { position: absolute; right: 50%; height: 100%; background: var(--bad); }
 .impact-note { margin-top: 10px; }
+
+/* ---- Help: terms, how-to, glossary drawer -------------------------------------------------- */
+.term { position: relative; border-bottom: 1px dotted currentColor; cursor: help; text-decoration: none; }
+.term-tip { position: fixed; transform: translate(-50%, -100%); width: min(320px, 80vw);
+  padding: 10px 12px; background: #0b141c; border: 1px solid rgba(255, 255, 255, 0.18); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  font: 400 13px/1.45 var(--body, system-ui); color: var(--text); text-transform: none; letter-spacing: 0; text-align: left;
+  visibility: hidden; opacity: 0; transition: opacity 0.15s; z-index: 80; pointer-events: none; white-space: normal; }
+.term-tip.on { visibility: visible; opacity: 1; }
+.term-tip.below { transform: translate(-50%, 0); }
+.term-tip b { color: var(--accent); margin-right: 4px; }
+.term:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+.howto { margin: 4px 0 14px; padding: 8px 14px; background: rgba(79, 195, 247, 0.06); border-left: 3px solid #4fc3f7; font-size: 14px; }
+.howto summary { cursor: pointer; font-family: var(--display); font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; font-size: 13px; color: #8fd8fb; }
+.howto p { margin: 8px 0 2px; line-height: 1.55; max-width: 100ch; }
+.header-actions { position: absolute; top: 4px; right: 0; display: flex; gap: 10px; }
+.header-actions .tour-start { position: static; }
+.help-start { padding: 8px 14px; border: 1px solid rgba(79, 195, 247, 0.6); background: rgba(79, 195, 247, 0.1); color: var(--text);
+  font-family: var(--display); font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+.help-start:hover { background: rgba(79, 195, 247, 0.3); }
+.drawer-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.55); z-index: 70; display: flex; justify-content: flex-end; }
+.drawer { width: min(560px, 100%); height: 100%; overflow-y: auto; background: #0f1923; padding: 22px 24px 40px; border-left: 4px solid var(--accent);
+  animation: drawer-in 0.25s ease-out; position: relative; }
+@keyframes drawer-in { from { transform: translateX(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .drawer { animation: none; } }
+.drawer h2 { font-family: var(--display); font-weight: 800; text-transform: uppercase; font-size: 28px; margin: 0 0 8px; }
+.drawer h3 { font-family: var(--display); text-transform: uppercase; letter-spacing: 2px; color: var(--accent); margin: 18px 0 6px; }
+.drawer p { line-height: 1.6; }
+.drawer dl { margin: 0; }
+.drawer dt { font-weight: 700; margin-top: 10px; }
+.drawer dd { margin: 2px 0 0; color: var(--muted); line-height: 1.5; font-size: 14px; }
+.drawer-close { position: absolute; top: 16px; right: 16px; }
+.drawer-search { width: 100%; margin: 6px 0 4px; padding: 8px 10px; }
+@media (max-width: 640px) { .header-actions { position: static; margin-top: 8px; } }

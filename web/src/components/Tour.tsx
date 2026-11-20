@@ -6,6 +6,7 @@
 // PageDown / PageUp. On the Replay page the arrows already scrub time, so there only the other
 // keys work.
 
+import { Glossed } from "./Help";
 import { useEffect } from "react";
 import type { Selection } from "../useSelection";
 
@@ -110,7 +111,7 @@ export function Tour({ step, onStep, onClose, onNavigate, tab }: {
           {s.kicker} <span className="tour-count">{step + 1} / {STEPS.length}</span>
         </div>
         <div className="tour-title">{s.title}</div>
-        <p className="tour-text">{s.text}</p>
+        <p className="tour-text"><Glossed text={s.text} /></p>
         <div className="tour-bar">
           <div className="tour-dots">
             {STEPS.map((_, i) => (

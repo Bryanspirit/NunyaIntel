@@ -1,5 +1,7 @@
 // App shell: header with pickers, tabs, and the active page.
 
+import { HelpDrawer, HowTo } from "./components/Help";
+import { HOWTO } from "./glossary";
 import { useCallback, useState } from "react";
 import { apiUrl, type Meta } from "./api";
 import { Pickers } from "./components/Pickers";
@@ -24,6 +26,8 @@ export function App() {
   const teamName = meta.data?.teams.find((t) => t.id === selection.team)?.name ?? selection.team;
   const [tour, setTour] = useState<number | null>(null); // presentation mode: current step
   const closeTour = useCallback(() => setTour(null), []);
+  const [help, setHelp] = useState(false);
+  const closeHelp = useCallback(() => setHelp(false), []);
 
   return (
     <div className={tour !== null ? "app touring" : "app"}>
@@ -32,7 +36,10 @@ export function App() {
           Nunya<span>Intel</span>
         </h1>
         <p className="tagline">VALORANT scouting · utility · Operator profiler</p>
-        <button className="tour-start" onClick={() => setTour(0)} disabled={tour !== null}>▶ Presentation</button>
+        <div className="header-actions">
+          <button className="help-start" onClick={() => setHelp(true)} aria-label="Help and glossary">? Help</button>
+          <button className="tour-start" onClick={() => setTour(0)} disabled={tour !== null}>▶ Presentation</button>
+        </div>
         {meta.data && <Pickers meta={meta.data} selection={selection} onChange={update} />}
       </header>
 
@@ -50,6 +57,7 @@ export function App() {
             Can't reach the API ({meta.error}). Start it with <code>nunyaintel serve</code>.
           </p>
         )}
+        {HOWTO[selection.tab] && <HowTo page={selection.tab} text={HOWTO[selection.tab]} />}
         {selection.tab === "findings" && <FindingsPage selection={selection} onNavigate={update} />}
         {selection.tab === "scouting" && <ScoutingPage selection={selection} onNavigate={update} />}
         {selection.tab === "operator" && <OperatorPage selection={selection} teamName={teamName} onNavigate={update} />}
@@ -62,6 +70,7 @@ export function App() {
         {selection.tab === "predict" && <PredictPage selection={selection} meta={meta.data} teamName={teamName} />}
       </main>
 
+      {help && <HelpDrawer onClose={closeHelp} />}
       {tour !== null && <Tour step={tour} onStep={setTour} onClose={closeTour} onNavigate={update} tab={selection.tab} />}
 
       <footer className="muted">

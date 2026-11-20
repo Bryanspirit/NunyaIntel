@@ -1,6 +1,7 @@
 // Game plan: written advice for playing one opponent. Every line shows its evidence (with counts)
 // and a link to the view that proves it. Print it (or save as PDF) for a coach's sheet.
 
+import { Glossed } from "../components/Help";
 import { apiUrl, type GamePlan, type GamePlanItem, type Meta } from "../api";
 import { OpponentPicker } from "../components/OpponentPicker";
 import { PageHero } from "../components/broadcast";
@@ -58,7 +59,7 @@ export function GamePlanPage({ selection, meta, onNavigate }: { selection: Selec
             {rows.map((it) => (
               <Reveal key={it.advice} as="article" className="plan-item" delay={100 + order++ * 60}>
                 <div className="plan-advice">
-                  {it.advice}
+                  <Glossed text={it.advice} />
                   {it.small && <span className="bigstat-small plan-small">small sample</span>}
                 </div>
                 <div className="plan-evidence">

@@ -2,6 +2,7 @@
 // that slide in one after another with count-up numbers and animated team-vs-league bars.
 // The server ranks findings by how unusual and how reliable they are (z-score vs. the league).
 
+import { Glossed } from "../components/Help";
 import { ImpactPanel } from "../components/ImpactPanel";
 import type { CSSProperties } from "react";
 import { apiUrl, type Finding, type Findings } from "../api";
@@ -114,7 +115,7 @@ function Tile({ f, delay, onDetails }: { f: Finding; delay: number; onDetails: (
         <CountUp value={big.value} delay={delay + 150} format={(v) => `${v.toFixed(0)}%`} />
         {big.caption && <span className="tile-caption">{big.caption}</span>}
       </div>
-      <div className="tile-label">{big.label}</div>
+      <div className="tile-label"><Glossed text={big.label} /></div>
       {big.evidence && (
         <div className="tile-evidence">
           {f.hits} of {f.n}
