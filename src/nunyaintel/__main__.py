@@ -114,7 +114,8 @@ def warm_common_views(base_url: str, teams: tuple[str, ...] = WARM_TEAMS) -> Non
                      f"operator?team={team}&min_op_rounds=1",
                      f"predict/matchup?team={team}", f"predict/next-buy?team={team}",
                      f"matchup-report?team={team}", "predict/round",
-                     f"gameplan?team={team}", f"impact?team={team}"]  # fmt: skip
+                     f"gameplan?team={team}", f"impact?team={team}",
+                     f"recent?team={team}"]  # fmt: skip
             for m in maps:
                 urls += [f"findings?team={team}&map={m}", f"scout?team={team}&map={m}",
                          f"operator?team={team}&map={m}&min_op_rounds=1",

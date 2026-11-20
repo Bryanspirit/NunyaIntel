@@ -2,6 +2,7 @@
 // that slide in one after another with count-up numbers and animated team-vs-league bars.
 // The server ranks findings by how unusual and how reliable they are (z-score vs. the league).
 
+import { RecentPanel } from "../components/TeamTrends";
 import { Glossed } from "../components/Help";
 import { ImpactPanel } from "../components/ImpactPanel";
 import type { CSSProperties } from "react";
@@ -75,7 +76,8 @@ export function FindingsPage({ selection, onNavigate }: Props) {
         </>
       )}
 
-      <ImpactPanel selection={selection} index={0} onNavigate={onNavigate} />
+      <RecentPanel selection={selection} index={0} onNavigate={onNavigate} />
+      <ImpactPanel selection={selection} index={1} onNavigate={onNavigate} />
 
       <p className="note">
         Ranked by z-score: how many standard errors the team is from the league average, given its sample size. So 15

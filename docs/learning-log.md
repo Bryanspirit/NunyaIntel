@@ -11,6 +11,21 @@ One entry per build step: what we built, the key ideas behind it, how to run it,
 
 ---
 
+## Agent compositions + what's changed lately (branch `interactive`, 20 Nov 2026)
+
+**What:** on **Scouting** (with a map picked), the team's agent compositions next to the league's most common ones. On **Key findings**, "What's changed lately": the team's last 5 matches against everything before.
+
+**Key ideas**
+- **A comp is a set:** sort the five agent names so "Omen, Fade…" and "Fade, Omen…" count as the same comp. Maps with fewer than five known agents are skipped.
+- **Is a change real? A two-proportion z-test:** compare the two rates, allowing for how many rounds each has. From 1.5 standard errors we call it a change, below that "luck". With 290 recent rounds, Cloud9's attack falling from 55% to 48% is only −1.3 SE: luck.
+- **Don't test tiny counts:** Xeppaa going from 0 to 1 Operator rounds scored z = 1.52. A change now needs 10+ Operator rounds behind it. Big z-scores from tiny counts are a classic trap.
+- **Honest wording:** with 14 earlier matches and 5 recent ones, many agents naturally aren't played recently. "Dropped" overstated it, so the page says "not played lately".
+- **Cloud9:** OXY's Operator use fell from 11.2% to 7.6% of rounds (1.7 SE), Corrode joined the map pool, and no main rate moved beyond luck.
+
+**Read:** `src/nunyaintel/comps.py`, `web/src/components/TeamTrends.tsx`.
+
+---
+
 ## Glossary and help for non-players (branch `interactive`, 20 Nov 2026)
 
 **What:** a **? Help** button opens "VALORANT in 30 seconds" and a searchable glossary (game, money, statistics). VALORANT and stats terms are linked automatically with plain-language tooltips (in Key findings tiles, game plan lines, tour captions and the help notes). Every page starts with a collapsible **How to read this page**.

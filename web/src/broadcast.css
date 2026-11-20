@@ -533,3 +533,13 @@ tr.clickable-row:hover td { background: rgba(255, 255, 255, 0.04); }
 .drawer-close { position: absolute; top: 16px; right: 16px; }
 .drawer-search { width: 100%; margin: 6px 0 4px; padding: 8px 10px; }
 @media (max-width: 640px) { .header-actions { position: static; margin-top: 8px; } }
+
+/* ---- Comps and recent changes ------------------------------------------------------------- */
+.comp-agents { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.agent-chip { padding: 1px 7px; background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.12); font-size: 12px; }
+.recent-summary { margin-bottom: 12px; }
+.recent-summary p { margin: 4px 0; }
+.recent-summary p.better b { color: var(--good); }
+.recent-summary p.worse b { color: var(--bad); }
+td.good { color: var(--good); } td.bad { color: var(--bad); }
+td.nowrap { white-space: nowrap; }

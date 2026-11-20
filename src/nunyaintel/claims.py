@@ -382,6 +382,22 @@ def _impact_c9(con):
     )
 
 
+def _recent_c9(con):
+    """'What's changed lately' for Cloud9 (Key findings)."""
+    from nunyaintel import comps
+
+    r = comps.recent(con, "79")
+    oxy = next(p for p in r["players"] if p["name"] == "OXY")
+    real = [c["key"] for c in r["changes"] if c["changed"]]
+    got = (r["recent_series"], r["earlier_series"], *oxy["op_recent"], *oxy["op_before"],
+           round(oxy["op_z"], 2), len(real))  # fmt: skip
+    return Result(
+        got == (5, 14, 22, 290, 75, 672, -1.69, 0),
+        f"last {got[0]} vs {got[1]} matches: OXY Op {got[2]}/{got[3]} vs {got[4]}/{got[5]} "
+        f"(z {got[6]}); main rates changed beyond luck: {got[7]}",
+    )
+
+
 CLAIMS = [
     Claim("dataset", "README intro",
           "857 series, 2,078 maps, 42,490 rounds, 160 teams (Jan 2025 - Sep 2026)", _dataset),
@@ -441,6 +457,10 @@ CLAIMS = [
     Claim("impact_c9", "Key findings (Who wins rounds), player pages",
           "Cloud9's top impact: v1c +2.05 round wins added per 100 rounds (#94 of 535 players "
           "with 200+ rounds), OXY +1.64 (#119)", _impact_c9),
+    Claim("recent_c9", "Key findings (What's changed lately)",
+          "Cloud9's last 5 matches vs the 14 before: OXY's Operator use fell from 11.2% (75 of 672 "
+          "rounds) to 7.6% (22 of 290), 1.7 standard errors; no main rate changed beyond luck",
+          _recent_c9),
     Claim("ability_kills", "README caveats", "about 3.7% of kills have no weapon recorded",
           _ability_kills),
 ]  # fmt: skip

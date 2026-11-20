@@ -382,6 +382,24 @@ def create_app(
             get_map(map)
         return {"players": impact.team_players(con, _team(con, team)["id"], map_name=map)}
 
+    @app.get("/api/comps")
+    def team_comps(
+        team: str, map: str | None = None, con: sqlite3.Connection = db
+    ) -> dict[str, Any]:
+        """The team's agent compositions (per map) and the league's most common ones."""
+        from nunyaintel import comps
+
+        if map:
+            get_map(map)
+        return comps.comps(con, _team(con, team)["id"], map_name=map)
+
+    @app.get("/api/recent")
+    def recent_changes(team: str, con: sqlite3.Connection = db) -> dict[str, Any]:
+        """The team's last 5 matches vs. everything before: rates, agents, Operator, maps."""
+        from nunyaintel import comps
+
+        return comps.recent(con, _team(con, team)["id"])
+
     @app.get("/api/matches")
     def matches(team: str, con: sqlite3.Connection = db) -> dict[str, Any]:
         """The team's maps, newest first (for the match-story picker)."""

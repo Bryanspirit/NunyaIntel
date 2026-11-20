@@ -443,3 +443,31 @@ def test_player_impact(client, paths):
     assert alice == pytest.approx(-victim)  # what the killer gains, the victim loses
     profile = client.get("/api/player", params={"player": "p1"}).json()
     assert profile["impact"]["per_100"] == pytest.approx(p1["per_100"])
+
+
+def test_comps_and_recent(client, paths):
+    import sqlite3 as sq
+
+    from nunyaintel import comps
+
+    db, _ = paths
+    assert client.get("/api/comps", params={"team": "A"}).json()["team"] == []  # 1 agent known
+    con = sq.connect(db)
+    for game in ("g1", "g2"):
+        for i, agent in enumerate(("omen", "jett", "killjoy", "fade")):
+            con.execute(
+                "INSERT INTO meta_rosters (game_id, team_id, player_id, character_name) "
+                "VALUES (?, 'A', ?, ?)",
+                (game, f"x{i}", agent),
+            )
+    con.commit()
+    con.close()
+    j = client.get("/api/comps", params={"team": "A", "map": "testmap"}).json()
+    (comp,) = j["team"]
+    assert comp["agents"] == ["fade", "jett", "killjoy", "omen", "sova"]
+    assert (comp["maps"], comp["wins"], comp["league_maps"]) == (2, 2, 2)
+    assert j["league"]["testmap"][0]["agents"] == comp["agents"]
+    # only 2 matches: not enough history to talk about recent changes
+    assert client.get("/api/recent", params={"team": "A"}).json()["enough"] is False
+    assert comps._z_diff(30, 50, 10, 50) == pytest.approx(4.08, abs=0.01)
+    assert comps._z_diff(0, 0, 5, 10) == 0.0
