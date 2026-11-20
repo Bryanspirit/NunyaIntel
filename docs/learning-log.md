@@ -11,6 +11,20 @@ One entry per build step: what we built, the key ideas behind it, how to run it,
 
 ---
 
+## Match story + player compare (branch `interactive`, 20 Nov 2026)
+
+**What:** a **Matches** tab. It lists the team's maps; pick one for its story: a score-difference line, then one column per round with the score, how it ended, both buys, side, plant site and first blood. Click any round to replay it. Matchup head-to-head rows get a 📖 link to the story. On a player's profile, **Compare with…** puts two players side by side (`?vs=`), with per-map stats, agents, weapons and two heatmaps.
+
+**Key ideas**
+- **Reuse the win-chance model:** each round's lowest and highest win chance tags **comebacks** (won from ≤ 15%) and **throws** (lost from ≥ 85%). The first try at 25% / 75% tagged 7 comebacks in 23 rounds. Pro rounds swing a lot, so a tag must be rare to mean anything.
+- **Fair comparisons:** per-map numbers (kills per map, deaths per map), so a player with 40 maps and one with 10 compare fairly. Rates with fewer than 30 fights behind them say "small sample".
+- **Search as you type, politely:** the player box waits 200 ms after you stop typing (debounce) and cancels the old request (`AbortController`), so fast typing doesn't flood the server.
+- **Bug caught by a test:** `story()` and `plan()` loaded map data from the default file and ignored the one the app was given. The test fixture's made-up map exposed it. Now the app's map file is passed through, and a map with no callouts still gets a story, just without plant sites.
+
+**Read:** `src/nunyaintel/match.py`, `web/src/pages/MatchPage.tsx`, `ComparePlayers` in `web/src/pages/PlayerPage.tsx`.
+
+---
+
 ## Opponent game plan (branch `interactive`, 20 Nov 2026)
 
 **What:** a **Game plan** tab with written advice for playing one opponent. It covers the map veto, site plan, what to exploit and respect, the utility to expect, their Operator, their economy habit, and our own leaks. Each line shows its evidence with counts and a "see it →" link to the view that proves it. **🖨 Print / save as PDF** gives a clean black-on-white sheet for a coach.

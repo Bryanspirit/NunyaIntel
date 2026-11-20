@@ -7,6 +7,7 @@ import { Tour } from "./components/Tour";
 import { title } from "./format";
 import { FindingsPage } from "./pages/FindingsPage";
 import { GamePlanPage } from "./pages/GamePlanPage";
+import { MatchPage } from "./pages/MatchPage";
 import { MatchupPage } from "./pages/MatchupPage";
 import { OperatorPage } from "./pages/OperatorPage";
 import { PlayerPage } from "./pages/PlayerPage";
@@ -37,7 +38,7 @@ export function App() {
 
       <nav className="tabs no-print">
         {TABS.map((tab) => (
-          <button key={tab} className={tab === selection.tab ? "tab active" : "tab"} onClick={() => update({ tab, round: "", t: "" })}>
+          <button key={tab} className={tab === selection.tab ? "tab active" : "tab"} onClick={() => update({ tab, round: "", t: "", game: "", vs: "" })}>
             {tab === "findings" ? "Key findings" : tab === "gameplan" ? "Game plan" : title(tab)}
           </button>
         ))}
@@ -55,6 +56,7 @@ export function App() {
         {selection.tab === "utility" && <UtilityPage selection={selection} teamName={teamName} onNavigate={update} />}
         {selection.tab === "replay" && <ReplayPage selection={selection} teamName={teamName} />}
         {selection.tab === "player" && <PlayerPage selection={selection} onNavigate={update} />}
+        {selection.tab === "matches" && <MatchPage selection={selection} teamName={teamName} onNavigate={update} />}
         {selection.tab === "matchup" && <MatchupPage selection={selection} meta={meta.data} onNavigate={update} />}
         {selection.tab === "gameplan" && <GamePlanPage selection={selection} meta={meta.data} onNavigate={update} />}
         {selection.tab === "predict" && <PredictPage selection={selection} meta={meta.data} teamName={teamName} />}

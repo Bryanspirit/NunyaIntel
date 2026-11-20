@@ -371,6 +371,33 @@ def create_app(
             **timeline.replay(con, tm["id"], m, side=side, since=since),
         }
 
+    @app.get("/api/matches")
+    def matches(team: str, con: sqlite3.Connection = db) -> dict[str, Any]:
+        """The team's maps, newest first (for the match-story picker)."""
+        from nunyaintel import match
+
+        return {"games": match.games(con, _team(con, team)["id"])}
+
+    @app.get("/api/match")
+    def match_story(team: str, game: str, con: sqlite3.Connection = db) -> dict[str, Any]:
+        """One map round by round: score, buys, kills, plants, win-chance swings."""
+        from nunyaintel import match
+
+        try:
+            return match.story(con, _team(con, team)["id"], game, maps_path=maps_path)
+        except KeyError:
+            raise HTTPException(404, f"No map {game!r} for this team") from None
+
+    @app.get("/api/players")
+    def players(q: str = "", limit: int = 20, con: sqlite3.Connection = db) -> dict[str, Any]:
+        """Player search by name (for the compare picker)."""
+        rows = con.execute(
+            "SELECT player_id, name, latest_team_name FROM meta_players "
+            "WHERE name LIKE ? ORDER BY CAST(series_count AS INTEGER) DESC LIMIT ?",
+            (f"%{q}%", min(limit, 50)),
+        ).fetchall()
+        return {"players": [{"id": p, "name": n, "team": t} for p, n, t in rows]}
+
     @app.get("/api/player")
     def player(player: str, map: str | None = None, con: sqlite3.Connection = db) -> dict[str, Any]:
         """One player's profile (agents, fights, weapons, Op, utility, heatmap points)."""
@@ -393,7 +420,7 @@ def create_app(
         b = _team(con, opponent)["id"] if opponent else predict.frequent_opponent(con, a)
         if b is None:
             raise HTTPException(404, "No opponent found for this team")
-        return gp.plan(con, a, b, map_info=get_map(map))
+        return gp.plan(con, a, b, map_info=get_map(map), maps_path=maps_path)
 
     @app.get("/api/matchup-report")
     def matchup_report(

@@ -389,6 +389,8 @@ def test_gameplan(paths, tmp_path):
     for item in j["items"]:
         assert item["section"] in sections and item["advice"] and item["evidence"]
         assert item["small"] == (item["n"] < 30) and "tab" in item["view"]
+    no_map = app.get("/api/gameplan", params={"team": "A"}).json()  # plans for the pick
+    assert no_map["map_was_chosen"] is False
     assert app.get("/api/gameplan", params={"team": "nobody"}).status_code == 404
 
 
@@ -398,3 +400,27 @@ def test_gameplan_timing_words():
     assert _timing(None) == ""
     assert "buy phase" in _timing(-19.4) and "19s" in _timing(-19.4)
     assert _timing(12) == ", ~12s into the round"
+
+
+def test_matches_and_match_story(client):
+    games = client.get("/api/matches", params={"team": "A"}).json()["games"]
+    assert [g["game_id"] for g in games] == ["g2", "g1"]  # newest first
+    assert games[0]["opponent"]["name"] == "Bravo" and games[0]["won"] is True
+    j = client.get("/api/match", params={"team": "A", "game": "g1"}).json()
+    assert (j["us"]["name"], j["them"]["name"], j["map"]) == ("Alpha", "Bravo", "testmap")
+    rounds = j["rounds"]
+    assert [(r["round"], r["won"], r["score_us"], r["score_them"]) for r in rounds] == [
+        (1, True, 1, 0), (2, False, 1, 1)
+    ]  # fmt: skip
+    assert rounds[0]["key"] == "g1:1" and rounds[0]["first_blood"] == "us"
+    assert rounds[0]["kills_us"] == 1 and rounds[0]["plant"] == "A"
+    assert 0 <= rounds[0]["low"] <= rounds[0]["high"] <= 1
+    assert j["summary"]["attack"] == [1, 2] and j["summary"]["first_bloods"] == [2, 2]
+    assert client.get("/api/match", params={"team": "A", "game": "nope"}).status_code == 404
+
+
+def test_player_search(client):
+    assert client.get("/api/players", params={"q": "lic"}).json()["players"] == [
+        {"id": "p1", "name": "Alice", "team": "Alpha"}
+    ]
+    assert client.get("/api/players", params={"q": "zzz"}).json()["players"] == []

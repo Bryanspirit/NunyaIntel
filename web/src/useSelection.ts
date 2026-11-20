@@ -4,8 +4,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-export type Tab = "findings" | "scouting" | "operator" | "utility" | "replay" | "matchup" | "gameplan" | "predict" | "player";
-export const TABS: Tab[] = ["findings", "scouting", "operator", "utility", "replay", "matchup", "gameplan", "predict"];
+export type Tab = "findings" | "scouting" | "operator" | "utility" | "replay" | "matches" | "matchup" | "gameplan" | "predict" | "player";
+export const TABS: Tab[] = ["findings", "scouting", "operator", "utility", "replay", "matches", "matchup", "gameplan", "predict"];
 // "player" is a page you reach by clicking a name, not a tab in the bar
 export const ALL_TABS: Tab[] = [...TABS, "player"];
 
@@ -19,9 +19,11 @@ export interface Selection {
   t: string; // "" = none, else seconds from the buy-phase end
   opp: string; // "" = most frequent opponent, else the opponent's team id (Matchup tab)
   player: string; // player id on the Player page
+  vs: string; // second player id: compare mode on the Player page
+  game: string; // game id on the Matches tab ("" = the list)
 }
 
-const DEFAULTS: Selection = { team: "79", map: "", side: "", since: "", tab: "findings", round: "", t: "", opp: "", player: "" };
+const DEFAULTS: Selection = { team: "79", map: "", side: "", since: "", tab: "findings", round: "", t: "", opp: "", player: "", vs: "", game: "" };
 
 function read(): Selection {
   const q = new URLSearchParams(window.location.search);
@@ -36,6 +38,8 @@ function read(): Selection {
     t: q.get("t") ?? "",
     opp: q.get("opp") ?? "",
     player: q.get("player") ?? "",
+    vs: q.get("vs") ?? "",
+    game: q.get("game") ?? "",
   };
 }
 

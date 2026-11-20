@@ -17,7 +17,7 @@ interface Step {
   claim?: string; // id in docs/claims.md
 }
 
-const BLANK: Selection = { team: "79", map: "", side: "", since: "", tab: "findings", round: "", t: "", opp: "", player: "" };
+const BLANK: Selection = { team: "79", map: "", side: "", since: "", tab: "findings", round: "", t: "", opp: "", player: "", vs: "", game: "" };
 
 export const STEPS: Step[] = [
   {

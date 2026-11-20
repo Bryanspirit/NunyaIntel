@@ -484,3 +484,61 @@ export interface GamePlan {
   head_to_head: { maps: number; won: number };
   items: GamePlanItem[];
 }
+
+// ---- /api/matches, /api/match, /api/players ------------------------------------------------
+
+export interface MatchGame {
+  game_id: string;
+  date: string;
+  map: string;
+  event: string;
+  opponent: { id: string; name: string };
+  score_us: number;
+  score_them: number;
+  won: boolean;
+}
+
+export interface MatchRound {
+  round: number;
+  key: string; // "<game>:<round>" for Replay links
+  side: "attacker" | "defender";
+  won: boolean;
+  win_type: string;
+  own_buy: string;
+  opp_buy: string;
+  score_us: number;
+  score_them: number;
+  kills_us: number;
+  kills_them: number;
+  first_blood: "us" | "them" | null;
+  plant: string | null;
+  low: number; // lowest win chance during the round (this team)
+  high: number;
+  tag: "comeback" | "thrown" | "";
+}
+
+export interface MatchStory {
+  game_id: string;
+  map: string;
+  date: string;
+  event: string;
+  us: { id: string; name: string };
+  them: { id: string; name: string };
+  score_us: number;
+  score_them: number;
+  won: boolean;
+  summary: {
+    attack: [number, number];
+    defense: [number, number];
+    pistols: [number, number];
+    first_bloods: [number, number];
+    first_blood_conversion: [number, number];
+    longest_win_streak: number;
+    longest_loss_streak: number;
+    comebacks: number;
+    thrown: number;
+  };
+  rounds: MatchRound[];
+}
+
+export interface PlayerHit { id: string; name: string; team: string }

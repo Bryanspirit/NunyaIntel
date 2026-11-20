@@ -1,8 +1,9 @@
 // Player profile: reached by clicking a player's name anywhere in the app.
 
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { apiUrl, type MapInfo, type PlayerProfile } from "../api";
 import { BigStat, PageHero, Panel } from "../components/broadcast";
+import { PlayerSearch } from "../components/PlayerSearch";
 import { Empty } from "../components/ui";
 import { nice, pct, secs, title } from "../format";
 import { useApi } from "../useApi";
@@ -14,6 +15,11 @@ const HEAT: Record<Kind, string> = { kill: "61, 220, 151", death: "255, 70, 85",
 const HEAT_LABEL: Record<Kind, string> = { kill: "Where they kill from", death: "Where they die", util: "Where they cast" };
 
 export function PlayerPage({ selection, onNavigate }: { selection: Selection; onNavigate: Nav }) {
+  if (selection.player && selection.vs) return <ComparePlayers selection={selection} onNavigate={onNavigate} />;
+  return <OnePlayer selection={selection} onNavigate={onNavigate} />;
+}
+
+function OnePlayer({ selection, onNavigate }: { selection: Selection; onNavigate: Nav }) {
   const p = useApi<PlayerProfile>(selection.player ? apiUrl("/player", { player: selection.player, map: selection.map }) : null);
   if (!selection.player) return <Empty>Click a player's name anywhere in the app to open their profile.</Empty>;
   if (p.error) return <p className="error">{p.error}</p>;
@@ -42,6 +48,9 @@ export function PlayerPage({ selection, onNavigate }: { selection: Selection; on
           {d.team.name} scouting →
         </button>
       </p>
+      <div className="plan-bar">
+        <PlayerSearch label={`Compare ${d.name} with`} exclude={d.player_id} onPick={(id) => onNavigate({ vs: id })} />
+      </div>
 
       <div className="bigstats">
         <BigStat label="Fights won (K / (K+D))" value={fights ? d.kills / fights : 0} n={fights} delay={150}
@@ -123,7 +132,7 @@ function Bar({ label, value, note }: { label: string; value: number; note: strin
 }
 
 /** Soft glows that add up where the player is most often: brighter = more often there. */
-function Heatmap({ map, points }: { map: string; points: PlayerProfile["points"] }) {
+export function Heatmap({ map, points }: { map: string; points: PlayerProfile["points"] }) {
   const info = useApi<MapInfo>(apiUrl(`/maps/${map}`));
   const ref = useRef<HTMLCanvasElement>(null);
   const [kinds, setKinds] = useState<Record<Kind, boolean>>({ kill: true, death: true, util: false });
@@ -166,5 +175,109 @@ function Heatmap({ map, points }: { map: string; points: PlayerProfile["points"]
         <p className="note">Brighter = more often there. Positions are where they shot, died or cast.</p>
       </div>
     </div>
+  );
+}
+
+// ---- compare two players ---------------------------------------------------------------------
+
+type Row = { label: string; a: number; b: number; fmt: (v: number) => string; higherIsBetter: boolean | null; n?: [number, number] };
+
+function ComparePlayers({ selection, onNavigate }: { selection: Selection; onNavigate: Nav }) {
+  const pa = useApi<PlayerProfile>(apiUrl("/player", { player: selection.player, map: selection.map }));
+  const pb = useApi<PlayerProfile>(apiUrl("/player", { player: selection.vs, map: selection.map }));
+  if (pa.error || pb.error) return <p className="error">{pa.error ?? pb.error}</p>;
+  if (!pa.data || !pb.data) return <p className="muted">Loading both players…</p>;
+  const a = pa.data, b = pb.data;
+  const maps = (p: PlayerProfile) => Object.values(p.agents).reduce((x, y) => x + y, 0);
+  const per = (v: number, p: PlayerProfile) => (maps(p) ? v / maps(p) : 0);
+  const rate = (x: number, n: number) => (n ? x / n : 0);
+  const op = (p: PlayerProfile) => p.operator ?? { rounds_with_op: 0, rounds_played: 0, op_kills: 0, op_round_win_rate: 0 };
+  const dec = (v: number) => v.toFixed(1);
+  const pc = (v: number) => pct(v);
+  const int = (v: number) => String(Math.round(v));
+  // per map, so a player with 40 maps and one with 10 compare fairly
+  const rows: Row[] = [
+    { label: "Maps played", a: maps(a), b: maps(b), fmt: int, higherIsBetter: null },
+    { label: "Kills per map", a: per(a.kills, a), b: per(b.kills, b), fmt: dec, higherIsBetter: true },
+    { label: "Deaths per map", a: per(a.deaths, a), b: per(b.deaths, b), fmt: dec, higherIsBetter: false },
+    { label: "Fights won (K / (K+D))", a: rate(a.kills, a.kills + a.deaths), b: rate(b.kills, b.kills + b.deaths), fmt: pc,
+      higherIsBetter: true, n: [a.kills + a.deaths, b.kills + b.deaths] },
+    { label: "First kills per map", a: per(a.first_kills, a), b: per(b.first_kills, b), fmt: dec, higherIsBetter: true },
+    { label: "Opening duels won", a: rate(a.first_kills, a.first_kills + a.first_deaths), b: rate(b.first_kills, b.first_kills + b.first_deaths),
+      fmt: pc, higherIsBetter: true, n: [a.first_kills + a.first_deaths, b.first_kills + b.first_deaths] },
+    { label: "Rounds with an Operator", a: rate(op(a).rounds_with_op, op(a).rounds_played), b: rate(op(b).rounds_with_op, op(b).rounds_played),
+      fmt: pc, higherIsBetter: null },
+    { label: "Operator kills", a: op(a).op_kills, b: op(b).op_kills, fmt: int, higherIsBetter: null },
+  ];
+  return (
+    <section key={`${a.player_id}|${b.player_id}|${selection.map}`}>
+      <PageHero kicker={`Player compare${selection.map ? ` · ${title(selection.map)}` : " · all maps"}`} title={`${a.name} vs ${b.name}`} />
+      <p className="muted">
+        <button className="link" onClick={() => onNavigate({ vs: "" })}>← {a.name}'s profile</button> ·{" "}
+        <button className="link" onClick={() => onNavigate({ player: b.player_id, vs: a.player_id })}>⇄ swap sides</button> ·{" "}
+        <button className="link" onClick={() => onNavigate({ player: b.player_id, vs: "" })}>{b.name}'s profile →</button>
+      </p>
+      <div className="plan-bar">
+        <PlayerSearch label="Change the right-hand player" exclude={a.player_id} onPick={(id) => onNavigate({ vs: id })} />
+      </div>
+
+      <Panel title="Head to head" index={0} aside={`${a.name} (${a.team.name}) · ${b.name} (${b.team.name}) · counts per map, so sample sizes compare fairly`}>
+        <div className="cmp">
+          <div className="cmp-head left">{a.name}</div>
+          <div />
+          <div className="cmp-head right">{b.name}</div>
+          {rows.map((r) => {
+            const better = r.higherIsBetter === null || r.a === r.b ? null : (r.a > r.b) === r.higherIsBetter ? "a" : "b";
+            const total = Math.abs(r.a) + Math.abs(r.b) || 1;
+            const small = r.n ? r.n.map((x) => x < 30) : [false, false];
+            return (
+              <Fragment key={r.label}>
+                <div className={`cmp-val left ${better === "a" ? "win" : ""}`}>
+                  {r.fmt(r.a)}
+                  {small[0] && <span className="cmp-small">small sample</span>}
+                </div>
+                <div className="cmp-mid">
+                  <div className="cmp-label">{r.label}</div>
+                  <div className="cmp-bar">
+                    <span className="cmp-a" style={{ width: `${(Math.abs(r.a) / total) * 100}%` }} />
+                    <span className="cmp-b" style={{ width: `${(Math.abs(r.b) / total) * 100}%` }} />
+                  </div>
+                </div>
+                <div className={`cmp-val right ${better === "b" ? "win" : ""}`}>
+                  {small[1] && <span className="cmp-small">small sample</span>}
+                  {r.fmt(r.b)}
+                </div>
+              </Fragment>
+            );
+          })}
+        </div>
+      </Panel>
+
+      <div className="grid-2">
+        {[a, b].map((p, i) => (
+          <Panel key={p.player_id} title={`${p.name}: agents and weapons`} index={1 + i}>
+            {Object.entries(p.agents).slice(0, 5).map(([agent, n]) => (
+              <Bar key={agent} label={nice(agent)} value={n / Math.max(1, maps(p))} note={`${n} maps`} />
+            ))}
+            <div style={{ height: 10 }} />
+            {p.weapons.slice(0, 5).map((w) => (
+              <Bar key={w.weapon} label={nice(w.weapon)} value={w.kills / Math.max(1, p.kills)} note={`${w.kills}`} />
+            ))}
+          </Panel>
+        ))}
+      </div>
+
+      {selection.map ? (
+        <div className="grid-2">
+          {[a, b].map((p, i) => (
+            <Panel key={p.player_id} title={`Where ${p.name} plays ${title(selection.map)}`} index={3 + i} aside={`${p.points.length} positions`}>
+              <div className="cmp-heat">{p.points.length ? <Heatmap map={selection.map} points={p.points} /> : <Empty>No positions for {p.name} on this map.</Empty>}</div>
+            </Panel>
+          ))}
+        </div>
+      ) : (
+        <p className="muted">Pick a map at the top to compare where they play, as two heatmaps.</p>
+      )}
+    </section>
   );
 }

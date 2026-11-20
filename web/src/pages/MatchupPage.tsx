@@ -127,6 +127,8 @@ export function MatchupPage({ selection, meta, onNavigate }: { selection: Select
                   <td><b>{h.score_a}</b></td>
                   <td><b>{h.score_b}</b></td>
                   <td>
+                    <button className="replay-link" title="The story of this map, round by round"
+                      onClick={() => onNavigate({ tab: "matches", game: h.game_id, map: "" })}>📖</button>{" "}
                     <button className="replay-link" title="Replay this map from round 1"
                       onClick={() => onNavigate({ map: h.map, ...replayAt(h.first_round, -3) })}>▶</button>
                   </td>

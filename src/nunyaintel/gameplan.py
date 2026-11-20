@@ -18,9 +18,10 @@ from __future__ import annotations
 
 import sqlite3
 from collections import Counter, defaultdict
+from pathlib import Path
 
 from nunyaintel import insights, matchup_report, predict
-from nunyaintel.maps import MapInfo, get_map
+from nunyaintel.maps import DEFAULT_PATH, MapInfo, get_map
 from nunyaintel.operator_profiler import profiler as op
 from nunyaintel.utility import effectiveness, lineups, placement
 
@@ -122,13 +123,19 @@ def _economy(con, team_id) -> dict | None:
             "league_rate": lr}  # fmt: skip
 
 
-def plan(con: sqlite3.Connection, us: str, them: str, map_info: MapInfo | None = None) -> dict:
+def plan(
+    con: sqlite3.Connection,
+    us: str,
+    them: str,
+    map_info: MapInfo | None = None,
+    maps_path: Path = DEFAULT_PATH,
+) -> dict:
     baselines = insights.load_baselines(con)
     chosen = map_info is not None
     rep = matchup_report.report(con, us, them, map_info=map_info)
     # no map chosen: plan for the suggested pick (the map where we're furthest ahead)
     if map_info is None and rep["pick"]:
-        map_info = get_map(rep["pick"])
+        map_info = get_map(rep["pick"], maps_path)
         rep = matchup_report.report(con, us, them, map_info=map_info)
     a, b = rep["a"]["name"], rep["b"]["name"]
     m = map_info.name if map_info else None
