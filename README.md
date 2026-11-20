@@ -51,6 +51,20 @@ py -3.14 -m venv .venv                    # macOS/Linux: python3.14 -m venv .ven
 - Saving disk with a sparse checkout of the data? Include **`meta`**: `git sparse-checkout set val val-ability-supplements meta`. (The data README's example leaves it out, and NunyaIntel needs it.)
 - Port 4811 taken? Use `nunyaintel serve --port 4821`.
 
+### Or run it with Docker
+
+After step 4 above (the extract has to exist in `data/cache`), with Docker Desktop running:
+
+```powershell
+docker compose up -d --build     # then open http://127.0.0.1:4811
+docker compose logs -f           # watch it start (the first start copies the extract, ~1 min)
+docker compose down              # stop it (add -v to also delete Docker's copy of the extract)
+```
+
+- **The image holds code only.** The licensed data and the extract are mounted at run time, never built into the image, so sharing the image can't leak them.
+- **Fast on Windows and macOS:** on first start (and whenever you rebuild the extract), `docker-entrypoint.sh` copies `data/cache` into a Docker volume. Reading the 1.1 GB extract straight from a Windows folder was 10–20× slower (a game plan took 56 s instead of 3 s).
+- **Local only:** the port is published on `127.0.0.1`, as the data licence allows local use, not a public server.
+
 ## A tour
 
 Pick a team (the **Cloud9** / **Cloud9 GC** buttons are shortcuts), a map and optionally a side. The selection lives in the URL, e.g. `/?team=79&map=lotus&tab=utility`, so any view can be bookmarked or shared.

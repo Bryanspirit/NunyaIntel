@@ -1,0 +1,19 @@
+# Keep the build context small and free of licensed data: nothing below is sent to Docker.
+data/
+*.sqlite
+*.zst
+*.jsonl
+*.parquet
+*.duckdb
+.git/
+.venv/
+.idea/
+.junie/
+**/__pycache__/
+.pytest_cache/
+.ruff_cache/
+web/node_modules/
+web/dist/
+tests/
+docs/
+scripts/

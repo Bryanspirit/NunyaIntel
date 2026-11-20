@@ -147,7 +147,9 @@ def serve(
 
     if build:
         build_web()
-    url = f"http://{host}:{port}/"
+    # in a container we listen on 0.0.0.0, but the address to open (and warm) is still local
+    shown = "127.0.0.1" if host in ("0.0.0.0", "::") else host
+    url = f"http://{shown}:{port}/"
     if (WEB_DIST / "index.html").exists():
         print(f"NunyaIntel on {url}   (API docs: {url}docs)")
     else:

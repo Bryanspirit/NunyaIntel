@@ -11,6 +11,22 @@ One entry per build step: what we built, the key ideas behind it, how to run it,
 
 ---
 
+## Running in Docker (branch `interactive`, 20 Nov 2026)
+
+**What:** `docker compose up -d --build` runs NunyaIntel in a container at http://127.0.0.1:4811 (`Dockerfile`, `compose.yaml`, `.dockerignore`, `docker-entrypoint.sh`).
+
+**Key ideas**
+- **Multi-stage build:** stage 1 (Node) builds the React app; stage 2 (slim Python 3.14) copies only the built `dist` and installs the package. No Node or `node_modules` in the final image, which is 209 MB.
+- **Code in the image, data at run time:** `.dockerignore` keeps `data/`, `*.sqlite`, `*.zst` and friends out of the build context altogether, and a check inside the built image found no data files. The licensed data is mounted when the container runs.
+- **Bind mount vs. named volume:** reading a 1.1 GB SQLite file from a Windows folder through Docker is slow (game plan 56 s, Key findings 2.6 s). A named volume lives on Docker's own Linux disk: 3.3 s and 0.13 s. The start-up script copies the extract into the volume on first start, and again only when `data/cache` has a newer one (`-nt`, "newer than").
+- **Listening vs. publishing:** inside a container the server must listen on `0.0.0.0`, or Docker's port forwarding can't reach it. Privacy comes from publishing the port on `127.0.0.1:4811` only, which matches the data licence (local use).
+- **Small hardening:** runs as a non-root user (`app`, uid 1000), a `HEALTHCHECK` calls `/api/meta`, and `.gitattributes` keeps `*.sh` files at LF line endings, since a Windows CRLF would break the script in Linux.
+- **The backslash trap, again:** writing the Dockerfile through a shell heredoc turned `\r` into a real carriage return and lost the line continuations. Fixed by rewriting the line by number. Rule: use the Edit tool for lines with backslashes.
+
+**Read:** `Dockerfile`, `compose.yaml`, `docker-entrypoint.sh`.
+
+---
+
 ## Agent compositions + what's changed lately (branch `interactive`, 20 Nov 2026)
 
 **What:** on **Scouting** (with a map picked), the team's agent compositions next to the league's most common ones. On **Key findings**, "What's changed lately": the team's last 5 matches against everything before.
