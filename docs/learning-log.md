@@ -11,6 +11,22 @@ One entry per build step: what we built, the key ideas behind it, how to run it,
 
 ---
 
+## Playstyle fingerprint (main, 20 Nov 2026)
+
+**What:** a **Playstyle** panel on Scouting (one map). It shows when the team plants (fast < 35 s, default, late > 70 s, or no plant), when first contact happens and who wins it, how often they fake, and how early fights start on their defense, all against the league on the same map. The game plan gets a "Their playstyle" section with advice for anything unusual.
+
+**Key ideas**
+- **Compare within a map:** maps differ a lot in pace, so the baseline is every team's rounds on the same map, never a global average.
+- **Defining a fake from the data:** take the utility the attackers threw within 20 m of a site before planting. If 2+ casts went to one site and they planted at another, it's a fake. A definition you can state in one sentence is one you can check.
+- **Only flag what's beyond luck:** each rate gets a z-score against the league; ±1.5 is "notable", the rest is shown as "like the league". Cloud9's 12.5% fakes look high but aren't significant, so the page doesn't make a story of them.
+- **Distributions beat averages:** a median plant time hides the shape, so a 5-second histogram of plant times (team bars, league outline) shows *when* a team hits.
+- **Cloud9 on Lotus:** 32% of attack rounds plant after 70 s (league 21%, 3.5 SE), median plant 61 s vs 55 s, a slow, late-hitting team. Cloud9 GC is the opposite: fast contact, 59% of first kills, almost no fakes.
+- **Merged to main:** every branch was already inside `interactive`, so `main` moved forward with no merge commit (`git merge --ff-only`). Lint, tests, the web build and all claims were re-run on `main` before pushing.
+
+**Read:** `src/nunyaintel/playstyle.py`, `web/src/components/PlaystylePanel.tsx`.
+
+---
+
 ## Running in Docker (branch `interactive`, 20 Nov 2026)
 
 **What:** `docker compose up -d --build` runs NunyaIntel in a container at http://127.0.0.1:4811 (`Dockerfile`, `compose.yaml`, `.dockerignore`, `docker-entrypoint.sh`).

@@ -471,3 +471,25 @@ def test_comps_and_recent(client, paths):
     assert client.get("/api/recent", params={"team": "A"}).json()["enough"] is False
     assert comps._z_diff(30, 50, 10, 50) == pytest.approx(4.08, abs=0.01)
     assert comps._z_diff(0, 0, 5, 10) == 0.0
+
+
+def test_playstyle(client):
+    j = client.get("/api/playstyle", params={"team": "A", "map": "testmap"}).json()
+    team = j["team"]
+    # every fixture round: plant 10 s after the buy phase, at A, with recon bolts near A first
+    assert team["attack_rounds"] == 4 and team["pace"]["fast"]["n"] == 4
+    assert team["median_plant_s"] == 10.0 and sum(team["plant_hist"]) == pytest.approx(1.0)
+    assert team["rates"]["fake"]["hits"] == 0 and team["rates"]["fake"]["n"] == 4
+    assert team["rates"]["first_kill"]["n"] == 4  # (the fixture's kills don't record a side)
+    assert j["league"]["attack_rounds"] == 4  # the only team on the map
+    assert client.get("/api/playstyle", params={"team": "A", "map": "nowhere"}).status_code == 404
+
+
+def test_pace_bands():
+    from nunyaintel.playstyle import _hist, pace
+
+    assert [pace(None), pace(10), pace(35), pace(70), pace(71)] == [
+        "no plant", "fast", "default", "default", "late"
+    ]  # fmt: skip
+    h = _hist([0, 4.9, 5, 500])
+    assert h[0] == 0.5 and h[1] == 0.25 and h[-1] == 0.25

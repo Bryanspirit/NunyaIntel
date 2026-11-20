@@ -400,6 +400,13 @@ def create_app(
 
         return comps.recent(con, _team(con, team)["id"])
 
+    @app.get("/api/playstyle")
+    def team_playstyle(team: str, map: str, con: sqlite3.Connection = db) -> dict[str, Any]:
+        """How fast the team hits, how it opens rounds, how often it fakes (vs. the league)."""
+        from nunyaintel import playstyle
+
+        return playstyle.fingerprint(con, _team(con, team)["id"], get_map(map))
+
     @app.get("/api/matches")
     def matches(team: str, con: sqlite3.Connection = db) -> dict[str, Any]:
         """The team's maps, newest first (for the match-story picker)."""

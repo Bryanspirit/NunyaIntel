@@ -470,7 +470,7 @@ export interface RoundModel {
 // ---- /api/gameplan -----------------------------------------------------------------------
 
 export interface GamePlanItem {
-  section: "veto" | "exploit" | "respect" | "watch" | "map" | "utility" | "operator" | "economy";
+  section: "veto" | "exploit" | "respect" | "watch" | "map" | "playstyle" | "utility" | "operator" | "economy";
   advice: string;
   evidence: string;
   n: number;

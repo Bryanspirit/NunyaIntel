@@ -16,6 +16,7 @@ type Nav = (change: Partial<Selection>) => void;
 const SECTIONS: { key: GamePlanItem["section"]; title: string; blurb: string }[] = [
   { key: "veto", title: "Map veto", blurb: "where we're furthest ahead / behind" },
   { key: "map", title: "Site plan", blurb: "attack their weakest hold, stack their favourite site" },
+  { key: "playstyle", title: "Their playstyle", blurb: "how they hit and open rounds on this map, where it's unusual" },
   { key: "exploit", title: "Exploit", blurb: "their weaknesses vs. the league" },
   { key: "respect", title: "Respect", blurb: "their strengths vs. the league" },
   { key: "utility", title: "Expect this utility", blurb: "their most-used lineups on the map" },

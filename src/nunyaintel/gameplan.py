@@ -20,7 +20,7 @@ import sqlite3
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from nunyaintel import insights, matchup_report, predict
+from nunyaintel import insights, matchup_report, playstyle, predict
 from nunyaintel.maps import DEFAULT_PATH, MapInfo, get_map
 from nunyaintel.operator_profiler import profiler as op
 from nunyaintel.utility import effectiveness, lineups, placement
@@ -59,6 +59,21 @@ WATCH = {
     "op_duel_win": "Our Operator loses opening duels ({r} won): play it for second contact",
 }
 SIDE_WORD = {"attacker": "attack", "defender": "defense"}
+# (rate, above the league?) -> advice; {r} = their rate
+STYLE = {
+    (
+        "late",
+        True,
+    ): "Expect slow, late hits ({r} after 70 s): keep your setups, don't over-rotate early",
+    ("late", False): "They rarely hit late ({r}): be set up by the mid-round",
+    ("fast", True): "Expect fast hits ({r} plant within 35 s): get early info, play for retakes",
+    ("first_kill", True): "Respect their entry: they get the first kill in {r} of attack rounds",
+    ("first_kill", False): "Contest the opening duel: their attack gets the first kill only {r}",
+    ("fake", True): "Watch for fakes: {r} of their planted rounds were fakes",
+    ("fake", False): "They rarely fake ({r}): trust where their utility goes and rotate",
+    ("early_fight", True): "Expect early fights on their defense ({r} of rounds in the first 15 s)",
+    ("early_fight", False): "Their defense rarely fights early ({r}): take space at the start",
+}
 BUY_WORDS = {"eco": "eco", "semi-eco": "semi-eco", "semi-buy": "force / half buy",
              "full-buy": "full-buy"}  # fmt: skip
 
@@ -221,6 +236,19 @@ def plan(
                 f"won {_pct(main.op_round_win_rate)} of Op rounds",
                 main.rounds_with_op, {"tab": "operator", "team": them, "map": m},
             ))  # fmt: skip
+
+    # their playstyle on the map: only what differs from the league beyond luck
+    if map_info is not None:
+        style = playstyle.fingerprint(con, them, map_info)["team"]["rates"]
+        for key, r in style.items():
+            text = STYLE.get((key, r["z"] > 0)) if r["notable"] else None
+            if text:
+                items.append(_item(
+                    "playstyle", text.format(r=_pct(r["rate"])),
+                    f"{r['hits']} of {r['n']} on {m.title()}; league {_pct(r['league_rate'])}; "
+                    f"{abs(r['z']):.1f} standard errors",
+                    r["n"], {"tab": "scouting", "team": them, "map": m},
+                ))  # fmt: skip
 
     econ = _economy(con, them)
     if econ:

@@ -398,6 +398,23 @@ def _recent_c9(con):
     )
 
 
+def _playstyle_c9(con):
+    """Cloud9's Lotus playstyle (Scouting playstyle panel)."""
+    from nunyaintel import playstyle
+    from nunyaintel.maps import get_map
+
+    f = playstyle.fingerprint(con, "79", get_map("lotus"))
+    late = f["team"]["rates"]["late"]
+    got = (late["hits"], late["n"], round(late["league_rate"] * 100), round(late["z"], 1),
+           round(f["team"]["median_plant_s"]), round(f["league"]["median_plant_s"]))  # fmt: skip
+    return Result(
+        got == (50, 155, 21, 3.5, 61, 55),
+        f"late plants {got[0]}/{got[1]} vs league {got[2]}% (z {got[3]}); median plant "
+        f"{got[4]} s vs {got[5]} s",
+        late["n"],
+    )
+
+
 CLAIMS = [
     Claim("dataset", "README intro",
           "857 series, 2,078 maps, 42,490 rounds, 160 teams (Jan 2025 - Sep 2026)", _dataset),
@@ -461,6 +478,9 @@ CLAIMS = [
           "Cloud9's last 5 matches vs the 14 before: OXY's Operator use fell from 11.2% (75 of 672 "
           "rounds) to 7.6% (22 of 290), 1.7 standard errors; no main rate changed beyond luck",
           _recent_c9),
+    Claim("playstyle_c9", "Scouting (Playstyle on Lotus)",
+          "Cloud9 hit late on Lotus: 32% of attack rounds plant after 70 s (50 of 155) vs 21% "
+          "league, 3.5 standard errors; median plant 61 s vs 55 s", _playstyle_c9),
     Claim("ability_kills", "README caveats", "about 3.7% of kills have no weapon recorded",
           _ability_kills),
 ]  # fmt: skip
