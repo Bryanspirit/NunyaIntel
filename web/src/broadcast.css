@@ -559,3 +559,37 @@ td.hi-cell { color: #f5c56b; font-weight: 700; }
 .ph-axis { fill: var(--muted); font-size: 10px; }
 .ps-stats { display: flex; flex-wrap: wrap; gap: 18px; margin: 8px 0 12px; font-size: 13px; }
 .ps-stats b { font-family: var(--display); font-size: 20px; }
+
+/* ---- Map veto ------------------------------------------------------------------------------ */
+.veto { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; margin-bottom: 14px; }
+@media (max-width: 900px) { .veto { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.veto-card { display: flex; flex-direction: column; gap: 4px; padding: 10px 8px; border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--panel); color: var(--text); font: inherit; text-align: left; cursor: pointer; animation: strip-in 0.4s both; }
+.veto-card:hover { outline: 2px solid #fff; }
+.veto-card.ban { opacity: 0.75; }
+.veto-card.ban .veto-map { text-decoration: line-through; text-decoration-color: var(--bad); }
+.veto-card.pick { border-color: var(--good); box-shadow: inset 0 3px 0 var(--good); }
+.veto-card.decider { border-color: #f5c56b; box-shadow: inset 0 3px 0 #f5c56b; }
+.veto-card.a .veto-step { color: #ff8a8a; } .veto-card.b .veto-step { color: #8fd8fb; }
+.veto-step { font-family: var(--display); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; font-size: 11px; color: #f5c56b; }
+.veto-map { font-family: var(--display); font-weight: 800; font-size: 20px; text-transform: uppercase; }
+.veto-edge { font-size: 11px; color: var(--muted); }
+.veto-odds { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; margin-bottom: 12px; }
+.veto-odds > div:first-child { display: flex; align-items: baseline; gap: 10px; }
+.veto-odds b { font-family: var(--display); font-size: 44px; line-height: 1; }
+@media (prefers-reduced-motion: reduce) { .veto-card { animation: none; } }
+
+/* ---- Quick search (Ctrl+K) ------------------------------------------------------------------ */
+.palette-backdrop { justify-content: center; align-items: flex-start; padding-top: 12vh; }
+.palette { width: min(620px, calc(100% - 32px)); background: #0f1923; border: 1px solid rgba(255, 255, 255, 0.15);
+  border-top: 4px solid var(--accent); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6); animation: drawer-in 0.18s ease-out; }
+.palette input { width: 100%; padding: 14px 16px; font-size: 17px; border: none; border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent; color: var(--text); outline: none; }
+.palette ul { list-style: none; margin: 0; padding: 6px 0; max-height: 50vh; overflow-y: auto; }
+.palette li { display: flex; gap: 12px; align-items: center; padding: 8px 16px; cursor: pointer; }
+.palette li.on { background: rgba(255, 70, 85, 0.14); }
+.pal-kind { width: 54px; font-family: var(--display); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+.pal-kind.team { color: #ff8a8a; } .pal-kind.player { color: #8fd8fb; } .pal-kind.map { color: #f5c56b; }
+.pal-label { font-weight: 600; }
+.pal-hint { margin-left: auto; font-size: 12px; color: var(--muted); }
+.pal-foot { padding: 8px 16px; font-size: 12px; border-top: 1px solid rgba(255, 255, 255, 0.08); }

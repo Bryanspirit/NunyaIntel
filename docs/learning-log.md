@@ -11,6 +11,21 @@ One entry per build step: what we built, the key ideas behind it, how to run it,
 
 ---
 
+## Map veto simulator + quick search (main, 20 Nov 2026)
+
+**What:** the Matchup page plays out a **best-of-3 veto** (ban, ban, pick, pick, ban, ban, decider) with series odds. **Ctrl+K** (or `/`, or ⌕ Search) opens a quick search for pages, teams, maps and players.
+
+**Key ideas**
+- **A negative result is a result:** I tried to give each team a strength *per map* (Elo plus a per-map offset, learned from map wins, then from round shares). On the tuning maps it looked better, but on the latest 503 maps it was **worse** than plain Elo (Brier 0.2177 vs 0.2126; 65.0% vs 66.8% right). So past results on a map didn't predict the next result there beyond overall strength. Teams play each map rarely, rosters change, and the test period is a different set of teams (2026 Game Changers).
+- **So the tool says what it can back:** the veto order comes from map records (round win rate vs. the team's usual, shrunk with 60 rounds' weight), which is useful for *preparation*. The series odds come from overall Elo only, and the page explains why. The finding is a checked claim (`veto_model`).
+- **Best of 3 favours the favourite:** with the same chance p on each map, P(series) = p²(3 − 2p). 60% per map becomes 64.8%; Cloud9's 45% against NRG becomes 43%.
+- **Tune without touching the test set:** the offset's learning rate was chosen on the last 30% of the *training* maps, so the 503 test maps were only used once, for the final score.
+- **Keyboard-first search:** one listener on `window` opens it; arrows move an `aria-selected` option; Enter navigates; player names come from the debounced `/api/players` search. Note: when automated, Chrome may catch Ctrl+K for its own address bar, so the ⌕ button opens it too.
+
+**Read:** `src/nunyaintel/veto.py`, `web/src/components/VetoPanel.tsx`, `web/src/components/CommandPalette.tsx`.
+
+---
+
 ## Playstyle fingerprint (main, 20 Nov 2026)
 
 **What:** a **Playstyle** panel on Scouting (one map). It shows when the team plants (fast < 35 s, default, late > 70 s, or no plant), when first contact happens and who wins it, how often they fake, and how early fights start on their defense, all against the league on the same map. The game plan gets a "Their playstyle" section with advice for anything unusual.

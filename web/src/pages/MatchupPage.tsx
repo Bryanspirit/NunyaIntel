@@ -2,6 +2,7 @@
 // pick/ban suggestion, the site battle on the selected map, and every head-to-head map with a
 // link into the Replay.
 
+import { VetoPanel } from "../components/VetoPanel";
 import type { CSSProperties } from "react";
 import { OpponentPicker } from "../components/OpponentPicker";
 import { apiUrl, type CollisionSide, type MatchupReport, type Meta, type SiteBattleRow } from "../api";
@@ -55,6 +56,8 @@ export function MatchupPage({ selection, meta, onNavigate }: { selection: Select
         <TeamSide side={elo.b} align="right" />
       </Reveal>
       {elo.warnings.length > 0 && <ul className="warnings">{elo.warnings.map((w) => <li key={w}>{w}</li>)}</ul>}
+
+      <VetoPanel selection={{ ...selection, opp: b.id }} index={0} onNavigate={onNavigate} />
 
       <Panel title="Where they collide" index={0}
         aside="each side vs. the league; the edge goes to whoever is further in their own favour">

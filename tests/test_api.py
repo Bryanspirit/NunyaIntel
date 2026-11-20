@@ -493,3 +493,20 @@ def test_pace_bands():
     ]  # fmt: skip
     h = _hist([0, 4.9, 5, 500])
     assert h[0] == 0.5 and h[1] == 0.25 and h[-1] == 0.25
+
+
+def test_veto(client):
+    j = client.get("/api/veto", params={"team": "A"}).json()
+    assert (j["a"]["name"], j["b"]["name"]) == ("Alpha", "Bravo")
+    assert [p["map"] for p in j["pool"]] == ["testmap"] and j["steps"] == []  # one-map pool
+    assert j["decider"] == "testmap" and j["order"] == ["testmap"]
+    assert 0 < j["p_map"] < 1 and j["series_p_a"] > j["p_map"]  # A won both maps: favourite
+    assert {"brier", "plain_elo_brier", "test_maps"} <= set(j["model"])
+
+
+def test_series_chance():
+    from nunyaintel.veto import series_chance
+
+    assert series_chance([0.5, 0.5, 0.5]) == pytest.approx(0.5)
+    assert series_chance([0.6, 0.6, 0.6]) == pytest.approx(0.648)  # Bo3 favours the favourite
+    assert series_chance([1.0, 0.0, 1.0]) == pytest.approx(1.0)

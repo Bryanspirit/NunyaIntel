@@ -2,8 +2,8 @@
 
 Every number NunyaIntel quotes, recomputed from the local extract by `nunyaintel verify-claims`. This file is generated, so don't edit it by hand.
 
-- Checked: 2026-11-20 10:31 UTC; extract built 2026-11-18T02:00:57+00:00
-- Result: **23 of 23 claims pass**
+- Checked: 2026-11-20 10:37 UTC; extract built 2026-11-18T02:00:57+00:00
+- Result: **24 of 24 claims pass**
 - *small sample* = fewer than 30 rounds or duels behind the number: quote it as a lead, not a verdict
 - Data coverage: no VCT (main-team) matches in 2026; Cloud9's VCT data ends Aug 2025.
 
@@ -31,4 +31,5 @@ Every number NunyaIntel quotes, recomputed from the local extract by `nunyaintel
 | PASS | Cloud9's top impact: v1c +2.05 round wins added per 100 rounds (#94 of 535 players with 200+ rounds), OXY +1.64 (#119) | Key findings (Who wins rounds), player pages | v1c +2.05 round wins added / 100 (#94 of 535); OXY +1.64 (#119) |
 | PASS | Cloud9's last 5 matches vs the 14 before: OXY's Operator use fell from 11.2% (75 of 672 rounds) to 7.6% (22 of 290), 1.7 standard errors; no main rate changed beyond luck | Key findings (What's changed lately) | last 5 vs 14 matches: OXY Op 22/290 vs 75/672 (z -1.69); main rates changed beyond luck: 0 |
 | PASS | Cloud9 hit late on Lotus: 32% of attack rounds plant after 70 s (50 of 155) vs 21% league, 3.5 standard errors; median plant 61 s vs 55 s | Scouting (Playstyle on Lotus) | late plants 50/155 vs league 21% (z 3.5); median plant 61 s vs 55 s |
+| PASS | per-map strength did not beat plain Elo on 503 unseen maps: Brier 0.2177 vs 0.2126, right 65.0% vs 66.8% | Matchup (map veto note) | 503 test maps: per-map Brier 0.2177 vs plain Elo 0.2126; right 65.0% vs 66.8% |
 | PASS | about 3.7% of kills have no weapon recorded | README caveats | 10989/297521 = 3.7% |

@@ -407,6 +407,19 @@ def create_app(
 
         return playstyle.fingerprint(con, _team(con, team)["id"], get_map(map))
 
+    @app.get("/api/veto")
+    def map_veto(
+        team: str, opponent: str | None = None, con: sqlite3.Connection = db
+    ) -> dict[str, Any]:
+        """Best-of-3 veto played out from map records, with series odds from overall Elo."""
+        from nunyaintel import predict, veto
+
+        a = _team(con, team)["id"]
+        b = _team(con, opponent)["id"] if opponent else predict.frequent_opponent(con, a)
+        if b is None:
+            raise HTTPException(404, "No opponent found for this team")
+        return veto.simulate(con, a, b)
+
     @app.get("/api/matches")
     def matches(team: str, con: sqlite3.Connection = db) -> dict[str, Any]:
         """The team's maps, newest first (for the match-story picker)."""

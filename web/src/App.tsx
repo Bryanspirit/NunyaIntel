@@ -1,5 +1,6 @@
 // App shell: header with pickers, tabs, and the active page.
 
+import { CommandPalette } from "./components/CommandPalette";
 import { HelpDrawer, HowTo } from "./components/Help";
 import { HOWTO } from "./glossary";
 import { useCallback, useState } from "react";
@@ -37,6 +38,8 @@ export function App() {
         </h1>
         <p className="tagline">VALORANT scouting · utility · Operator profiler</p>
         <div className="header-actions">
+          <button className="help-start" title="Quick search (Ctrl+K)"
+            onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true }))}>⌕ Search</button>
           <button className="help-start" onClick={() => setHelp(true)} aria-label="Help and glossary">? Help</button>
           <button className="tour-start" onClick={() => setTour(0)} disabled={tour !== null}>▶ Presentation</button>
         </div>
@@ -70,6 +73,7 @@ export function App() {
         {selection.tab === "predict" && <PredictPage selection={selection} meta={meta.data} teamName={teamName} />}
       </main>
 
+      <CommandPalette meta={meta.data} onNavigate={update} />
       {help && <HelpDrawer onClose={closeHelp} />}
       {tour !== null && <Tour step={tour} onStep={setTour} onClose={closeTour} onNavigate={update} tab={selection.tab} />}
 

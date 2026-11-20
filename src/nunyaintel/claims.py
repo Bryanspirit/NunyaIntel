@@ -415,6 +415,20 @@ def _playstyle_c9(con):
     )
 
 
+def _veto_model(con):
+    """Per-map strength vs plain Elo on unseen maps (Matchup veto note)."""
+    from nunyaintel import veto
+
+    e = veto.evaluate(con)
+    got = (e["test_maps"], round(e["brier"], 4), round(e["plain_elo_brier"], 4),
+           round(e["accuracy"] * 100, 1), round(e["plain_elo_accuracy"] * 100, 1))  # fmt: skip
+    return Result(
+        got == (503, 0.2177, 0.2126, 65.0, 66.8),
+        f"{got[0]} test maps: per-map Brier {got[1]} vs plain Elo {got[2]}; "
+        f"right {got[3]}% vs {got[4]}%",
+    )
+
+
 CLAIMS = [
     Claim("dataset", "README intro",
           "857 series, 2,078 maps, 42,490 rounds, 160 teams (Jan 2025 - Sep 2026)", _dataset),
@@ -481,6 +495,9 @@ CLAIMS = [
     Claim("playstyle_c9", "Scouting (Playstyle on Lotus)",
           "Cloud9 hit late on Lotus: 32% of attack rounds plant after 70 s (50 of 155) vs 21% "
           "league, 3.5 standard errors; median plant 61 s vs 55 s", _playstyle_c9),
+    Claim("veto_model", "Matchup (map veto note)",
+          "per-map strength did not beat plain Elo on 503 unseen maps: Brier 0.2177 vs 0.2126, "
+          "right 65.0% vs 66.8%", _veto_model),
     Claim("ability_kills", "README caveats", "about 3.7% of kills have no weapon recorded",
           _ability_kills),
 ]  # fmt: skip
