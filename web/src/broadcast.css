@@ -489,3 +489,5 @@ tr.clickable-row:hover td { background: rgba(255, 255, 255, 0.04); }
 .cmp-bar { display: flex; height: 8px; background: rgba(255, 255, 255, 0.06); }
 .cmp-a { background: #ff4655; } .cmp-b { background: #4fc3f7; margin-left: auto; }
 .cmp-heat > .grid-2 { grid-template-columns: 1fr; }
+
+.clock-note { margin: 10px 0 14px; font-size: 13px; line-height: 1.5; }

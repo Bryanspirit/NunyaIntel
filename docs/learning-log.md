@@ -11,6 +11,20 @@ One entry per build step: what we built, the key ideas behind it, how to run it,
 
 ---
 
+## Time in the round-win model (branch `interactive`, 20 Nov 2026)
+
+**What:** the win-chance model now knows *when* a state happens: before the plant, 20-second bands of round time; after the plant, 10-second bands since the plant (the spike goes off at 45 s).
+
+**Key ideas**
+- **One more level of shrinkage:** (players alive, spike, time band) → (players alive, spike) → … A time band with few examples falls back to the timeless rate, so adding detail can't make rare cases worse.
+- **Measure the gain on the same moments:** the evaluation scores every test moment twice, with and without time. Overall the gain is small (Brier 0.1620 → 0.1612), because most moments are early in a round. On 18,473 late moments it's clear: 0.1363 → 0.1332.
+- **What it learns:** a 1v1 with the spike down is a coin flip just after the plant (52%) but 75% for attack after 30 s. A 2v2 without a plant drops from 49% to 36% for attack as the clock runs out.
+- **Test lesson:** my first test used identical rounds, so every level agreed and nothing could change. A test needs data where the thing being tested *matters*: here, the same state early in some rounds and late in others.
+
+**Read:** `band` and `moments` in `src/nunyaintel/winprob.py`, `tests/test_winprob.py`.
+
+---
+
 ## Match story + player compare (branch `interactive`, 20 Nov 2026)
 
 **What:** a **Matches** tab. It lists the team's maps; pick one for its story: a score-difference line, then one column per round with the score, how it ended, both buys, side, plant site and first blood. Click any round to replay it. Matchup head-to-head rows get a 📖 link to the story. On a player's profile, **Compare with…** puts two players side by side (`?vs=`), with per-map stats, agents, weapons and two heatmaps.

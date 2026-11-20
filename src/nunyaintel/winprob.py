@@ -6,10 +6,15 @@ chance at every kill and plant of a round to draw a win-chance line.
 
 Rare states (say 1 v 4 with the spike down) have few examples, so each state's rate is shrunk
 toward a broader group, the same empirical-Bayes idea as the lineup scores:
-  state (a, d, planted)  ->  man advantage (a - d, planted)  ->  planted or not  ->  all rounds
+  (a, d, planted, time band) -> (a, d, planted) -> man advantage (a - d, planted)
+  -> planted or not -> all rounds
+
+Time matters: a 2 v 2 with 5 s left plays differently from one with 60 s. The time band is
+  before the plant  R0..R4 = 0-20, 20-40, 40-60, 60-80, 80+ s after the buy phase ends
+  after the plant   P0..P3 = 0-10, 10-20, 20-30, 30+ s after the plant (the spike: 45 s)
+taken when the state begins (at the kill or plant that created it).
 
 Revives (Sage) are not in the data, so a side can show 6 deaths; alive counts stop at 0.
-Time left is not in the state yet: a 2 v 2 with 5 s left plays differently from one with 60 s.
 """
 
 from __future__ import annotations
@@ -18,11 +23,27 @@ import os
 import sqlite3
 from collections import defaultdict
 from dataclasses import dataclass, field
+from datetime import datetime
 
 from nunyaintel.predict import TEST_FRACTION, log_loss
 
 K = 10.0  # shrinkage strength: a state needs ~10 rounds before its own rate dominates
 START_STATE = (5, 5, 0)
+START_BAND = "R0"
+LATE_BANDS = {"R3", "R4", "P2", "P3"}  # 60 s+ into the round, or 20 s+ after the plant
+
+
+def band(t_round: float | None, t_plant: float | None) -> str | None:
+    """Time band for a moment: seconds after the buy phase / after the plant (see above)."""
+    if t_plant is not None:
+        return f"P{min(max(int(t_plant // 10), 0), 3)}"
+    if t_round is None:
+        return None
+    return f"R{min(max(int(t_round // 20), 0), 4)}"
+
+
+def _secs(a: str, b: str) -> float:
+    return (datetime.fromisoformat(a) - datetime.fromisoformat(b)).total_seconds()
 
 
 @dataclass
@@ -34,6 +55,7 @@ class RoundStory:
     buy_end: str | None
     # (occurred_at, attackers alive, defenders alive, planted, what happened)
     steps: list[tuple[str, int, int, int, str]] = field(default_factory=list)
+    bands: list[str | None] = field(default_factory=list)  # time band of each step
 
 
 def stories(con: sqlite3.Connection, where: str = "", params: tuple = ()) -> list[RoundStory]:
@@ -68,6 +90,7 @@ def stories(con: sqlite3.Connection, where: str = "", params: tuple = ()) -> lis
 
     for key, story in rounds.items():
         a, d, planted = START_STATE
+        plant_at = None
         for at, what in sorted(happenings.get(key, [])):
             if what == "attacker died":
                 a = max(0, a - 1)
@@ -75,7 +98,14 @@ def stories(con: sqlite3.Connection, where: str = "", params: tuple = ()) -> lis
                 d = max(0, d - 1)
             else:
                 planted = 1
+                plant_at = plant_at or at
             story.steps.append((at, a, d, planted, what))
+            try:
+                t_round = _secs(at, story.buy_end) if story.buy_end else None
+                t_plant = _secs(at, plant_at) if plant_at else None
+            except ValueError:
+                t_round = t_plant = None
+            story.bands.append(band(t_round, t_plant))
     return sorted(rounds.values(), key=lambda r: (r.started_at, r.key))
 
 
@@ -88,17 +118,28 @@ def visited(story: RoundStory) -> list[tuple[int, int, int]]:
     return out
 
 
+def moments(story: RoundStory) -> list[tuple[int, int, int, str | None]]:
+    """Like ``visited`` but with the time band each state began in: (a, d, planted, band)."""
+    out = [(*START_STATE, START_BAND)]
+    for (_, a, d, p, _), b in zip(story.steps, story.bands, strict=True):
+        if (a, d, p) != out[-1][:3]:
+            out.append((a, d, p, b))
+    return out
+
+
 class Model:
     """Counts of (attack wins, rounds) per state and per broader group."""
 
     def __init__(self, train: list[RoundStory]):
+        self.timed: dict[tuple, list[int]] = defaultdict(lambda: [0, 0])
         self.state: dict[tuple, list[int]] = defaultdict(lambda: [0, 0])
         self.adv: dict[tuple, list[int]] = defaultdict(lambda: [0, 0])
         self.plant: dict[int, list[int]] = defaultdict(lambda: [0, 0])
         self.all = [0, 0]
         for r in train:
-            for a, d, p in set(visited(r)):  # each state counts once per round
+            for a, d, p, b in set(moments(r)):  # each state counts once per round
                 for table, key in (
+                    (self.timed, (a, d, p, b)),
                     (self.state, (a, d, p)),
                     (self.adv, (a - d, p)),
                     (self.plant, p),
@@ -108,8 +149,8 @@ class Model:
             self.all[0] += r.attack_won
             self.all[1] += 1
 
-    def p_attack(self, a: int, d: int, planted: int) -> float:
-        """Chance the attack wins the round from this state."""
+    def p_attack(self, a: int, d: int, planted: int, band: str | None = None) -> float:
+        """Chance the attack wins the round from this state (and time band, if given)."""
         if a == 0 and not planted:
             return 0.0  # no attackers and no spike: the round is over
         if d == 0:
@@ -120,6 +161,7 @@ class Model:
             self.plant.get(planted),
             self.adv.get((a - d, planted)),
             self.state.get((a, d, planted)),
+            self.timed.get((a, d, planted, band)) if band else None,
         ):
             w, n = count or (0, 0)
             p = (w + K * p) / (n + K)
@@ -162,16 +204,25 @@ def evaluate(con: sqlite3.Connection) -> dict:
     test = [r for r in all_rounds if r.key[1] in test_games]
     m = Model(train)
     base = m.all[0] / m.all[1]
-    n = hits = 0
-    brier = brier_base = loss = loss_base = 0.0
+    n = hits = hits_untimed = 0
+    late = [0, 0.0, 0.0]  # moments, Brier with time, Brier without
+    brier = brier_base = brier_untimed = loss = loss_base = 0.0
     bins: dict[int, list[int]] = defaultdict(lambda: [0, 0])
     for r in test:
-        for a, d, p in visited(r)[:-1] or [START_STATE]:  # the final state usually *is* the result
-            q = m.p_attack(a, d, p)
+        # the final state usually *is* the result, so it isn't scored
+        for a, d, p, b in moments(r)[:-1] or [(*START_STATE, START_BAND)]:
+            q = m.p_attack(a, d, p, b)
+            q0 = m.p_attack(a, d, p)  # same moment, no time: what the time band adds
             won = r.attack_won
             n += 1
             hits += (q >= 0.5) == won
+            hits_untimed += (q0 >= 0.5) == won
             brier += (q - won) ** 2
+            brier_untimed += (q0 - won) ** 2
+            if b in LATE_BANDS:  # where the clock should matter most
+                late[0] += 1
+                late[1] += (q - won) ** 2
+                late[2] += (q0 - won) ** 2
             brier_base += (base - won) ** 2
             loss += log_loss(q if won else 1 - q)
             loss_base += log_loss(base if won else 1 - base)
@@ -184,6 +235,11 @@ def evaluate(con: sqlite3.Connection) -> dict:
         "test_states": n,
         "accuracy": hits / n if n else 0.0,
         "brier": brier / n if n else 0.0,
+        "accuracy_without_time": hits_untimed / n if n else 0.0,
+        "brier_without_time": brier_untimed / n if n else 0.0,
+        "late_moments": late[0],
+        "late_brier": late[1] / late[0] if late[0] else 0.0,
+        "late_brier_without_time": late[2] / late[0] if late[0] else 0.0,
         "baseline_brier": brier_base / n if n else 0.0,
         "log_loss": loss / n if n else 0.0,
         "baseline_log_loss": loss_base / n if n else 0.0,

@@ -344,9 +344,26 @@ def _round_winprob(con):
         round(m.p_attack(5, 4, 0) * 100), round(m.p_attack(4, 5, 0) * 100),
     )  # fmt: skip
     return Result(
-        got == (12745, 74.6, 0.162, 0.249, 52, 74, 31),
+        got == (12745, 74.7, 0.161, 0.249, 52, 74, 31),
         f"{got[0]} unseen rounds: {got[1]}% right, Brier {got[2]} vs {got[3]}; attack wins "
         f"{got[4]}% at 5v5, {got[5]}% after getting the first kill, {got[6]}% after losing it",
+    )
+
+
+def _round_clock(con):
+    """What the time band adds to the round model (Predict tab note)."""
+    from nunyaintel import winprob
+
+    e = winprob.evaluate(con)
+    m = winprob.model(con)
+    got = (
+        e["late_moments"], round(e["late_brier_without_time"], 4), round(e["late_brier"], 4),
+        round(m.p_attack(1, 1, 1, "P0") * 100), round(m.p_attack(1, 1, 1, "P3") * 100),
+    )  # fmt: skip
+    return Result(
+        got == (18473, 0.1363, 0.1332, 52, 75),
+        f"late moments {got[0]}: Brier {got[1]} -> {got[2]} with time; 1v1 spike down: "
+        f"{got[3]}% in the first 10 s after the plant, {got[4]}% after 30 s",
     )
 
 
@@ -399,9 +416,13 @@ CLAIMS = [
           "(11 of 37); NRG's most-attacked site C (36%) is C9's 33% hold; C9 won 5 of 8 "
           "head-to-head maps", _matchup_nrg),
     Claim("round_winprob", "Replay win-chance line, Predict tab",
-          "round win chance: 74.6% right on 12,745 unseen rounds (Brier 0.162 vs 0.249); "
+          "round win chance: 74.7% right on 12,745 unseen rounds (Brier 0.161 vs 0.249); "
           "attack wins 52% at 5v5, 74% after the first kill, 31% after losing it",
           _round_winprob),
+    Claim("round_clock", "Predict tab (clock note)",
+          "time in the round helps late: Brier 0.1363 -> 0.1332 on 18,473 late moments; a 1v1 "
+          "with the spike down is 52% for attack just after the plant, 75% after 30 s",
+          _round_clock),
     Claim("ability_kills", "README caveats", "about 3.7% of kills have no weapon recorded",
           _ability_kills),
 ]  # fmt: skip

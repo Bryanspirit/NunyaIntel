@@ -2,8 +2,8 @@
 
 Every number NunyaIntel quotes, recomputed from the local extract by `nunyaintel verify-claims`. This file is generated, so don't edit it by hand.
 
-- Checked: 2026-11-20 08:07 UTC; extract built 2026-11-18T02:00:57+00:00
-- Result: **19 of 19 claims pass**
+- Checked: 2026-11-20 08:31 UTC; extract built 2026-11-18T02:00:57+00:00
+- Result: **20 of 20 claims pass**
 - *small sample* = fewer than 30 rounds or duels behind the number: quote it as a lead, not a verdict
 - Data coverage: no VCT (main-team) matches in 2026; Cloud9's VCT data ends Aug 2025.
 
@@ -26,5 +26,6 @@ Every number NunyaIntel quotes, recomputed from the local extract by `nunyaintel
 | PASS | Cloud9 Lotus lineups: Omen smoke from C Main on defense, won 28 of 46 rounds (61%) across 11 matches vs. their usual 47%; Fade Haunt from A Lobby on attack, won 11 of 15 (73%) across 7 matches *(small sample)* | demo video (K1) | Omen smoke from C Main (defense): 28/46 = 60.9% in 11 matches, usual 47%; Fade Haunt from A Lobby (attack): 11/15 = 73.3% in 7 matches |
 | PASS | Elo map winner: 66.8% right on 503 unseen maps (Brier 0.213 vs 0.250); next buy: 81.8% vs 73.6% always-full-buy on 22,994 team-rounds, ecos caught 87% | Predict tab, docs/predictive-feasibility.md | Elo: 503 test maps, 66.8% right, Brier 0.213; next buy: 22994 test team-rounds, 81.8% right vs 73.6% always-full-buy; ecos caught 87% |
 | PASS | Cloud9 vs NRG on Lotus: C9's most-attacked site A (35%) is held by NRG only 30% (11 of 37); NRG's most-attacked site C (36%) is C9's 33% hold; C9 won 5 of 8 head-to-head maps | Matchup tab, presentation tour | opponent NRG; C9 attacks A most (35%), NRG holds it 11/37 = 29.7%; NRG attacks C most (36%), C9 holds it 33%; C9 won 5 of 8 head-to-head maps |
-| PASS | round win chance: 74.6% right on 12,745 unseen rounds (Brier 0.162 vs 0.249); attack wins 52% at 5v5, 74% after the first kill, 31% after losing it | Replay win-chance line, Predict tab | 12745 unseen rounds: 74.6% right, Brier 0.162 vs 0.249; attack wins 52% at 5v5, 74% after getting the first kill, 31% after losing it |
+| PASS | round win chance: 74.7% right on 12,745 unseen rounds (Brier 0.161 vs 0.249); attack wins 52% at 5v5, 74% after the first kill, 31% after losing it | Replay win-chance line, Predict tab | 12745 unseen rounds: 74.7% right, Brier 0.161 vs 0.249; attack wins 52% at 5v5, 74% after getting the first kill, 31% after losing it |
+| PASS | time in the round helps late: Brier 0.1363 -> 0.1332 on 18,473 late moments; a 1v1 with the spike down is 52% for attack just after the plant, 75% after 30 s | Predict tab (clock note) | late moments 18473: Brier 0.1363 -> 0.1332 with time; 1v1 spike down: 52% in the first 10 s after the plant, 75% after 30 s |
 | PASS | about 3.7% of kills have no weapon recorded | README caveats | 10989/297521 = 3.7% |

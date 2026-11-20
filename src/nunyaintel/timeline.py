@@ -128,8 +128,9 @@ def replay(
             continue
         ours = rounds[i].side == "attacker"
         flip = (lambda q: q) if ours else (lambda q: 1 - q)
-        line = [[0.0, round(flip(m.p_attack(*winprob.START_STATE)), 3), "round start"]]
-        for at, a, d, planted, what in story.steps:
+        start = m.p_attack(*winprob.START_STATE, winprob.START_BAND)
+        line = [[0.0, round(flip(start), 3), "round start"]]
+        for (at, a, d, planted, what), tband in zip(story.steps, story.bands, strict=True):
             t = t_of(at, story.buy_end)
             if T_MIN <= t <= T_MAX:
                 state = f"{a}v{d}" if ours else f"{d}v{a}"
@@ -141,7 +142,7 @@ def replay(
                 else:
                     what = f"{team} get a kill"
                 spike = " · spike down" if planted and what != "spike planted" else ""
-                p_team = round(flip(m.p_attack(a, d, planted)), 3)
+                p_team = round(flip(m.p_attack(a, d, planted, tband)), 3)
                 line.append([round(t, 2), p_team, f"{what} · {state}{spike}"])
         wp[i] = line
 

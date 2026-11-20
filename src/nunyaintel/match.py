@@ -89,7 +89,8 @@ def story(
     swing: dict[int, tuple[float, float]] = {}
     for st in winprob.stories(con, "AND x.game_id = ?", (game_id,)):
         ours_attack = st.attack_team == team_id
-        ps = [model.p_attack(*s) for s in winprob.visited(st)[:-1] or [winprob.START_STATE]]
+        start = [(*winprob.START_STATE, winprob.START_BAND)]
+        ps = [model.p_attack(*s) for s in winprob.moments(st)[:-1] or start]
         ps = ps if ours_attack else [1 - p for p in ps]
         swing[st.key[2]] = (min(ps), max(ps))
 

@@ -267,6 +267,12 @@ function RoundSection() {
             <BigStat label="Brier score (lower is better)" value={model.brier} kind="decimal" delay={240}
               sub={`always guessing ${pct(model.attack_win_rate)}: ${model.baseline_brier.toFixed(3)}`} />
           </div>
+          <p className="note clock-note">
+            <b>Does the clock matter?</b> Overall a little (Brier {model.brier_without_time.toFixed(4)} → {model.brier.toFixed(4)} with
+            time), but late in rounds clearly: on {model.late_moments.toLocaleString()} moments 60 s+ into the round or 20 s+ after
+            the plant, {model.late_brier_without_time.toFixed(4)} → {model.late_brier.toFixed(4)}. E.g. a 1v1 with the spike down
+            is a coin flip just after the plant, but 3 in 4 for attack once 30 s have passed.
+          </p>
           <table>
             <thead><tr><th>When it said…</th><th>…attack actually won</th><th>Moments</th></tr></thead>
             <tbody>

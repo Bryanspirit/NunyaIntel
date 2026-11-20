@@ -507,7 +507,7 @@ function WinChance({ line, team, tMin, tMax, t, onSeek }: {
         ))}
         <line x1={x(t)} x2={x(t)} y1={0} y2={H} className="density-head" />
       </svg>
-      <p className="note">From how often teams went on to win from the same players-alive and spike state (tested on 12,745 unseen rounds). Time left isn't counted yet.</p>
+      <p className="note">From how often teams went on to win from the same players alive, spike state and time in the round (tested on 12,745 unseen rounds).</p>
     </div>
   );
 }

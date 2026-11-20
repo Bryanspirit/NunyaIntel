@@ -460,6 +460,8 @@ export interface RoundModel {
   model: {
     train_rounds: number; test_rounds: number; test_states: number; accuracy: number;
     brier: number; baseline_brier: number; log_loss: number; baseline_log_loss: number; attack_win_rate: number;
+    accuracy_without_time: number; brier_without_time: number;
+    late_moments: number; late_brier: number; late_brier_without_time: number;
     calibration: { from: number; to: number; won: number; n: number }[];
   };
 }
