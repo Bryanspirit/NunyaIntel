@@ -372,3 +372,29 @@ def test_player_profile(client):
     no_map = client.get("/api/player", params={"player": "p1"}).json()
     assert no_map["points"] == [] and no_map["map"] is None
     assert client.get("/api/player", params={"player": "nobody"}).status_code == 404
+
+
+def test_gameplan(paths, tmp_path):
+    db, maps = paths
+    app = TestClient(create_app(db_path=db, maps_path=maps, baselines_path=tmp_path / "b.json"))
+    j = app.get("/api/gameplan", params={"team": "A", "map": "testmap"}).json()
+    assert (j["a"]["name"], j["b"]["name"], j["map"], j["map_was_chosen"]) == (
+        "Alpha",
+        "Bravo",
+        "testmap",
+        True,
+    )
+    assert j["head_to_head"] == {"maps": 2, "won": 2}
+    sections = {"veto", "exploit", "respect", "watch", "map", "utility", "operator", "economy"}
+    for item in j["items"]:
+        assert item["section"] in sections and item["advice"] and item["evidence"]
+        assert item["small"] == (item["n"] < 30) and "tab" in item["view"]
+    assert app.get("/api/gameplan", params={"team": "nobody"}).status_code == 404
+
+
+def test_gameplan_timing_words():
+    from nunyaintel.gameplan import _timing
+
+    assert _timing(None) == ""
+    assert "buy phase" in _timing(-19.4) and "19s" in _timing(-19.4)
+    assert _timing(12) == ", ~12s into the round"

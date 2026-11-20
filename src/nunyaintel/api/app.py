@@ -381,6 +381,20 @@ def create_app(
         except KeyError:
             raise HTTPException(404, f"Unknown player: {player!r}") from None
 
+    @app.get("/api/gameplan")
+    def gameplan(
+        team: str, opponent: str | None = None, map: str | None = None, con: sqlite3.Connection = db
+    ) -> dict[str, Any]:
+        """Written advice for playing an opponent, every line with its evidence."""
+        from nunyaintel import gameplan as gp
+        from nunyaintel import predict
+
+        a = _team(con, team)["id"]
+        b = _team(con, opponent)["id"] if opponent else predict.frequent_opponent(con, a)
+        if b is None:
+            raise HTTPException(404, "No opponent found for this team")
+        return gp.plan(con, a, b, map_info=get_map(map))
+
     @app.get("/api/matchup-report")
     def matchup_report(
         team: str,

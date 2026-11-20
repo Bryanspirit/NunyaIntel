@@ -6,6 +6,7 @@ import { Pickers } from "./components/Pickers";
 import { Tour } from "./components/Tour";
 import { title } from "./format";
 import { FindingsPage } from "./pages/FindingsPage";
+import { GamePlanPage } from "./pages/GamePlanPage";
 import { MatchupPage } from "./pages/MatchupPage";
 import { OperatorPage } from "./pages/OperatorPage";
 import { PlayerPage } from "./pages/PlayerPage";
@@ -25,7 +26,7 @@ export function App() {
 
   return (
     <div className={tour !== null ? "app touring" : "app"}>
-      <header>
+      <header className="no-print">
         <h1>
           Nunya<span>Intel</span>
         </h1>
@@ -34,10 +35,10 @@ export function App() {
         {meta.data && <Pickers meta={meta.data} selection={selection} onChange={update} />}
       </header>
 
-      <nav className="tabs">
+      <nav className="tabs no-print">
         {TABS.map((tab) => (
           <button key={tab} className={tab === selection.tab ? "tab active" : "tab"} onClick={() => update({ tab, round: "", t: "" })}>
-            {tab === "findings" ? "Key findings" : tab === "predict" ? "Predict" : title(tab)}
+            {tab === "findings" ? "Key findings" : tab === "gameplan" ? "Game plan" : title(tab)}
           </button>
         ))}
       </nav>
@@ -55,6 +56,7 @@ export function App() {
         {selection.tab === "replay" && <ReplayPage selection={selection} teamName={teamName} />}
         {selection.tab === "player" && <PlayerPage selection={selection} onNavigate={update} />}
         {selection.tab === "matchup" && <MatchupPage selection={selection} meta={meta.data} onNavigate={update} />}
+        {selection.tab === "gameplan" && <GamePlanPage selection={selection} meta={meta.data} onNavigate={update} />}
         {selection.tab === "predict" && <PredictPage selection={selection} meta={meta.data} teamName={teamName} />}
       </main>
 

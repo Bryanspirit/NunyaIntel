@@ -11,6 +11,20 @@ One entry per build step: what we built, the key ideas behind it, how to run it,
 
 ---
 
+## Opponent game plan (branch `interactive`, 20 Nov 2026)
+
+**What:** a **Game plan** tab with written advice for playing one opponent. It covers the map veto, site plan, what to exploit and respect, the utility to expect, their Operator, their economy habit, and our own leaks. Each line shows its evidence with counts and a "see it →" link to the view that proves it. **🖨 Print / save as PDF** gives a clean black-on-white sheet for a coach.
+
+**Key ideas**
+- **Generate text from numbers, never the other way round:** `gameplan.py` measures nothing new. It turns tested analyses (matchup report, league z-scores, site holds, lineups, Operator profiles, next-buy situations) into sentences from templates, so a sentence can't claim more than its number.
+- **Direction matters:** the first version said "expect a full buy" because NRG's full-buy rate differed most from the league, but it was *lower* (16% vs 70%). Advice like "expect X" needs a positive gap, so the code now only uses habits ≥ 10 points *more* common than the league. Always read generated advice once with real data.
+- **Honest defaults:** with no map chosen, the plan uses the suggested pick and says so. Lines with fewer than 30 rounds behind them carry the "small sample" tag.
+- **Print CSS:** `@media print` hides the navigation, swaps the dark theme for white, turns off animations and keeps each advice card on one page (`break-inside: avoid`).
+
+**Read:** `src/nunyaintel/gameplan.py`, `web/src/pages/GamePlanPage.tsx`.
+
+---
+
 ## Live round win chance (branch `interactive`, 20 Nov 2026)
 
 **What:** each team's chance to win the round at every moment, drawn as a line under the Replay when you pick one round. The **Predict** tab gets a "Who wins the round from here?" grid and the model's test results.

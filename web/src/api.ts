@@ -1,3 +1,4 @@
+import type { Selection } from "./useSelection";
 // The API contract: TypeScript types that mirror the JSON built in src/nunyaintel/api/app.py.
 // If the Python side changes a field, update the matching type here; the compiler then points
 // at every component that needs to change.
@@ -461,4 +462,25 @@ export interface RoundModel {
     brier: number; baseline_brier: number; log_loss: number; baseline_log_loss: number; attack_win_rate: number;
     calibration: { from: number; to: number; won: number; n: number }[];
   };
+}
+
+// ---- /api/gameplan -----------------------------------------------------------------------
+
+export interface GamePlanItem {
+  section: "veto" | "exploit" | "respect" | "watch" | "map" | "utility" | "operator" | "economy";
+  advice: string;
+  evidence: string;
+  n: number;
+  small: boolean; // fewer than 30 rounds behind it
+  view: Partial<Selection>; // where the number is shown
+}
+
+export interface GamePlan {
+  a: { id: string; name: string };
+  b: { id: string; name: string };
+  map: string | null;
+  map_was_chosen: boolean;
+  elo: { p_a_wins_map: number };
+  head_to_head: { maps: number; won: number };
+  items: GamePlanItem[];
 }

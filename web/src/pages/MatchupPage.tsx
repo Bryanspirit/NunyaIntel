@@ -2,7 +2,8 @@
 // pick/ban suggestion, the site battle on the selected map, and every head-to-head map with a
 // link into the Replay.
 
-import { useEffect, useState, type CSSProperties } from "react";
+import type { CSSProperties } from "react";
+import { OpponentPicker } from "../components/OpponentPicker";
 import { apiUrl, type CollisionSide, type MatchupReport, type Meta, type SiteBattleRow } from "../api";
 import { PageHero, Panel } from "../components/broadcast";
 import { CountUp, Reveal } from "../components/motion";
@@ -18,9 +19,6 @@ export function MatchupPage({ selection, meta, onNavigate }: { selection: Select
   const r = useApi<MatchupReport>(
     apiUrl("/matchup-report", { team: selection.team, opponent: selection.opp, map: selection.map, since: selection.since }),
   );
-  const [text, setText] = useState("");
-  useEffect(() => setText(r.data?.b.name ?? ""), [r.data?.b.name]);
-
   if (r.error) return <p className="error">{r.error}</p>;
   if (!r.data) return <p className="muted">Lining the two teams up…</p>;
   const { a, b, elo, collisions, map_pool, pick, ban, sites, head_to_head } = r.data;
@@ -30,18 +28,10 @@ export function MatchupPage({ selection, meta, onNavigate }: { selection: Select
     <section key={`${a.id}|${b.id}|${selection.map}`}>
       <PageHero kicker={`Matchup report${selection.map ? ` · ${title(selection.map)}` : ""}`} title={`${a.name} vs ${b.name}`} />
 
-      <label className="opp-picker">
-        Opponent
-        <input list="matchup-opp" value={text} placeholder="Type a team"
-          onChange={(e) => {
-            setText(e.target.value);
-            const t = meta?.teams.find((x) => x.name.toLowerCase() === e.target.value.toLowerCase());
-            if (t) onNavigate({ opp: t.id });
-          }} />
-        <datalist id="matchup-opp">
-          {meta?.teams.filter((t) => t.id !== selection.team).map((t) => <option key={t.id} value={t.name} />)}
-        </datalist>
-      </label>
+      <div className="plan-bar">
+        <OpponentPicker meta={meta} selection={selection} current={b.name} onNavigate={onNavigate} />
+        <button className="chip active" onClick={() => onNavigate({ tab: "gameplan", opp: b.id })}>📋 Game plan vs {b.name} →</button>
+      </div>
 
       <Reveal className="versus" delay={100}>
         <TeamSide side={elo.a} align="left" />

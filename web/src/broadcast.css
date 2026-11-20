@@ -421,3 +421,30 @@ header { position: relative; }
 .wp-corner { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
 .wp-cell { display: flex; align-items: center; justify-content: center; font-family: var(--display); font-weight: 800; font-size: 17px; color: #0b141c; }
 .wp-note { margin-top: 18px; clear: both; }
+
+/* ---- Game plan ------------------------------------------------------------------------------ */
+.plan-bar { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin: 6px 0 14px; }
+.plan-section { margin: 22px 0 6px; }
+.plan-head { font-family: var(--display); font-weight: 800; letter-spacing: 2px; text-transform: uppercase; font-size: 20px;
+  margin: 0 0 8px; padding-bottom: 6px; border-bottom: 2px solid rgba(255, 255, 255, 0.08); }
+.plan-head .muted { font-family: inherit; font-weight: 400; letter-spacing: 0; text-transform: none; font-size: 13px; margin-left: 8px; }
+.plan-item { padding: 10px 14px; margin-bottom: 8px; background: var(--panel); border-left: 4px solid var(--muted); }
+.plan-exploit .plan-item, .plan-map .plan-item, .plan-veto .plan-item { border-left-color: var(--good); }
+.plan-respect .plan-item, .plan-watch .plan-item { border-left-color: var(--bad); }
+.plan-utility .plan-item, .plan-operator .plan-item, .plan-economy .plan-item { border-left-color: #f5c56b; }
+.plan-advice { font-size: 17px; font-weight: 600; }
+.plan-evidence { font-size: 13px; color: var(--muted); margin-top: 3px; display: flex; gap: 12px; flex-wrap: wrap; }
+.plan-small { display: inline-block; margin-left: 10px; vertical-align: middle; }
+.plan-foot { margin-top: 18px; }
+
+/* printing: a clean black-on-white coach's sheet */
+@media print {
+  .no-print, footer, .tour, .tour-start { display: none !important; }
+  body, .app, main { background: #fff !important; color: #000 !important; }
+  .hero, .plan-item { background: #fff !important; color: #000 !important; box-shadow: none !important; clip-path: none !important; }
+  .hero * { color: #000 !important; text-shadow: none !important; }
+  .plan-item { break-inside: avoid; border: 1px solid #bbb; border-left-width: 5px; }
+  .plan-evidence, .muted, .note { color: #333 !important; }
+  .plan-head { border-bottom-color: #000; }
+  .reveal, [class*="reveal"] { opacity: 1 !important; transform: none !important; animation: none !important; }
+}

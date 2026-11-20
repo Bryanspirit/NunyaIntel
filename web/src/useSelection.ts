@@ -4,8 +4,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-export type Tab = "findings" | "scouting" | "operator" | "utility" | "replay" | "matchup" | "predict" | "player";
-export const TABS: Tab[] = ["findings", "scouting", "operator", "utility", "replay", "matchup", "predict"];
+export type Tab = "findings" | "scouting" | "operator" | "utility" | "replay" | "matchup" | "gameplan" | "predict" | "player";
+export const TABS: Tab[] = ["findings", "scouting", "operator", "utility", "replay", "matchup", "gameplan", "predict"];
 // "player" is a page you reach by clicking a name, not a tab in the bar
 export const ALL_TABS: Tab[] = [...TABS, "player"];
 
