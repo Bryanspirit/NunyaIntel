@@ -14,9 +14,11 @@ ENDPOINTS = [
     "/api/replay?team=T1&map=demomap", "/api/matches?team=T1", "/api/match?team=T1&game=G00",
     "/api/matchup-report?team=T1&map=demomap", "/api/gameplan?team=T1&map=demomap",
     "/api/predict/matchup?team=T1", "/api/predict/next-buy?team=T1", "/api/predict/round",
+    "/api/predict/next-buy/forecast?last_buy=eco&won=false&streak=2&credits=12000&kept=0",
     "/api/player?player=T1P3&map=demomap", "/api/players?q=a", "/api/impact?team=T1",
     "/api/recent?team=T1", "/api/comps?team=T1&map=demomap",
-    "/api/playstyle?team=T1&map=demomap", "/api/veto?team=T1", "/api/maps/demomap",
+    "/api/playstyle?team=T1&map=demomap", "/api/veto?team=T1",
+    "/api/clutch?team=T1", "/api/clutch?team=T1&map=demomap", "/api/maps/demomap",
     "/api/maps/demomap/minimap",
 ]  # fmt: skip
 
@@ -57,3 +59,18 @@ def test_demo_refuses_to_replace_a_real_extract(tmp_path):
         demo.build(real, tmp_path / "maps.json")
     demo.build(tmp_path / "d.sqlite", tmp_path / "m.json")
     demo.build(tmp_path / "d.sqlite", tmp_path / "m.json")  # replacing a demo is fine
+
+
+def test_demo_match_story_has_buy_calls(client):
+    story = client.get("/api/match", params={"team": "T1", "game": "G00"}).json()
+    right, n = story["summary"]["opp_buy_calls"]
+    assert 0 < n <= len(story["rounds"]) and 0 <= right <= n
+    called = [r["opp_call"] for r in story["rounds"] if r["opp_call"]]
+    assert all(c["buy"] in ("eco", "semi-eco", "semi-buy", "full-buy") for c in called)
+
+
+def test_demo_clutch_finds_situations(client):
+    r = client.get("/api/clutch", params={"team": "T1", "map": "demomap"}).json()
+    assert r["clutch"]["n"] > 0 and r["retake"]["n"] > 0 and r["post_plant"]["n"] > 0
+    assert sum(v["n"] for v in r["clutch"]["by_vs"]) == r["clutch"]["n"]
+    assert {s["site"] for s in r["retake"]["sites"]} <= {"A", "B"}

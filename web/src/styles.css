@@ -6,6 +6,7 @@
   --text: #ece8e1;
   --muted: #8b978f;
   --accent: #ff4655;
+  --accent-strong: #d42c3b; /* behind white text: 4.97:1 (the bright red is only 3.4:1) */
   --good: #3ddc97;
   --bad: #ff6b6b;
   color-scheme: dark;
@@ -28,7 +29,9 @@ button { cursor: pointer; }
 .chip.active, .tab.active { border-color: var(--accent); color: var(--accent); }
 .shortcuts { display: flex; gap: 6px; }
 .team-dates { color: var(--muted); font-size: 12px; padding-bottom: 8px; }
-.tabs { display: flex; gap: 8px; margin: 16px 0; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+.tabs { display: flex; gap: 8px; margin: 16px 0; border-bottom: 1px solid var(--line); padding-bottom: 8px;
+  overflow-x: auto; scrollbar-width: thin; } /* narrow screens: the tab bar scrolls, not the page */
+.tabs .tab { flex: 0 0 auto; }
 .tab { background: transparent; border-color: transparent; text-transform: uppercase; letter-spacing: 1px; }
 h2 { margin: 0 0 4px; }
 .muted { color: var(--muted); }
@@ -57,7 +60,12 @@ code { background: var(--panel); padding: 1px 4px; border-radius: 3px; }
 .legend-toggle { margin-left: auto; display: inline-flex; gap: 4px; align-items: center; }
 .legend-toggle input { padding: 0; }
 .grid-2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start; }
-@media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+/* minmax(0, 1fr), not 1fr: a plain 1fr column can't shrink below its widest content (a table) */
+@media (max-width: 900px) { .grid-2 { grid-template-columns: minmax(0, 1fr); } }
+/* phones: wide tables scroll inside their own box instead of widening the page */
+@media (max-width: 700px) {
+  main table { display: block; overflow-x: auto; max-width: 100%; }
+}
 h3 { margin: 16px 0 8px; font-size: 15px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
 
 /* ---- Shared UI ---- */
@@ -86,7 +94,7 @@ tbody tr { cursor: default; }
 .tag { font-size: 11px; padding: 1px 6px; border-radius: 3px; border: 1px solid var(--line); color: var(--muted); }
 
 /* ---- Key findings ---- */
-.findings { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin: 12px 0 20px; }
+.findings { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 12px; margin: 12px 0 20px; }
 .finding { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--muted);
   border-radius: 6px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
 .finding.strength { border-left-color: var(--good); }

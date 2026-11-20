@@ -307,6 +307,47 @@ def _predictions(con):
     )
 
 
+def _next_buy_money(con):
+    """The money-aware next-buy model (Predict tab, match story buy calls)."""
+    from nunyaintel import nextbuy
+
+    e = nextbuy.evaluate(con)
+    eco, semi = e["per_class"]["eco"], e["per_class"]["semi-eco"]
+    got = (
+        e["test_rounds"], round(e["accuracy"] * 100, 1), round(e["situation_accuracy"] * 100, 1),
+        round(e["baseline_accuracy"] * 100, 1), round(100 * eco["right"] / eco["n"]),
+        round(100 * semi["right"] / semi["n"]), e["median_bias"],
+    )  # fmt: skip
+    return Result(
+        got == (22458, 87.0, 81.6, 73.0, 93, 44, -2300),
+        f"{got[0]} test team-rounds: {got[1]}% right with money vs {got[2]}% situation only, "
+        f"{got[3]}% always-full-buy; ecos caught {got[4]}%, semi-ecos {got[5]}%; "
+        f"credit estimate median {got[6]} per team",
+    )
+
+
+def _clutch_c9(con):
+    """Cloud9 in tight rounds (Scouting clutch panel, game plan); plus the league sanity check."""
+    from nunyaintel import clutch
+    from nunyaintel.maps import get_map
+
+    allmaps = clutch.analyse(con, "79")
+    lotus = clutch.analyse(con, "79", get_map("lotus"))
+    ra = next(s for s in lotus["retake"]["sites"] if s["site"] == "A")
+    pb = next(s for s in lotus["post_plant"]["sites"] if s["site"] == "B")
+    c = allmaps["clutch"]
+    got = (c["won"], c["n"], round(c["expected"]), round(c["z"], 1),
+           ra["won"], ra["n"], round(ra["expected"], 1), round(ra["z"], 1),
+           pb["won"], pb["n"], round(pb["expected"], 1), round(pb["z"], 1))  # fmt: skip
+    return Result(
+        got == (102, 531, 95, 1.0, 14, 33, 9.4, 2.1, 10, 24, 14.4, -2.0),
+        f"clutches {got[0]} of {got[1]} vs {got[2]} league ({got[3]} SE); Lotus retake A "
+        f"{got[4]} of {got[5]} vs {got[6]} ({got[7]} SE); post-plant B {got[8]} of {got[9]} vs "
+        f"{got[10]} ({got[11]} SE)",
+        pb["n"],
+    )
+
+
 def _matchup_nrg(con):
     """Cloud9 vs NRG on Lotus, shown in the Matchup tab and the presentation tour."""
     from nunyaintel import matchup_report, predict
@@ -473,6 +514,14 @@ CLAIMS = [
           "Elo map winner: 66.8% right on 503 unseen maps (Brier 0.213 vs 0.250); next buy: "
           "81.8% vs 73.6% always-full-buy on 22,994 team-rounds, ecos caught 87%",
           _predictions),
+    Claim("next_buy_money", "Predict tab (next buy), match story buy calls",
+          "next buy with money: 87.0% right on 22,458 unseen team-rounds vs 81.6% from the "
+          "situation alone and 73.0% always-full-buy; ecos caught 93%, semi-ecos 44%; the "
+          "credit estimate runs ~2,300 low per team", _next_buy_money),
+    Claim("clutch_c9", "Scouting (clutches and retakes), game plan",
+          "Cloud9's clutches are normal: 102 of 531 won vs 95 for the league in the same "
+          "situations (1.0 SE). On Lotus they retake A well (14 of 33 vs 9.4, 2.1 SE) and hold "
+          "B post-plants badly (10 of 24 vs 14.4, 2.0 SE)", _clutch_c9),
     Claim("matchup_nrg", "Matchup tab, presentation tour",
           "Cloud9 vs NRG on Lotus: C9's most-attacked site A (35%) is held by NRG only 30% "
           "(11 of 37); NRG's most-attacked site C (36%) is C9's 33% hold; C9 won 5 of 8 "

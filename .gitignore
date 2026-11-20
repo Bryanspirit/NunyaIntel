@@ -31,3 +31,6 @@ web/dist/
 data/demo-cache/
 web/test-results/
 web/playwright-report/
+
+# screenshots of real-data results: published only by choice (data license)
+screenshots/

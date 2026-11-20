@@ -2,7 +2,8 @@
 
 For every round: the score after it, the side, both teams' buys, how it ended, kills on each
 side, who drew first blood, where the spike went down, and the round's win-chance range from
-the round model (winprob). From that range we tag:
+the round model (winprob), and the buy the money model (nextbuy) expected from each team
+before the round. From the win-chance range we tag:
   comeback  won a round after their chance had fallen to 15% or less
   thrown    lost a round after their chance had risen to 85% or more
 """
@@ -13,7 +14,7 @@ import sqlite3
 from collections import defaultdict
 from pathlib import Path
 
-from nunyaintel import winprob
+from nunyaintel import nextbuy, winprob
 from nunyaintel.maps import DEFAULT_PATH, MapInfo, get_map
 from nunyaintel.scouting.sites import MAX_PLANT_TO_SITE_M
 from nunyaintel.scouting.team_rounds import load_team_rounds
@@ -94,6 +95,8 @@ def story(
         ps = ps if ours_attack else [1 - p for p in ps]
         swing[st.key[2]] = (min(ps), max(ps))
 
+    calls = nextbuy.game_calls(con, game_id)
+
     out, us, them = [], 0, 0
     for r in rounds:
         us, them = us + r.won, them + (not r.won)
@@ -111,6 +114,8 @@ def story(
             "score_us": us, "score_them": them, "kills_us": kills[r.round_num][0],
             "kills_them": kills[r.round_num][1], "first_blood": first.get(r.round_num),
             "plant": plants.get(r.round_num), "low": round(lo, 3), "high": round(hi, 3), "tag": tag,
+            "own_call": calls.get((r.round_num, team_id)),
+            "opp_call": calls.get((r.round_num, opp)),
         })  # fmt: skip
 
     def streak(won: bool) -> int:
@@ -142,6 +147,8 @@ def story(
             "longest_win_streak": streak(True), "longest_loss_streak": streak(False),
             "comebacks": sum(r["tag"] == "comeback" for r in out),
             "thrown": sum(r["tag"] == "thrown" for r in out),
+            "opp_buy_calls": [sum(r["opp_call"]["right"] for r in out if r["opp_call"]),
+                              sum(1 for r in out if r["opp_call"])],
         },
         "rounds": out,
     }  # fmt: skip

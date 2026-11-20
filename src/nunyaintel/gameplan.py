@@ -9,6 +9,8 @@ Nothing new is measured here. The plan turns tested analyses into short advice:
   utility    their most-used lineups on the map (what to expect, where, when)
   operator   their main Operator player on the map
   economy    the buy situation where they differ most from the league (next-buy model)
+  clutch     their retakes / post-plants per site and their clutches, where they differ from
+             the league in the same situations beyond luck
 
 Each item says what to do ("advice"), why ("evidence", with counts) and where to see it
 ("view": the app selection that shows the number). Fewer than 30 behind it = small sample.
@@ -20,7 +22,7 @@ import sqlite3
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from nunyaintel import insights, matchup_report, playstyle, predict
+from nunyaintel import clutch, insights, matchup_report, playstyle, predict
 from nunyaintel.maps import DEFAULT_PATH, MapInfo, get_map
 from nunyaintel.operator_profiler import profiler as op
 from nunyaintel.utility import effectiveness, lineups, placement
@@ -73,6 +75,20 @@ STYLE = {
     ("fake", False): "They rarely fake ({r}): trust where their utility goes and rotate",
     ("early_fight", True): "Expect early fights on their defense ({r} of rounds in the first 15 s)",
     ("early_fight", False): "Their defense rarely fights early ({r}): take space at the start",
+}
+# (situation, better than the league?) -> advice; {site}, {name} filled in
+TIGHT = {
+    ("retake", False): "Plant {site} when you can: their retakes there fall short of the league's",
+    ("retake", True): "Think twice about planting {site} without numbers: they retake it well",
+    ("post_plant", False): "Retake {site} together instead of saving: their post-plants there "
+    "fail more than the league's",
+    ("post_plant", True): "If they plant {site}, retake only with numbers: their post-plant "
+    "there holds well",
+    ("clutch", True): "Close out rounds when they're down to one: their last player wins "
+    "more than the league's",
+    ("clutch", False): "When they're down to one, take your time: their last player rarely wins",
+    ("player", True): "Don't let {name} play alone at the end: wins more clutches than the "
+    "league would",
 }
 BUY_WORDS = {"eco": "eco", "semi-eco": "semi-eco", "semi-buy": "force / half buy",
              "full-buy": "full-buy"}  # fmt: skip
@@ -249,6 +265,29 @@ def plan(
                     f"{abs(r['z']):.1f} standard errors",
                     r["n"], {"tab": "scouting", "team": them, "map": m},
                 ))  # fmt: skip
+
+    # tight rounds: retakes / post-plants by site (map) and clutches, beyond luck only
+    tight = clutch.analyse(con, them, map_info)
+    on = f" on {m.title()}" if m else ""
+
+    def tight_item(kind: str, t: dict, view: dict, **fill: str) -> None:
+        items.append(_item(
+            "clutch", TIGHT[kind, t["above"] > 0].format(**fill),
+            f"won {t['won']} of {t['n']}{on} where the league would win {t['expected']:.1f}; "
+            f"{abs(t['z']):.1f} standard errors",
+            t["n"], view,
+        ))  # fmt: skip
+
+    view = {"tab": "scouting", "team": them, **({"map": m} if m else {})}
+    for kind in ("retake", "post_plant"):
+        for t in tight[kind]["sites"]:
+            if t["notable"]:
+                tight_item(kind, t, view, site=t["site"])
+    if tight["clutch"]["notable"]:
+        tight_item("clutch", tight["clutch"], view)
+    for pl in tight["clutch"]["players"]:
+        if pl["notable"] and pl["above"] > 0:
+            tight_item("player", pl, view, name=pl["name"])
 
     econ = _economy(con, them)
     if econ:

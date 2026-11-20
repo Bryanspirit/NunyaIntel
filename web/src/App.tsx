@@ -3,7 +3,7 @@
 import { CommandPalette } from "./components/CommandPalette";
 import { HelpDrawer, HowTo } from "./components/Help";
 import { HOWTO } from "./glossary";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { apiUrl, type Meta } from "./api";
 import { Pickers } from "./components/Pickers";
 import { Tour } from "./components/Tour";
@@ -28,10 +28,21 @@ export function App() {
   const [tour, setTour] = useState<number | null>(null); // presentation mode: current step
   const closeTour = useCallback(() => setTour(null), []);
   const [help, setHelp] = useState(false);
+  // narrow screens: the tab bar scrolls sideways; keep the current tab in view (only the bar
+  // moves: scrollIntoView could also scroll the whole page up to it)
+  const tabsRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const bar = tabsRef.current;
+    const active = bar?.querySelector<HTMLElement>(".tab.active");
+    if (bar && active && bar.scrollWidth > bar.clientWidth) {
+      bar.scrollLeft = active.offsetLeft - bar.offsetLeft - (bar.clientWidth - active.offsetWidth) / 2;
+    }
+  }, [selection.tab]);
   const closeHelp = useCallback(() => setHelp(false), []);
 
   return (
     <div className={tour !== null ? "app touring" : "app"}>
+      <a className="skip-link no-print" href="#main">Skip to content</a>
       <header className="no-print">
         <h1>
           Nunya<span>Intel</span>
@@ -46,15 +57,16 @@ export function App() {
         {meta.data && <Pickers meta={meta.data} selection={selection} onChange={update} />}
       </header>
 
-      <nav className="tabs no-print">
+      <nav className="tabs no-print" aria-label="Pages" ref={tabsRef}>
         {TABS.map((tab) => (
-          <button key={tab} className={tab === selection.tab ? "tab active" : "tab"} onClick={() => update({ tab, round: "", t: "", game: "", vs: "" })}>
+          <button key={tab} className={tab === selection.tab ? "tab active" : "tab"}
+            aria-current={tab === selection.tab ? "page" : undefined} onClick={() => update({ tab, round: "", t: "", game: "", vs: "" })}>
             {tab === "findings" ? "Key findings" : tab === "gameplan" ? "Game plan" : title(tab)}
           </button>
         ))}
       </nav>
 
-      <main>
+      <main id="main" tabIndex={-1}>
         {meta.error && (
           <p className="error">
             Can't reach the API ({meta.error}). Start it with <code>nunyaintel serve</code>.

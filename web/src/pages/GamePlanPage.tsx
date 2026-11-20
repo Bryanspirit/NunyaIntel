@@ -21,6 +21,7 @@ const SECTIONS: { key: GamePlanItem["section"]; title: string; blurb: string }[]
   { key: "respect", title: "Respect", blurb: "their strengths vs. the league" },
   { key: "utility", title: "Expect this utility", blurb: "their most-used lineups on the map" },
   { key: "operator", title: "Their Operator", blurb: "who holds it and how often" },
+  { key: "clutch", title: "Tight rounds", blurb: "retakes, post-plants and clutches, against the league in the same situations" },
   { key: "economy", title: "Their economy", blurb: "a buy habit unlike the league's" },
   { key: "watch", title: "Watch our own leaks", blurb: "what a scouting opponent will find on us" },
 ];

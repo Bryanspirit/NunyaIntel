@@ -407,6 +407,15 @@ def create_app(
 
         return playstyle.fingerprint(con, _team(con, team)["id"], get_map(map))
 
+    @app.get("/api/clutch")
+    def team_clutch(
+        team: str, map: str | None = None, con: sqlite3.Connection = db
+    ) -> dict[str, Any]:
+        """Clutches, retakes and post-plant holds vs. the league in the same situations."""
+        from nunyaintel import clutch
+
+        return clutch.analyse(con, _team(con, team)["id"], get_map(map) if map else None)
+
     @app.get("/api/veto")
     def map_veto(
         team: str, opponent: str | None = None, con: sqlite3.Connection = db
@@ -505,9 +514,25 @@ def create_app(
     @app.get("/api/predict/next-buy")
     def predict_next_buy(team: str, con: sqlite3.Connection = db) -> dict[str, Any]:
         """Next-round buy by situation: league and team distributions, plus tested accuracy."""
-        from nunyaintel import predict
+        from nunyaintel import nextbuy, predict
 
-        return predict.next_buy(con, _team(con, team)["id"])
+        out = predict.next_buy(con, _team(con, team)["id"])
+        out["money_model"] = nextbuy.evaluate(con)
+        return out
+
+    @app.get("/api/predict/next-buy/forecast")
+    def predict_next_buy_forecast(
+        last_buy: str = Query("full-buy", pattern="^(pistol|eco|semi-eco|semi-buy|full-buy)$"),
+        won: bool = False,
+        streak: int = Query(1, ge=0, le=3),
+        credits: int = Query(15000, ge=0, le=60000),
+        kept: int = Query(0, ge=0, le=60000),
+        con: sqlite3.Connection = db,
+    ) -> dict[str, Any]:
+        """Next-round buy for a situation plus the team's money (credits and surviving gear)."""
+        from nunyaintel import nextbuy
+
+        return nextbuy.forecast(con, last_buy, won, streak, credits, kept)
 
     @app.get("/api/predict/round")
     def predict_round(con: sqlite3.Connection = db) -> dict[str, Any]:

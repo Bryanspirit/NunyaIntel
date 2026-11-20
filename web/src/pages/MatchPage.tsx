@@ -83,6 +83,10 @@ function Story({ selection, onNavigate }: { selection: Selection; onNavigate: Na
         <BigStat label="Defense rounds won" value={s.defense[1] ? s.defense[0] / s.defense[1] : 0} n={s.defense[1]} sub={`${s.defense[0]} of ${s.defense[1]}`} delay={170} />
         <BigStat label="First bloods" value={s.first_bloods[1] ? s.first_bloods[0] / s.first_bloods[1] : 0} n={s.first_bloods[1]}
           sub={`${s.first_bloods[0]} of ${s.first_bloods[1]}; won ${s.first_blood_conversion[0]} of those rounds`} delay={240} />
+        {s.opp_buy_calls[1] > 0 && (
+          <BigStat label={`${m.them.name}'s buys called`} value={s.opp_buy_calls[0] / s.opp_buy_calls[1]} n={s.opp_buy_calls[1]}
+            sub={`${s.opp_buy_calls[0]} of ${s.opp_buy_calls[1]} rounds, from their money after the round before`} delay={280} />
+        )}
         <BigStat label="Comebacks / thrown" value={s.comebacks} kind="count" sub={`won ${s.comebacks} from ≤15% · lost ${s.thrown} from ≥85%`} delay={310} />
       </div>
 
@@ -92,12 +96,12 @@ function Story({ selection, onNavigate }: { selection: Selection; onNavigate: Na
           {m.rounds.map((rd, i) => (
             <button key={rd.round} className={`strip-round ${rd.won ? "won" : "lost"} ${rd.tag} ${rd.round === 13 ? "half" : ""}`}
               style={{ animationDelay: `${i * 30}ms` }} onClick={() => open(rd)}
-              title={`Round ${rd.round} · ${rd.side === "attacker" ? "attack" : "defense"} · ${rd.won ? "won" : "lost"} (${END[rd.win_type]?.[1] ?? rd.win_type}) · ${BUY_NAME[rd.own_buy] ?? rd.own_buy} vs ${BUY_NAME[rd.opp_buy] ?? rd.opp_buy} · kills ${rd.kills_us}–${rd.kills_them}${rd.plant ? ` · plant ${rd.plant}` : ""} · win chance ${Math.round(rd.low * 100)}–${Math.round(rd.high * 100)}%`}>
+              title={`Round ${rd.round} · ${rd.side === "attacker" ? "attack" : "defense"} · ${rd.won ? "won" : "lost"} (${END[rd.win_type]?.[1] ?? rd.win_type}) · ${BUY_NAME[rd.own_buy] ?? rd.own_buy} vs ${BUY_NAME[rd.opp_buy] ?? rd.opp_buy} · kills ${rd.kills_us}–${rd.kills_them}${rd.plant ? ` · plant ${rd.plant}` : ""} · win chance ${Math.round(rd.low * 100)}–${Math.round(rd.high * 100)}%${rd.opp_call ? ` · we expected ${m.them.name} to ${BUY_NAME[rd.opp_call.buy]} (${Math.round(rd.opp_call.p * 100)}%)${rd.opp_call.right ? " ✓" : " ✗"}` : ""}`}>
               <span className="sr-num">{rd.round}</span>
               <span className="sr-score">{rd.score_us}–{rd.score_them}</span>
               <span className="sr-end">{END[rd.win_type]?.[0] ?? "?"}</span>
               <span className="sr-buy us">{BUY[rd.own_buy] ?? "?"}</span>
-              <span className="sr-buy them">{BUY[rd.opp_buy] ?? "?"}</span>
+              <span className={`sr-buy them ${rd.opp_call ? (rd.opp_call.right ? "called" : "missed") : ""}`}>{BUY[rd.opp_buy] ?? "?"}</span>
               <span className="sr-side">{rd.side === "attacker" ? "ATK" : "DEF"}</span>
               <span className="sr-meta">{rd.plant ? `◆${rd.plant}` : " "}{rd.first_blood === "us" ? " FB" : ""}</span>
               {rd.tag && <span className="sr-tag">{rd.tag === "comeback" ? "✦" : "✗"}</span>}
@@ -107,6 +111,8 @@ function Story({ selection, onNavigate }: { selection: Selection; onNavigate: Na
         <p className="note strip-legend">
           Each column: round · score after it · how it ended (☠ eliminated, 💥 exploded, ✂ defused, ⏱ time) · {m.us.name}'s buy ·
           {" "}{m.them.name}'s buy (P pistol, E eco, SE semi-eco, HB force/half, FB full) · side · ◆ plant site, FB = {m.us.name} drew first blood.
+          {" "}{m.them.name}'s buy is underlined green when the money model called it before the round, red when it didn't
+          (hover a round for the call).
         </p>
       </Panel>
     </section>

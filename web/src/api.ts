@@ -354,6 +354,32 @@ export interface NextBuy {
     baseline_accuracy: number;
     per_class: Record<string, { right: number; n: number }>;
   };
+  money_model: {
+    test_rounds: number;
+    accuracy: number;
+    situation_accuracy: number; // the situation-only model on the same rounds
+    baseline: string;
+    baseline_accuracy: number;
+    per_class: Record<string, { right: number; n: number }>;
+    median_error: number; // team credits
+    median_bias: number; // negative: the estimate runs low
+  };
+}
+
+export interface BuyForecast {
+  chances: Record<BuyState, number>;
+  likeliest: BuyState;
+  support: number; // past rounds behind the narrowest matching group
+  uses_money: boolean; // false: no past round had this money in this situation
+}
+
+/** The buy the money model expected from a team before a round (match story). */
+export interface BuyCall {
+  buy: BuyState;
+  p: number;
+  credits: number;
+  kept: number;
+  right: boolean;
 }
 
 // ---- /api/replay -------------------------------------------------------------------------
@@ -470,7 +496,7 @@ export interface RoundModel {
 // ---- /api/gameplan -----------------------------------------------------------------------
 
 export interface GamePlanItem {
-  section: "veto" | "exploit" | "respect" | "watch" | "map" | "playstyle" | "utility" | "operator" | "economy";
+  section: "veto" | "exploit" | "respect" | "watch" | "map" | "playstyle" | "utility" | "operator" | "clutch" | "economy";
   advice: string;
   evidence: string;
   n: number;
@@ -518,6 +544,8 @@ export interface MatchRound {
   low: number; // lowest win chance during the round (this team)
   high: number;
   tag: "comeback" | "thrown" | "";
+  own_call: BuyCall | null;
+  opp_call: BuyCall | null;
 }
 
 export interface MatchStory {
@@ -540,6 +568,7 @@ export interface MatchStory {
     longest_loss_streak: number;
     comebacks: number;
     thrown: number;
+    opp_buy_calls: [number, number]; // opponent buys the money model called right, of rounds
   };
   rounds: MatchRound[];
 }

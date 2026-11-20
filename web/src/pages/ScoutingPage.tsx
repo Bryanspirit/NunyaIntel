@@ -1,5 +1,6 @@
 // Scouting (T1 + T2, and T3 when a map is selected), broadcast style.
 
+import { ClutchPanel } from "../components/ClutchPanel";
 import { PlaystylePanel } from "../components/PlaystylePanel";
 import { CompsPanel } from "../components/TeamTrends";
 import { apiUrl, type Scout, type Side, type SiteRow } from "../api";
@@ -196,7 +197,8 @@ export function ScoutingPage({ selection, onNavigate }: { selection: Selection; 
       )}
       {!selection.map && <p className="muted">Pick a map for plants, sites, setups and opening duels.</p>}
       <PlaystylePanel selection={selection} teamName={data.team.name} index={8} />
-      <CompsPanel selection={selection} index={9} />
+      <ClutchPanel selection={selection} onNavigate={onNavigate} index={9} />
+      <CompsPanel selection={selection} index={10} />
     </section>
   );
 }

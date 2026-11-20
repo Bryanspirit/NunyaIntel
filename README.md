@@ -72,10 +72,10 @@ Pick a team (the **Cloud9** / **Cloud9 GC** buttons are shortcuts), a map and op
 | Tab | What you see |
 |---|---|
 | **Key findings** (landing view) | The team's most unusual numbers vs. the whole league, ranked by a z-score (how far from the league, given the sample size), each with counts, league rate and rank. Plus site findings for the selected (or most-played) map. **Details →** opens the evidence |
-| **Scouting** | Headline numbers (side win %, pistol conversion, anti-eco losses, eco upsets) · per-map record · how rounds end · a buy-vs-buy win-rate heat grid. With a map: **every spike plant on the minimap**, site tables (where they plant / what they hold), default setups per player, opening-duel areas |
+| **Scouting** | Headline numbers (side win %, pistol conversion, anti-eco losses, eco upsets) · per-map record · how rounds end · a buy-vs-buy win-rate heat grid. With a map: **every spike plant on the minimap**, site tables (where they plant / what they hold), default setups per player, opening-duel areas · **playstyle** (hit timing, first contact, fakes vs. the league) · **clutches and retakes**: 1v1–1v5, retakes and post-plants per site, each against how often the league wins the same situation |
 | **Operator** | Who uses the Op · Op rate by team economy · opening duels with vs. without it. With a map: **angles drawn as arrows** (shooter area → target area) |
 | **Replay** (2D / **3D**) | In **3D** the map is a model with raised walls (drawn from the data): orbit by dragging, ＋/－ to zoom, an auto-rotating broadcast camera, kill tracers arcing through the air and spike plants as light beams. Press ▶ and watch a team's rounds unfold on the minimap, second by second from the end of the buy phase: kills (with a tracer from shooter to victim), deaths, utility and plants. **Live** view (events flash and fade) or **Build-up** (habits accumulate), all rounds overlaid or one specific round, a draggable timeline with a kills/deaths density strip (click to jump), speeds 1–8×, layer toggles, hover for details, Space and ← → on the keyboard |
-| **Predict** | **Who wins a map?** Elo ratings (the chess system) give a map-win probability vs. any opponent, shown with the model's test results (66.8% right on 503 unseen maps vs. 50% for a coin flip, with a calibration table) and warnings for stale ratings or teams never linked by any chain of matches. **What will they buy next round?** For a chosen situation (last buy, won or lost, loss streak), the team's usual next buy vs. the league (81.8% right vs. 73.6% for always guessing full-buy; ecos caught 87%) |
+| **Predict** | **Who wins a map?** Elo ratings (the chess system) give a map-win probability vs. any opponent, shown with the model's test results (66.8% right on 503 unseen maps vs. 50% for a coin flip, with a calibration table) and warnings for stale ratings or teams never linked by any chain of matches. **What will they buy next round?** For a chosen situation (last buy, won or lost, loss streak) **and the team's money** (credits and gear kept by survivors, rebuilt from the game's reward rules): 87.0% right on 22,458 unseen team-rounds vs. 81.6% from the situation alone and 73.0% for always guessing full-buy; ecos caught 93%. The match story marks every opponent buy as called or missed |
 | **Utility** | Every ability: casts per round, % set up during the buy phase, median timing. **Lineups drawn as aim arrows** and ranked by effectiveness. Hover a row to highlight its arrow |
 
 Everything is also available on the command line:
@@ -87,7 +87,7 @@ nunyaintel operator --team Cloud9 [--economy | --duels | --map pearl --angles]
 nunyaintel utility  --team Cloud9 --map lotus [--side defender] [--lineups --score]
 ```
 
-*Screenshots: coming with the submission kit (task K4).*
+*Screenshots:* `cd web; npm run screenshots` captures 13 views (12 desktop at 2× plus a phone view) into `screenshots/`. That folder is git-ignored: the data license allows showing results in demos and to judges, so which images get published is a deliberate choice.
 
 ## How it works
 
@@ -138,9 +138,15 @@ src/nunyaintel/
   operator_profiler/  profiler (O1, O2) · angles (O3)
   api/         FastAPI app (JSON for the web app)
   maps.py · economy.py · doctor.py · __main__.py (CLI)
+  predict.py (Elo, next buy) · nextbuy.py (next buy from money) · winprob.py (round win chance)
+  clutch.py (clutches, retakes, post-plants) · playstyle.py · impact.py · veto.py
+  gameplan.py · matchup_report.py · match.py · player.py · comps.py · claims.py · demo.py
 web/           React + TypeScript (Vite): pages, <Minimap>, typed API client
+  e2e/         Playwright: app.spec.ts (pages, interactions) · a11y.spec.ts (axe, widths,
+               keyboard) · screenshots.shot.ts (npm run screenshots)
 tests/         pytest on synthetic data only (the licensed data never appears in tests)
-docs/          learning-log.md: what was built at each step and why
+docs/          learning-log.md (what was built and why) · claims.md (every number, re-checked)
+               · demo-script.md (the video, every spoken number mapped to a claim)
 ```
 
 ## Development
@@ -154,7 +160,7 @@ cd web; npm run build                     # type-check + bundle
 
 **Frontend with live reload:** run `nunyaintel serve` (API on :4811) and `cd web; npm run dev` (http://127.0.0.1:4810, forwards `/api/*` to :4811).
 
-**Browser tests (Playwright)** click through every page and the main interactions in a real browser, and fail on any page error, console error or failed request:
+**Browser tests (Playwright)** click through every page and the main interactions in a real browser, and fail on any page error, console error or failed request. `e2e/a11y.spec.ts` also scans every page with **axe-core** (WCAG 2.1 A/AA, fails on serious or critical problems), checks that every page fits a tablet (820 px) and a phone (390 px) without sideways scrolling, and checks keyboard use:
 
 ```powershell
 cd web

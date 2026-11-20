@@ -11,6 +11,86 @@ One entry per build step: what we built, the key ideas behind it, how to run it,
 
 ---
 
+## Screenshots and demo script v2 (main, 20 Nov 2026)
+
+**What:** `npm run screenshots` drives the app with Playwright and saves 13 images (12 desktop at 2× pixels, plus one phone view) to `screenshots/`, which is git-ignored. `docs/demo-script.md` is rewritten for the current app: 9 shots, about 2:35. Every spoken number is mapped to a checked claim.
+
+**Key ideas**
+- **Screenshots are tests too:** each image is a Playwright "test" in `e2e/screenshots.shot.ts`, run by its own config (`screenshots.config.ts`), so `npm run e2e` never runs it. One image can be re-taken with `-g "replay"`.
+- **Look at what you capture:** viewing the images caught three problems that no test had:
+  1. **A real bug: the Predict page showed 86.6%, the checked claim said 87.0%.** The app's database connection returns `sqlite3.Row` objects, not tuples, and `set(rows)` built a set of Row objects. `(game, round) in planted` is never true for those, so in the app the plant reward silently vanished. The fix: unpack each row into a tuple. A regression test now uses `row_factory = sqlite3.Row`, like the app.
+  2. **"17%" instead of 45%:** the hero numbers count up in JavaScript, and the screenshot caught one halfway. Finishing CSS animations doesn't stop JavaScript ones. The fix: screenshots run with **reduced motion**, which the count-up already respects (accessibility helped here too).
+  3. **A Replay still in the buy phase, and focus rings in the picture:** the shot now jumps the time slider to 85% of the round and blurs the slider first.
+- **Publishing is a decision, not a side effect:** the license allows showing results in demos and to judges, but not making "any part or derivative" of the data available to third parties. Screenshots stay local until you choose where they go.
+- **Say only what's checked:** the script avoids the Elo odds against NRG, which aren't claims and change with each rebuild, and it doesn't call Cloud9 clutch. Their clutches are normal (1.0 SE) once compared fairly.
+
+**Read:** `web/e2e/screenshots.shot.ts`, `web/screenshots.config.ts`, `docs/demo-script.md`.
+
+---
+
+## Accessibility and small screens (main, 20 Nov 2026)
+
+**What:** `web/e2e/a11y.spec.ts` adds 13 browser tests:
+- **Accessibility:** every page is scanned with **axe-core** against WCAG 2.1 A/AA.
+- **Width:** every page must fit a **tablet (820 px)** and a **phone (390 px)** with no sideways scrolling.
+- **Keyboard:** a test checks that focus is visible and that the tabs, quick search and Escape all work.
+
+Everything now passes, together with new tests for the buy sliders, the buy calls and the clutch panel: 33 tests on real data, 32 on demo data (the tour is skipped there).
+
+**Key ideas**
+- **Let a tool find the problems, then fix what it finds:**
+  - **Colour:** axe found white text on the bright red (#ff4655) at **3.35:1**, below the 4.5:1 minimum. A deeper red, `--accent-strong: #d42c3b` (4.97:1), is now used only *behind* white text. The bright red stays where it's text on the dark background (5.3:1).
+  - **Phone width:** the tab bar didn't wrap and pushed every page 416 px wider. It now scrolls sideways inside itself, and the current tab is scrolled into view by setting the bar's own `scrollLeft`. `scrollIntoView` could also scroll the whole page.
+- **`minmax(0, 1fr)`, not `1fr`:** a grid column sized `1fr` can't shrink below its widest content (here a table), so it pushed the minimap off-screen. `minmax(0, 1fr)` allows it to shrink. On phones, tables become `display: block; overflow-x: auto`, so each one scrolls in its own box.
+- **`min(380px, 100%)`:** card grids used `minmax(380px, 1fr)`, wider than a phone. `minmax(min(380px, 100%), 1fr)` keeps the big-screen layout and fits small ones.
+- **A good failure message names the cause:** the width test reports the *outermost* element that sticks out. It skips anything inside a box that scrolls or clips, because overflowing there is that box's job.
+- **Keyboard users:** a "Skip to content" link appears on the first Tab, the active tab has `aria-current="page"`, and every control shows a white focus ring (`:focus-visible`).
+- **A bug of my own, caught by a new test:** I ran `tsc -b` (build mode), which, unlike `tsc --noEmit`, **wrote a `.js` copy of every source file** next to the `.tsx`. Vite resolves `./App` to `App.js` *before* `App.tsx`, so it silently bundled stale copies. The new clutch test failed because the panel wasn't in the bundle. The fix: delete the stray files and set `"noEmit": true` in `tsconfig.json`, so it can't happen again.
+- **Pin dependencies of dependencies too:** `@axe-core/playwright` is pinned to 4.14.0, but it allowed `axe-core` 4.14.1, only 4 days old. An npm `overrides` entry pins it to 4.14.0.
+
+**Read:** `web/e2e/a11y.spec.ts`, the `@media` rules in `web/src/styles.css`, `tabsRef` in `web/src/App.tsx`.
+
+---
+
+## Clutches, retakes and post-plants (main, 20 Nov 2026)
+
+**What:** a Scouting panel, "Clutches and retakes", for any team, on all maps or one. It shows:
+- **Clutches:** the team down to its last player, split by 1v1 to 1v5, with who the last player was.
+- **Retakes:** defending after the spike goes down.
+- **Post-plants:** holding their own plant.
+- **Per site:** retakes and post-plants by plant site, once a map is picked.
+- **Replay links:** the least likely clutches won open in the Replay.
+
+The game plan gets a "Tight rounds" section, built from the results that go beyond luck.
+
+**Key ideas**
+- **Compare like with like:** losing a 1v3 is normal and winning a 4v2 retake is expected. Each situation is compared with how often the **league** wins the same kind of situation, with the same numbers alive, spike state and time band. "Won above expected" = wins − the sum of those league rates.
+- **Check the whole league before trusting a team's number:** my first version took "expected" from the round win-chance model. Cloud9 came out +18 clutches (2.7 standard errors), which looked like a headline. But summed over the 40 biggest teams, clutches were won **4,405 times against 3,651 "expected"**, so almost everyone looked clutch. The round model's 1v2 chance averages *every* way a round reaches 1v2, and "the first moment a team is down to one" is a particular subset. Measured against the league's own clutch record, the gaps add up to about zero (4,405 vs 4,316, average +0.25 SE). Cloud9 are then **normal** (102 of 531 vs 95; 1.0 SE).
+- **The lesson:** a measure where almost every team scores "above average" is broken. Summing it across everyone is a cheap test for that.
+- **Who was the last one alive?** That's the team's 5 players that round (from loadouts) minus everyone who died before that moment. If that doesn't leave exactly one player (missing rows, or a Sage revive the data doesn't show), the clutch still counts for the team but isn't given to anyone.
+- **Small samples stay leads:** per-site splits are small. Lotus retake A is 14 of 33 (2.1 SE), and post-plant B is 10 of 24 (2.0 SE). Fewer than 30 cases get no good/bad colour and a "small" tag.
+- **Tests caught my own scenario mistakes:** three of my hand-made test rounds didn't mean what I thought. For example, "attack loses 4, then a defender dies" is a **1v5** clutch, not a 1v4, because the clutch starts at the *first* moment a team is down to one.
+
+**Read:** `src/nunyaintel/clutch.py` (`situations`, `League`, `analyse`), `web/src/components/ClutchPanel.tsx`, `tests/test_clutch.py`.
+
+---
+
+## Next-round buy from money (main, 20 Nov 2026)
+
+**What:** the Predict page's "What will they buy next round?" now also asks how much money the team has: two sliders, **team credits** and **gear kept by survivors**. The match story marks every opponent buy the model called before the round (green underline) or missed (red), with a "buys called" count per match.
+
+**Key ideas**
+- **Rebuild the economy from the rules:** the data gives each player's credits *left after buying*. Next round's credits = leftover + round reward (win 3,000; loss 1,900 / 2,400 / 2,900 by loss streak) + 300 per player if they planted + 200 per kill, capped at 9,000 each. Survivors keep their gun and armour, so their loadout value counts as "gear kept".
+- **Check your estimate against reality:** next round, we can see what they really had (credits left + loadout value). The estimate runs **about 2,300 low per team**, because ability purchases and a few other details aren't in the data. So the model never trusts the raw number. It puts money into **bands** of 2,500 and learns from the league what each band leads to.
+- **Hierarchical shrinkage again:** (situation, credit band, gear band) → (situation, total band) → situation → all rounds. Each level is blended with the broader one, weighted by how many examples it has (K = 10). Rare cases lean on the broader pattern, and common cases speak for themselves. It's the same idea as the round win-chance model.
+- **Same test as before, so the numbers compare:** trained on the earliest 70% of maps, scored on the latest 30%. **87.0%** right vs 81.6% for the situation alone and 73.0% for always guessing "full buy". Ecos caught: 87% → **93%**. Semi-ecos were never predicted before; now 44% are. This is a checked claim (`next_buy_money`).
+- **Be honest about flattering numbers:** the per-match "buys called" uses a model trained on every map, including that one, so it's a little optimistic. The page and the code say so, and the honest score is the test above.
+- **Debouncing:** a slider fires on every pixel. `useDebounced` waits until it has been still for 250 ms before asking the server, so dragging sends one request, not fifty.
+
+**Read:** `src/nunyaintel/nextbuy.py` (`turns`, `Model`, `evaluate`), `NextBuySection` in `web/src/pages/PredictPage.tsx`, `tests/test_nextbuy.py`.
+
+---
+
 ## Browser tests and a demo dataset (main, 20 Nov 2026)
 
 **What:** 17 Playwright tests drive the real app in Chrome: every page, player compare, help, quick search, the Replay, match story → Replay, game plan, veto and the presentation tour. `nunyaintel make-demo` builds an invented dataset, so the whole app (and the tests) can run without the licensed data, e.g. on CI.

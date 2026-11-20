@@ -2,7 +2,7 @@
 // Every prediction is shown next to how well the model did on matches it had never seen.
 
 import { Fragment, useEffect, useState, type CSSProperties } from "react";
-import { apiUrl, type BuyState, type Matchup, type Meta, type NextBuy, type RatingSide, type RoundModel } from "../api";
+import { apiUrl, type BuyForecast, type BuyState, type Matchup, type Meta, type NextBuy, type RatingSide, type RoundModel } from "../api";
 import { BigStat, PageHero, Panel } from "../components/broadcast";
 import { CountUp, Reveal } from "../components/motion";
 import { Empty } from "../components/ui";
@@ -141,17 +141,24 @@ function NextBuySection({ selection, teamName }: { selection: Selection; teamNam
   const [lastBuy, setLastBuy] = useState<string>("full-buy");
   const [won, setWon] = useState(false);
   const [streak, setStreak] = useState(1);
+  const [credits, setCredits] = useState(14000);
+  const [kept, setKept] = useState(0);
+  // sliders fire on every pixel: ask the server only once they stop moving for a moment
+  const money = useDebounced({ credits, kept }, 250);
+  const fc = useApi<BuyForecast>(apiUrl("/predict/next-buy/forecast", {
+    last_buy: lastBuy, won: String(won), streak: String(won ? 0 : streak),
+    credits: String(money.credits), kept: String(money.kept),
+  }));
 
   if (nb.error) return <p className="error">{nb.error}</p>;
   if (!nb.data) return <p className="muted">Learning buy patterns…</p>;
-  const { model } = nb.data;
   const effectiveStreak = won ? 0 : Math.max(1, streak);
   const sit = nb.data.situations.find(
     (s) => s.last_buy === lastBuy && s.won_last === won && s.loss_streak === effectiveStreak,
   );
-  const shown = sit?.team ?? sit?.league;
-  const likely = shown ? BUYS.reduce((best, k) => ((shown[k] ?? 0) > (shown[best] ?? 0) ? k : best), BUYS[0]) : null;
-  const eco = model.per_class["eco"];
+  const mm = nb.data.money_model;
+  const eco = mm.per_class["eco"];
+  const semiEco = mm.per_class["semi-eco"];
 
   return (
     <Panel title="What will they buy next round?" index={1}
@@ -180,30 +187,60 @@ function NextBuySection({ selection, teamName }: { selection: Selection; teamNam
         )}
       </div>
 
-      {!sit ? (
-        <Empty>This situation never happens in the data.</Empty>
-      ) : (
-        <div className="grid-2">
-          <div>
-            {likely && (
+      <div className="situation money">
+        <label>
+          Team credits next round: <b>{credits.toLocaleString()}</b>
+          <input type="range" min={0} max={45000} step={500} value={credits}
+            onChange={(e) => setCredits(Number(e.target.value))} aria-label="Team credits next round" />
+        </label>
+        <label>
+          Gear kept by survivors: <b>{kept.toLocaleString()}</b>
+          <input type="range" min={0} max={30000} step={500} value={kept}
+            onChange={(e) => setKept(Number(e.target.value))} aria-label="Gear kept by survivors" />
+        </label>
+      </div>
+      <p className="note">
+        Credits = what the 5 players have to spend after the round rewards (a win pays 3,000 each, a loss 1,900, 2,400 or
+        2,900 by loss streak, plus 200 a kill). Survivors keep their gun and armour, so a lost round with 3 survivors
+        holding rifles is very different from a wipe.
+      </p>
+
+      <div className="grid-2">
+        <div>
+          {fc.data && (
+            <>
               <div className="bigstats">
-                <BigStat label={`Most likely: ${BUY_LABEL[likely]}`} value={shown![likely]} delay={100}
-                  n={sit.team ? sit.team_n : sit.league_n}
-                  sub={sit.team ? `${teamName}'s own pattern (${sit.team_n} times)` : `league pattern (${sit.league_n} times)`} />
+                <BigStat label={`Most likely: ${BUY_LABEL[fc.data.likeliest]}`} value={fc.data.chances[fc.data.likeliest]} delay={100}
+                  n={fc.data.support} sub={`${fc.data.uses_money ? "situation + money" : "situation only"} · backed by ${fc.data.support.toLocaleString()} past rounds`} />
               </div>
-            )}
-            <BuyBars title={teamName} dist={sit.team} n={sit.team_n} />
-            <BuyBars title="League" dist={sit.league} n={sit.league_n} />
-          </div>
-          <div className="model-card">
-            <b>How good is this?</b> On the latest {model.test_rounds.toLocaleString()} team-rounds (never seen in
-            training), the model guessed the next buy right <b>{pct(model.accuracy, 1)}</b> of the time. Always guessing
-            "{model.baseline}" gets {pct(model.baseline_accuracy, 1)}.
-            {eco && <> It caught <b>{pct(eco.right / eco.n)}</b> of ecos, the rounds where a full buy must not slip up.</>}{" "}
-            Semi-ecos are the blind spot (it rarely predicts them).
-          </div>
+              {!fc.data.uses_money && (
+                <p className="note">No team in the data had this much money in this situation (after a lost full buy, the
+                  loss bonus alone pays at least 9,500), so this falls back to the situation alone.</p>
+              )}
+              <BuyBars title="Situation + money (the model)" dist={fc.data.chances} n={fc.data.support} />
+            </>
+          )}
+          {fc.error && <p className="error">{fc.error}</p>}
+          {!sit ? (
+            <Empty>This situation never happens in the data.</Empty>
+          ) : (
+            <>
+              <BuyBars title={`${teamName}, situation only`} dist={sit.team} n={sit.team_n} />
+              <BuyBars title="League, situation only" dist={sit.league} n={sit.league_n} />
+            </>
+          )}
         </div>
-      )}
+        <div className="model-card">
+          <b>How good is this?</b> On the latest {mm.test_rounds.toLocaleString()} team-rounds (never seen in
+          training), the model with money guessed the next buy right <b>{pct(mm.accuracy, 1)}</b> of the time. The
+          situation alone gets {pct(mm.situation_accuracy, 1)}, and always guessing "{mm.baseline}" gets {pct(mm.baseline_accuracy, 1)}.
+          {eco && <> It caught <b>{pct(eco.right / eco.n)}</b> of ecos, the rounds where a full buy must not slip up.</>}
+          {semiEco && <> Semi-ecos are still the hardest ({pct(semiEco.right / semiEco.n)} caught).</>}
+          <br /><br />
+          The credit estimate runs about {Math.abs(mm.median_bias).toLocaleString()} low for a team (ability purchases aren't in the
+          data), so the model learns from the league what each amount really leads to rather than trusting the number.
+        </div>
+      </div>
     </Panel>
   );
 }
@@ -285,4 +322,15 @@ function RoundSection() {
       </div>
     </Panel>
   );
+}
+
+/** The value, but only after it has stopped changing for `ms` (fewer requests while dragging). */
+function useDebounced<T>(value: T, ms: number): T {
+  const [settled, setSettled] = useState(value);
+  const key = JSON.stringify(value);
+  useEffect(() => {
+    const id = setTimeout(() => setSettled(JSON.parse(key) as T), ms);
+    return () => clearTimeout(id);
+  }, [key, ms]);
+  return settled;
 }

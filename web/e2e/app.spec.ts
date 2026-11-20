@@ -126,3 +126,41 @@ test("presentation tour steps forward and closes", async ({ page, problems }) =>
   await expect(tour).toHaveCount(0);
   void problems;
 });
+
+test("predict: the money sliders change the next-buy forecast", async ({ page, problems }) => {
+  await page.goto(go("predict"));
+  const likely = page.locator(".bigstat").filter({ hasText: "Most likely:" }).first();
+  const credits = page.getByLabel("Team credits next round");
+  // moving the slider asks for a new forecast (once it stops moving)
+  const asked = page.waitForResponse((r) => r.url().includes("/next-buy/forecast") && r.url().includes("credits=30000"));
+  await credits.fill("30000");
+  await asked;
+  await expect(likely).toContainText("Full buy");
+  if (REAL_DATA) {
+    // after a lost full buy, 10,000 credits and nothing kept: the league saves
+    // (the invented demo economy is too simple for money to matter)
+    await credits.fill("10000");
+    await expect(likely).toContainText(/Eco|Semi-eco/);
+  }
+  void problems;
+});
+
+test("match story: opponent buys are marked as called or missed", async ({ page, problems }) => {
+  await page.goto(go("matches"));
+  await page.locator("tr.clickable-row").first().click();
+  await expect(page.locator(".sr-buy.them.called, .sr-buy.them.missed").first()).toBeVisible();
+  await expect(page.locator(".bigstat").filter({ hasText: "buys called" })).toBeVisible();
+  void problems;
+});
+
+test("scouting: clutches and retakes, with replay links", async ({ page, problems }) => {
+  await page.goto(go("scouting"));
+  const panel = page.locator(".panel").filter({ hasText: "Clutches and retakes" });
+  await expect(panel.locator(".clutch-table").first()).toBeVisible();
+  const link = panel.locator(".clutch-best button").first();
+  if (await link.count()) {
+    await link.click();
+    await expect(page).toHaveURL(/tab=replay.*round=/);
+  }
+  void problems;
+});
