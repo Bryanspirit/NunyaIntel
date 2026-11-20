@@ -21,13 +21,13 @@ from functools import cache
 from pathlib import Path
 from typing import Any
 
-from nunyaintel.config import DATA_DIR
+from nunyaintel.config import CACHE_DIR
 
 MAPS_URL = "https://valorant-api.com/v1/maps"
-DEFAULT_PATH = DATA_DIR / "cache" / "maps.json"
+DEFAULT_PATH = CACHE_DIR / "maps.json"
 # Minimap images, downloaded once so the app works offline (and when a network blocks the
 # image server: on 19 Nov a TLS-inspecting network made media.valorant-api.com unreachable).
-MINIMAP_DIR = DATA_DIR / "cache" / "minimaps"
+MINIMAP_DIR = CACHE_DIR / "minimaps"
 
 
 @dataclass(frozen=True, slots=True)

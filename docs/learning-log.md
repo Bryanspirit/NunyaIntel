@@ -11,6 +11,25 @@ One entry per build step: what we built, the key ideas behind it, how to run it,
 
 ---
 
+## Browser tests and a demo dataset (main, 20 Nov 2026)
+
+**What:** 17 Playwright tests drive the real app in Chrome: every page, player compare, help, quick search, the Replay, match story → Replay, game plan, veto and the presentation tour. `nunyaintel make-demo` builds an invented dataset, so the whole app (and the tests) can run without the licensed data, e.g. on CI.
+
+**Key ideas**
+- **Fail on anything unexpected:** a shared fixture listens for page errors, console errors and any HTTP response ≥ 400, and fails the test if it saw one. Pages that *look* fine but log errors still fail.
+- **One test suite, two datasets:** team, map and player come from environment variables. `npm run e2e` checks the real Cloud9 data; `npm run e2e:demo` checks invented teams. The tour is skipped on demo data, because it tells the real story.
+- **Synthetic data with the real shape:** the demo has the same tables as a real extract, three invented teams with built-in habits (one hits late at A, one fast at B), and a fixed random seed, so it's the same every run. A Python test checks all 24 API endpoints on it.
+- **Never touch the real extract:** `NUNYAINTEL_CACHE` points the app at another cache folder (`data/demo-cache`), and `make-demo` refuses to overwrite a real extract unless `--force`.
+- **Bugs the tests caught:**
+  - The app had no tab icon, so every page load produced a 404 for `/favicon.ico`. It now has an SVG icon.
+  - `with sqlite3.connect(...)` commits but **doesn't close** the file, so Windows couldn't delete it. Now `contextlib.closing()`.
+  - Three test mistakes of my own: "Play" also matched the "Replay" tab (use `exact: true`), `getByRole("option")` matched the page's dropdowns (scope it to the dialog), and `sed` ate a `\s`.
+- **Results:** 16/16 on demo data (tour skipped), 17/17 on real data, about 25 s each.
+
+**Read:** `web/e2e/app.spec.ts`, `web/playwright.config.ts`, `src/nunyaintel/demo.py`.
+
+---
+
 ## Map veto simulator + quick search (main, 20 Nov 2026)
 
 **What:** the Matchup page plays out a **best-of-3 veto** (ban, ban, pick, pick, ban, ban, decider) with series odds. **Ctrl+K** (or `/`, or ⌕ Search) opens a quick search for pages, teams, maps and players.

@@ -30,3 +30,6 @@ src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/nunyaintel/demo.py" = ["E501"]  # long keyword lists building invented rows

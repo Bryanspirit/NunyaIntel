@@ -27,13 +27,13 @@ from collections.abc import Sequence
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
-from nunyaintel.config import DATA_DIR
+from nunyaintel.config import CACHE_DIR
 from nunyaintel.operator_profiler import profiler as op
 from nunyaintel.scouting import economy_report as er
 from nunyaintel.scouting import overview
 from nunyaintel.scouting.team_rounds import TeamRound, load_team_rounds
 
-BASELINES_PATH = DATA_DIR / "cache" / "league_baselines.json"
+BASELINES_PATH = CACHE_DIR / "league_baselines.json"
 MAX_FINDINGS = 6
 
 

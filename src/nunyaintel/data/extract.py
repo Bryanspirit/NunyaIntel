@@ -28,11 +28,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from nunyaintel.config import DATA_DIR
+from nunyaintel.config import CACHE_DIR
 from nunyaintel.data.grid import TITLE, GridRepo, read_jsonl_zst
 
 SCHEMA_VERSION = 2  # v2: rounds.buy_ended_at
-DEFAULT_DB = DATA_DIR / "cache" / "nunyaintel.sqlite"
+DEFAULT_DB = CACHE_DIR / "nunyaintel.sqlite"
 
 SCHEMA = {
     "rounds": "series_id TEXT, game_id TEXT, round_num INT, started_at TEXT, buy_ended_at TEXT, "

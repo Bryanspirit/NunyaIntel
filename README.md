@@ -154,6 +154,16 @@ cd web; npm run build                     # type-check + bundle
 
 **Frontend with live reload:** run `nunyaintel serve` (API on :4811) and `cd web; npm run dev` (http://127.0.0.1:4810, forwards `/api/*` to :4811).
 
+**Browser tests (Playwright)** click through every page and the main interactions in a real browser, and fail on any page error, console error or failed request:
+
+```powershell
+cd web
+npm run e2e        # against the running app (Docker or serve) on :4811, real data
+npm run e2e:demo   # against invented demo data on :4812: no licensed data needed (CI)
+```
+
+`nunyaintel make-demo` writes that invented dataset (three made-up teams on one made-up map). `e2e:demo` puts it in `data/demo-cache` (via `NUNYAINTEL_CACHE`), so your real extract is never touched, and `make-demo` refuses to overwrite a real extract anyway. Locally the tests use your installed Chrome; on CI run `npx playwright install --with-deps chromium` first.
+
 Install the data guard as a git pre-commit hook:
 
 ```sh

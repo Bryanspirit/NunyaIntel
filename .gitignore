@@ -26,3 +26,8 @@ data/cache/
 # Web frontend build output and packages
 web/node_modules/
 web/dist/
+
+# demo extract for browser tests (invented data) and Playwright output
+data/demo-cache/
+web/test-results/
+web/playwright-report/

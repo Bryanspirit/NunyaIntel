@@ -11,6 +11,8 @@ RAW_DIR = DATA_DIR / "raw"
 PROCESSED_DIR = DATA_DIR / "processed"
 WEB_DIR = PROJECT_ROOT / "web"  # React source (Vite)
 WEB_DIST = WEB_DIR / "dist"  # built app, served by `nunyaintel serve`
+# extract, maps and caches; NUNYAINTEL_CACHE points elsewhere (e.g. a demo extract for tests)
+CACHE_DIR = Path(os.environ.get("NUNYAINTEL_CACHE") or DATA_DIR / "cache")
 
 
 def get_env(name: str, default: str | None = None) -> str | None:

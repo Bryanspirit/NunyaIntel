@@ -58,6 +58,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     build.add_argument("--series", nargs="*", help="Only these series IDs (default: all)")
     build.add_argument("--workers", type=int, default=None, help="Parallel processes")
+    demo = sub.add_parser(
+        "make-demo", help="Write a made-up demo extract (no licensed data), e.g. for CI"
+    )
+    demo.add_argument("--force", action="store_true", help="Replace a real extract")
     return parser
 
 
@@ -175,6 +179,16 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.command is None:
         parser.print_help()
+        return 0
+    if args.command == "make-demo":
+        from nunyaintel import demo
+
+        try:
+            counts = demo.build(force=args.force)
+        except FileExistsError as exc:
+            print(exc)
+            return 1
+        print("Demo extract written (invented data):", counts)
         return 0
     if args.command == "build-cache":
         import json
