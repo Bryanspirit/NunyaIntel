@@ -5,6 +5,7 @@
 import { RecentPanel } from "../components/TeamTrends";
 import { Glossed } from "../components/Help";
 import { ImpactPanel } from "../components/ImpactPanel";
+import { FormPanel } from "../components/FormPanel";
 import type { CSSProperties } from "react";
 import { apiUrl, type Finding, type Findings } from "../api";
 import { CountUp, Reveal } from "../components/motion";
@@ -76,6 +77,7 @@ export function FindingsPage({ selection, onNavigate }: Props) {
         </>
       )}
 
+      <FormPanel selection={selection} index={0} />
       <RecentPanel selection={selection} index={0} onNavigate={onNavigate} />
       <ImpactPanel selection={selection} index={1} onNavigate={onNavigate} />
 

@@ -16,7 +16,8 @@ const TABS = ["findings", "scouting", "operator", "utility", "replay", "matches"
 const go = (tab: string) => `/?team=${TEAM}&map=${MAP}&tab=${tab}${tab === "player" ? `&player=${PLAYER}` : ""}`;
 
 async function settle(page: import("@playwright/test").Page) {
-  await expect(page.locator(".hero").first()).toBeVisible();
+  // 60 s: on a server started without warm-up (CI, e2e:demo) a page's first answer is computed
+  await expect(page.locator(".hero").first()).toBeVisible({ timeout: 60_000 });
   await page.waitForLoadState("networkidle");
   await page.evaluate(() => document.getAnimations().forEach((a) => a.finish())); // reveal animations end
 }

@@ -348,6 +348,20 @@ def _clutch_c9(con):
     )
 
 
+def _form_c9(con):
+    """Cloud9's form at the end of their data (Key findings, Form over time)."""
+    from nunyaintel import form
+
+    f = form.form(con, "79")
+    c = f["change"]
+    got = (*c["last"], *c["before"], round(c["z"], 1), f["last_match"], f["data_end"])
+    return Result(
+        got == (138, 290, 356, 671, -1.9, "2025-08-29", "2026-09-03"),
+        f"last 5 matches {got[0]}/{got[1]} rounds vs {got[2]}/{got[3]} before (z {got[4]}); "
+        f"last match {got[5]}, data ends {got[6]}",
+    )
+
+
 def _matchup_nrg(con):
     """Cloud9 vs NRG on Lotus, shown in the Matchup tab and the presentation tour."""
     from nunyaintel import matchup_report, predict
@@ -522,6 +536,10 @@ CLAIMS = [
           "Cloud9's clutches are normal: 102 of 531 won vs 95 for the league in the same "
           "situations (1.0 SE). On Lotus they retake A well (14 of 33 vs 9.4, 2.1 SE) and hold "
           "B post-plants badly (10 of 24 vs 14.4, 2.0 SE)", _clutch_c9),
+    Claim("form_c9", "Key findings (Form over time), freshness badge",
+          "Cloud9 ended their data in worse form: 48% of rounds in their last 5 matches (138 of "
+          "290) vs 53% before (356 of 671), 1.9 SE; their last match was 29 Aug 2025, the data "
+          "ends 3 Sep 2026", _form_c9),
     Claim("matchup_nrg", "Matchup tab, presentation tour",
           "Cloud9 vs NRG on Lotus: C9's most-attacked site A (35%) is held by NRG only 30% "
           "(11 of 37); NRG's most-attacked site C (36%) is C9's 33% hold; C9 won 5 of 8 "

@@ -67,7 +67,7 @@ Assumptions until R1 is done: the previous edition (Dec 2025–Feb 2026) was run
 | 7 | Mon 4 – Wed 6 Jan | K7 final checklist, tag v1.0.0, **submit** |
 
 ### Rules
-- [ ] R1: Confirm **this edition's** rules on the Devpost page / Competition Plan v4: required materials, video length limit, license requirement, judging criteria, bonus categories, whether JetBrains IDE / Junie use is required or judged, and the exact deadline time and zone. Write them into `docs/submission-rules.md` (owner: user)
+- [x] R1 (done 20 Nov by claude from the official Devpost pages → `docs/submission-rules.md`; open decisions there: license, demo hosting, Riot policy, Junie use): Confirm **this edition's** rules on the Devpost page / Competition Plan v4: required materials, video length limit, license requirement, judging criteria, bonus categories, whether JetBrains IDE / Junie use is required or judged, and the exact deadline time and zone. Write them into `docs/submission-rules.md` (owner: user)
 
 ### M4: Polish (P)
 - [x] P1: **Judge setup path.** `nunyaintel doctor` (Python, packages, data repo incl. meta/, extract schema + partial-build warning, maps, Node, web build, port) + README Quickstart; fresh-clone rehearsal from GitHub passed (clone → install → doctor → build-cache → serve --build → page + API OK). Fixed 2 findings: sparse checkouts missing meta/, partial extract shown as ok (owner: claude)
@@ -83,8 +83,8 @@ Assumptions until R1 is done: the previous edition (Dec 2025–Feb 2026) was run
 ### D3: Submission kit (K)
 - [x] K1: **Demo video script** → `docs/demo-script.md` (9 shots with exact URLs, ~350 words ≈ 2:25; every spoken number in `verify-claims`, incl. new `lotus_lineups`; pre-recording checklist; data-license note). User to approve. (assume ≤ 3 min until R1 confirms): 20 s problem → 60 s Cloud9 story via Key findings → 60 s tour (plant map, Operator angles, lineup hover) → 20 s how it's built (GRID, PyCharm + Junie, FastAPI, React) → 10 s close. Show only small data excerpts on screen, as the data license allows (owner: claude drafts, user approves)
 - [ ] K2: **Record and edit the video:** screen capture of `serve --open` with the user's voiceover, captions, uploaded and linked (owner: user, claude helps)
-- [ ] K3: **Devpost write-up:** Inspiration / What it does / How we built it / Challenges / Accomplishments / What we learned / What's next, plus "Built with". Drafted from `docs/learning-log.md` (owner: claude drafts, user edits)
-- [ ] K4: **Screenshots and GIFs** for the README and Devpost: Key findings, plant map, Operator angles, lineup hover (owner: claude)
+- [ ] K3 (draft ready 20 Nov: `docs/devpost.md`; user fills the JetBrains-tools section and links): **Devpost write-up:** Inspiration / What it does / How we built it / Challenges / Accomplishments / What we learned / What's next, plus "Built with". Drafted from `docs/learning-log.md` (owner: claude drafts, user edits)
+- [x] K4 (20 Nov: `npm run screenshots` → 13 images in git-ignored `screenshots/`; publishing is the user's choice): **Screenshots and GIFs** for the README and Devpost: Key findings, plant map, Operator angles, lineup hover (owner: claude)
 - [ ] K5: **Blog post** (bonus category, if R1 confirms it): "Scouting Cloud9 with GRID data: what I learned building NunyaIntel", from the learning log (owner: user writes, claude edits)
 - [ ] K6: **JetBrains/Junie feedback** (bonus category, if R1 confirms it): concrete, reproducible feedback from P8's notes (owner: user, claude helps)
 - [ ] K7: **Final checklist (Mon 4 – Wed 6 Jan):**

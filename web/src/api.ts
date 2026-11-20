@@ -32,6 +32,7 @@ export interface Meta {
   version: string;
   teams: Team[];
   maps: string[];
+  data_end: string; // date of the latest map in the data
 }
 
 export interface Callout extends UV {
@@ -502,6 +503,17 @@ export interface GamePlanItem {
   n: number;
   small: boolean; // fewer than 30 rounds behind it
   view: Partial<Selection>; // where the number is shown
+}
+
+/** /api/brief: the game plan as a one-minute read (every line keeps its evidence). */
+export interface BriefLine { text: string; evidence: string; view: Partial<Record<string, string>> | null; small: boolean }
+export interface Brief {
+  a: { id: string; name: string };
+  b: { id: string; name: string };
+  map: string | null;
+  title: string;
+  sections: { key: string; title: string; lines: BriefLine[] }[];
+  text: string; // plain text for copy and paste
 }
 
 export interface GamePlan {

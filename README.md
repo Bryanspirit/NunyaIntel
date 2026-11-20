@@ -1,16 +1,20 @@
 # NunyaIntel
 
-**VALORANT opponent scouting from pro match data: how a team wins rounds, where it sets up its utility, and how it plays the Operator.**
+**Pick an opponent. Get a VALORANT game plan you can trust, in seconds.**
 
-An individual entry for the **Cloud9 × JetBrains: Sky's The Limit Hackathon 2026, Category 1: VALORANT Tactical Scouting, Utility Placement & Operator Profiler.** It runs locally on the hackathon's GRID data: 857 series, 2,078 maps, 42,490 rounds, 160 teams (VCT Americas, Masters and Game Changers, Jan 2025 – Sep 2026).
+NunyaIntel is a scouting tool for pro VALORANT coaches and analysts. It reads every round of GRID's pro match data and answers the questions asked before a match: *how does this team win rounds, where does it put its utility, how does it play the Operator, and what should we do about it?* Every answer comes with its evidence: the count, the league average, and a link to the view that shows it.
 
-NunyaIntel answers three questions a coach asks before playing a team:
+An individual entry for the **Cloud9 × JetBrains: Sky's The Limit Hackathon 2026, Category 1: VALORANT Tactical Scouting, Utility Placement & Operator Profiler.** It runs on the hackathon's GRID data: 857 series, 2,078 maps, 42,490 rounds, 160 teams (VCT Americas, Masters and Game Changers, Jan 2025 – Sep 2026).
 
-| Question | NunyaIntel shows |
+| A coach asks | NunyaIntel answers with |
 |---|---|
-| **How do they win and lose rounds?** | Map and side win rates, how rounds end, pistol and economy patterns, which sites they hit and hold, default setups, where opening duels happen |
-| **Where and when do they use utility?** | Every ability by timing (set up during the buy phase or used mid-round), the **lineups** they repeat (same spot, same aim, across matches) drawn on the minimap, and how well each one works |
-| **How do they play the Operator?** | Who buys it and when (by team economy), opening-duel success with vs. without it, and the **angles** they hold, drawn on the minimap |
+| **What's our plan against them?** | A **game plan** with a one-minute **coach's brief**: map veto, which site to hit, which to stack, their habits, their strongest players, three things to do. Printable, every line backed by a number |
+| **How do they win and lose rounds?** | Side and site records, economy habits, **playstyle** (hit timing, first contact, fakes), **clutches and retakes** compared with the league in the same situations, **form over time** |
+| **Where and when do they use utility?** | Every ability by timing, and the **lineups** they repeat (same spot, same aim, across matches) drawn on the map with how well each works |
+| **How do they play the Operator?** | Who buys it and when, opening duels with and without it, and the **angles** they hold |
+| **What happens next?** | A **replay** of any round (2D or 3D) with a live **win chance**, the **next-round buy** from their money, map-win odds and a **veto simulator** |
+
+**Why trust it?** Every model is tested on matches it never saw, and its accuracy is shown next to its predictions. For example, round win chance is 74.7% right on 12,745 unseen rounds, and the next buy 87.0% on 22,458 team-rounds. Every number in this README, the app's tour and the demo video is **recomputed from the data by code** (`nunyaintel verify-claims` → [`docs/claims.md`](docs/claims.md)). Ideas that didn't work are reported too: per-map team strength sounded smart but predicted worse than overall strength, so the app doesn't use it.
 
 ## What it finds: Cloud9 (VCT Americas 2025)
 

@@ -1,6 +1,7 @@
 // Game plan: written advice for playing one opponent. Every line shows its evidence (with counts)
 // and a link to the view that proves it. Print it (or save as PDF) for a coach's sheet.
 
+import { BriefPanel } from "../components/BriefPanel";
 import { Glossed } from "../components/Help";
 import { apiUrl, type GamePlan, type GamePlanItem, type Meta } from "../api";
 import { OpponentPicker } from "../components/OpponentPicker";
@@ -50,6 +51,8 @@ export function GamePlanPage({ selection, meta, onNavigate }: { selection: Selec
       {!map_was_chosen && map && (
         <p className="muted">No map picked, so the site plan is for the suggested pick, {title(map)}. Choose a map above to change it.</p>
       )}
+
+      <BriefPanel selection={selection} onNavigate={onNavigate} />
 
       {items.length === 0 && <Empty>Not enough data on these two teams for a plan.</Empty>}
       {SECTIONS.map((sec) => {

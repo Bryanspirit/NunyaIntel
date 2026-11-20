@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { Meta } from "../api";
 import type { Selection } from "../useSelection";
+import { Freshness } from "./FormPanel";
 
 interface Props {
   meta: Meta;
@@ -87,6 +88,7 @@ export function Pickers({ meta, selection, onChange }: Props) {
           {current.series} matches · {current.first_seen.slice(0, 10)} → {current.last_seen.slice(0, 10)}
         </span>
       )}
+      {current && <Freshness lastSeen={current.last_seen} />}
     </div>
   );
 }

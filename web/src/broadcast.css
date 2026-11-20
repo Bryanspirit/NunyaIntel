@@ -616,3 +616,38 @@ td.hi-cell { color: #f5c56b; font-weight: 700; }
 .skip-link:focus { top: 8px; }
 main:focus { outline: none; }
 :focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+/* coach's brief (Game plan page) */
+.brief { margin: 14px 0 24px; padding: 16px 18px; background: var(--panel); border-left: 4px solid #4fc3f7; }
+.brief-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.brief-head h3 { margin: 0; font-family: var(--display); font-weight: 800; letter-spacing: 2px; text-transform: uppercase; font-size: 22px; }
+.brief-head h3 .muted { font-family: var(--body); font-weight: 400; letter-spacing: 0; text-transform: none; font-size: 14px; margin-left: 8px; }
+.brief-grid { max-width: 980px; } /* one column: it's read top to bottom, like a note */
+.brief-section ul { margin: 4px 0 8px; padding-left: 18px; }
+.brief-section li { margin: 6px 0; line-height: 1.45; }
+.brief-evidence { display: block; font-size: 12.5px; color: var(--muted); }
+.brief-evidence .link { margin-left: 8px; }
+.brief .note { margin: 12px 0 0; } /* the global .note pulls up by 16px */
+.brief-links li, .brief-todo li { font-weight: 600; }
+@media print { .brief { background: #fff !important; color: #000 !important; border: 1px solid #bbb; break-inside: avoid; } }
+
+/* form over time (Key findings) */
+.form-chart { margin: 0; }
+.form-chart figcaption { font-family: var(--display); font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+  font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+.form-plot { position: relative; }
+.form-plot svg { width: 100%; height: auto; display: block; touch-action: pan-y; }
+.form-grid line { stroke: var(--line); stroke-width: 1; }
+.form-grid text, .form-axis { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.form-ref line { stroke: var(--muted); stroke-dasharray: 4 4; stroke-width: 1; }
+.form-ref-key { text-transform: none; letter-spacing: 0; font-family: var(--body); font-weight: 400; }
+.form-cross { stroke: var(--text); stroke-width: 1; opacity: 0.5; }
+.form-tip { position: absolute; top: 0; transform: translateX(-50%); pointer-events: none; background: var(--bg-deep);
+  border: 1px solid var(--line); padding: 6px 9px; font-size: 12px; white-space: nowrap; z-index: 2; }
+.form-table summary { cursor: pointer; color: var(--muted); font-size: 13px; margin: 8px 0; }
+/* freshness badge (header): icon + word + date, never colour alone */
+.freshness { font-size: 12px; padding: 3px 9px; border: 1px solid var(--line); border-radius: 999px; white-space: nowrap; }
+.freshness.good { color: var(--good); border-color: var(--good); }
+.freshness.warn { color: #f5c56b; border-color: #f5c56b; }
+.freshness.bad { color: var(--bad); border-color: var(--bad); }
+.form-note { margin: 6px 0 0; }

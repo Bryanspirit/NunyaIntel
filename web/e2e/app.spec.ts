@@ -164,3 +164,24 @@ test("scouting: clutches and retakes, with replay links", async ({ page, problem
   }
   void problems;
 });
+
+test("game plan opens with the coach's brief, whose links work", async ({ page, problems }) => {
+  await page.goto(go("gameplan"));
+  const brief = page.locator(".brief");
+  await expect(brief).toBeVisible({ timeout: 60_000 });
+  await expect(brief.locator("h4", { hasText: "Three things to do" })).toBeVisible();
+  await brief.getByRole("button", { name: "see it →" }).first().click();
+  await expect(page).not.toHaveURL(/tab=gameplan/);
+  void problems;
+});
+
+test("key findings: form chart with hover, and the freshness badge", async ({ page, problems }) => {
+  await page.goto(go("findings"));
+  await expect(page.locator(".freshness")).toContainText("latest match");
+  const chart = page.locator(".form-chart svg").first();
+  await chart.scrollIntoViewIfNeeded();
+  const box = (await chart.boundingBox())!;
+  await page.mouse.move(box.x + box.width * 0.6, box.y + box.height / 2);
+  await expect(page.locator(".form-tip")).toContainText("vs ");
+  void problems;
+});

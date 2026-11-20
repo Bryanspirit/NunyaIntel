@@ -18,7 +18,9 @@ ENDPOINTS = [
     "/api/player?player=T1P3&map=demomap", "/api/players?q=a", "/api/impact?team=T1",
     "/api/recent?team=T1", "/api/comps?team=T1&map=demomap",
     "/api/playstyle?team=T1&map=demomap", "/api/veto?team=T1",
-    "/api/clutch?team=T1", "/api/clutch?team=T1&map=demomap", "/api/maps/demomap",
+    "/api/clutch?team=T1", "/api/clutch?team=T1&map=demomap",
+    "/api/form?team=T1", "/api/brief?team=T1&opponent=T2&map=demomap", "/api/brief?team=T1",
+    "/api/maps/demomap",
     "/api/maps/demomap/minimap",
 ]  # fmt: skip
 
@@ -74,3 +76,23 @@ def test_demo_clutch_finds_situations(client):
     assert r["clutch"]["n"] > 0 and r["retake"]["n"] > 0 and r["post_plant"]["n"] > 0
     assert sum(v["n"] for v in r["clutch"]["by_vs"]) == r["clutch"]["n"]
     assert {s["site"] for s in r["retake"]["sites"]} <= {"A", "B"}
+
+
+def test_demo_form_and_freshness(client):
+    f = client.get("/api/form", params={"team": "T1"}).json()
+    assert len(f["matches"]) == len(f["rolling"]) >= 2
+    assert [m["date"] for m in f["matches"]] == sorted(m["date"] for m in f["matches"])
+    for m, r in zip(f["matches"], f["rolling"], strict=True):
+        assert m["rounds"][0] <= m["rounds"][1] and 0 <= r["rate"] <= 1 and r["se"] >= 0
+        assert m["rounds"][1] == m["attack"][1] + m["defense"][1]
+    assert client.get("/api/meta").json()["data_end"] >= f["last_match"]
+
+
+def test_demo_brief_keeps_evidence(client):
+    b = client.get("/api/brief", params={"team": "T1", "opponent": "T2", "map": "demomap"}).json()
+    assert b["title"].startswith("Harbor Lights on Demomap")
+    assert b["sections"] and all(s["lines"] for s in b["sections"])
+    for s in b["sections"]:
+        for line in s["lines"]:
+            assert line["text"] and line["text"] in b["text"]  # the copy text has every line
+    assert b["sections"][-1]["key"] == "todo" and len(b["sections"][-1]["lines"]) <= 3

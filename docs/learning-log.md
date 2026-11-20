@@ -11,6 +11,33 @@ One entry per build step: what we built, the key ideas behind it, how to run it,
 
 ---
 
+## The official rules, a coach's brief, form over time, and the write-up (main, 20 Nov 2026)
+
+**What:**
+- **The rules (R1):** I read this edition's official rules and checked NunyaIntel against them (`docs/submission-rules.md`).
+- **Coach's brief:** a one-minute summary at the top of the Game plan (`brief.py`).
+- **Form over time:** the Key findings page shows the team's form across matches, plus a freshness badge next to the team picker (`form.py`).
+- **Write-up:** a paste-ready Devpost submission (`docs/devpost.md`) and a new README opening.
+
+**Key ideas**
+- **Read the scoring rules before polishing:**
+  - Five equally weighted criteria. The first one, which also breaks ties, is "how thoroughly and skillfully does the project use **JetBrains tools**".
+  - So the project's biggest risk isn't a missing feature. It's showing real PyCharm and Junie work.
+  - The rules also *require* an open-source LICENSE file and, for a website, a working demo link.
+  - The fetch tool got 403 from Devpost, so I read the public pages in Chrome. The tool's own guard didn't let me read Riot's policy pages, and I left them for you rather than working around it.
+- **Explicit rules beat a black box:**
+  - The brief is written by code. Each "putting it together" line needs **two** checked facts pointing the same way, for example "fast hits (21% within 35 s) + opening duel won only 38% → contest the first fight".
+  - A reader can check every rule in `brief.py`. A language model could write smoother prose, but it could also invent things, and the licensed data would leave the machine.
+- **One measure per chart:** win rate (%) and Elo (points) are different scales, so they get two small charts instead of one chart with two y-axes. The note under them explains why they can disagree: Elo weighs who you played.
+- **Show luck on the chart:** the rolling win rate has a shaded ±1 standard-error band. A dip inside the band is noise, not a slump. Cloud9's last 5 matches (48% vs 53% before, 1.9 SE) are beyond it, and that's a checked claim (`form_c9`).
+- **Status needs more than colour:** the freshness badge shows an icon, a word and an age ("⚠ Old data: latest match 15 months ago"), so it doesn't rely on red vs green.
+- **Look at it, again:** the screenshots showed an empty right-hand column in the brief, a footnote overlapping text (a global style pulled it up 16 px) and chart labels sitting on the line. All fixed: one column for reading, labels moved to the captions.
+- **A slow first answer isn't a broken page:** the Matchup accessibility test timed out once on a server started without warm-up. Run alone, it passed, and the API then answered in 2 ms. The page-load wait in that suite is now 60 s, because CI starts cold too.
+
+**Read:** `docs/submission-rules.md`, `src/nunyaintel/brief.py`, `src/nunyaintel/form.py`, `web/src/components/FormPanel.tsx`, `docs/devpost.md`.
+
+---
+
 ## Screenshots and demo script v2 (main, 20 Nov 2026)
 
 **What:** `npm run screenshots` drives the app with Playwright and saves 13 images (12 desktop at 2× pixels, plus one phone view) to `screenshots/`, which is git-ignored. `docs/demo-script.md` is rewritten for the current app: 9 shots, about 2:35. Every spoken number is mapped to a checked claim.

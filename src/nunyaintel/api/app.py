@@ -187,7 +187,8 @@ def create_app(
         ]
         played = {r[0] for r in con.execute("SELECT DISTINCT lower(map) FROM meta_games")}
         maps = sorted(played & set(load_maps(maps_path)))
-        return {"version": __version__, "teams": teams, "maps": maps}
+        end = con.execute("SELECT MAX(started_at) FROM meta_games").fetchone()[0] or ""
+        return {"version": __version__, "teams": teams, "maps": maps, "data_end": end[:10]}
 
     @app.get("/api/maps/{name}")
     def map_info(name: str) -> dict[str, Any]:
@@ -479,6 +480,26 @@ def create_app(
         if b is None:
             raise HTTPException(404, "No opponent found for this team")
         return gp.plan(con, a, b, map_info=get_map(map), maps_path=maps_path)
+
+    @app.get("/api/form")
+    def team_form(team: str, con: sqlite3.Connection = db) -> dict[str, Any]:
+        """Match-by-match results, a rolling 5-match win rate with a luck band, Elo after each."""
+        from nunyaintel import form
+
+        return form.form(con, _team(con, team)["id"])
+
+    @app.get("/api/brief")
+    def coach_brief(
+        team: str, opponent: str | None = None, map: str | None = None, con: sqlite3.Connection = db
+    ) -> dict[str, Any]:
+        """The game plan as a one-minute read: who they are, why rounds go each way, what to do."""
+        from nunyaintel import brief, predict
+
+        a = _team(con, team)["id"]
+        b = _team(con, opponent)["id"] if opponent else predict.frequent_opponent(con, a)
+        if b is None:
+            raise HTTPException(404, "No opponent found for this team")
+        return brief.brief(con, a, b, map_info=get_map(map), maps_path=maps_path)
 
     @app.get("/api/matchup-report")
     def matchup_report(

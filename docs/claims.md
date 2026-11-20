@@ -2,8 +2,8 @@
 
 Every number NunyaIntel quotes, recomputed from the local extract by `nunyaintel verify-claims`. This file is generated, so don't edit it by hand.
 
-- Checked: 2026-11-20 12:31 UTC; extract built 2026-11-18T02:00:57+00:00
-- Result: **26 of 26 claims pass**
+- Checked: 2026-11-20 13:22 UTC; extract built 2026-11-18T02:00:57+00:00
+- Result: **27 of 27 claims pass**
 - *small sample* = fewer than 30 rounds or duels behind the number: quote it as a lead, not a verdict
 - Data coverage: no VCT (main-team) matches in 2026; Cloud9's VCT data ends Aug 2025.
 
@@ -27,6 +27,7 @@ Every number NunyaIntel quotes, recomputed from the local extract by `nunyaintel
 | PASS | Elo map winner: 66.8% right on 503 unseen maps (Brier 0.213 vs 0.250); next buy: 81.8% vs 73.6% always-full-buy on 22,994 team-rounds, ecos caught 87% | Predict tab, docs/predictive-feasibility.md | Elo: 503 test maps, 66.8% right, Brier 0.213; next buy: 22994 test team-rounds, 81.8% right vs 73.6% always-full-buy; ecos caught 87% |
 | PASS | next buy with money: 87.0% right on 22,458 unseen team-rounds vs 81.6% from the situation alone and 73.0% always-full-buy; ecos caught 93%, semi-ecos 44%; the credit estimate runs ~2,300 low per team | Predict tab (next buy), match story buy calls | 22458 test team-rounds: 87.0% right with money vs 81.6% situation only, 73.0% always-full-buy; ecos caught 93%, semi-ecos 44%; credit estimate median -2300 per team |
 | PASS | Cloud9's clutches are normal: 102 of 531 won vs 95 for the league in the same situations (1.0 SE). On Lotus they retake A well (14 of 33 vs 9.4, 2.1 SE) and hold B post-plants badly (10 of 24 vs 14.4, 2.0 SE) *(small sample)* | Scouting (clutches and retakes), game plan | clutches 102 of 531 vs 95 league (1.0 SE); Lotus retake A 14 of 33 vs 9.4 (2.1 SE); post-plant B 10 of 24 vs 14.4 (-2.0 SE) |
+| PASS | Cloud9 ended their data in worse form: 48% of rounds in their last 5 matches (138 of 290) vs 53% before (356 of 671), 1.9 SE; their last match was 29 Aug 2025, the data ends 3 Sep 2026 | Key findings (Form over time), freshness badge | last 5 matches 138/290 rounds vs 356/671 before (z -1.9); last match 2025-08-29, data ends 2026-09-03 |
 | PASS | Cloud9 vs NRG on Lotus: C9's most-attacked site A (35%) is held by NRG only 30% (11 of 37); NRG's most-attacked site C (36%) is C9's 33% hold; C9 won 5 of 8 head-to-head maps | Matchup tab, presentation tour | opponent NRG; C9 attacks A most (35%), NRG holds it 11/37 = 29.7%; NRG attacks C most (36%), C9 holds it 33%; C9 won 5 of 8 head-to-head maps |
 | PASS | round win chance: 74.7% right on 12,745 unseen rounds (Brier 0.161 vs 0.249); attack wins 52% at 5v5, 74% after the first kill, 31% after losing it | Replay win-chance line, Predict tab | 12745 unseen rounds: 74.7% right, Brier 0.161 vs 0.249; attack wins 52% at 5v5, 74% after getting the first kill, 31% after losing it |
 | PASS | time in the round helps late: Brier 0.1363 -> 0.1332 on 18,473 late moments; a 1v1 with the spike down is 52% for attack just after the plant, 75% after 30 s | Predict tab (clock note) | late moments 18473: Brier 0.1363 -> 0.1332 with time; 1v1 spike down: 52% in the first 10 s after the plant, 75% after 30 s |
