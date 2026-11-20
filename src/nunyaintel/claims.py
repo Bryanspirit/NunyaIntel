@@ -367,6 +367,21 @@ def _round_clock(con):
     )
 
 
+def _impact_c9(con):
+    """Player impact for Cloud9 (Key findings 'Who wins rounds', player pages)."""
+    from nunyaintel import impact
+
+    rows = {p["name"]: p for p in impact.team_players(con, "79")}
+    v, o = rows["v1c"], rows["OXY"]
+    got = (round(v["per_100"], 2), v["rank"], v["ranked"], round(o["per_100"], 2), o["rank"])
+    return Result(
+        got == (2.05, 94, 535, 1.64, 119),
+        f"v1c {got[0]:+} round wins added / 100 (#{got[1]} of {got[2]}); "
+        f"OXY {got[3]:+} (#{got[4]})",
+        v["rounds"],
+    )
+
+
 CLAIMS = [
     Claim("dataset", "README intro",
           "857 series, 2,078 maps, 42,490 rounds, 160 teams (Jan 2025 - Sep 2026)", _dataset),
@@ -423,6 +438,9 @@ CLAIMS = [
           "time in the round helps late: Brier 0.1363 -> 0.1332 on 18,473 late moments; a 1v1 "
           "with the spike down is 52% for attack just after the plant, 75% after 30 s",
           _round_clock),
+    Claim("impact_c9", "Key findings (Who wins rounds), player pages",
+          "Cloud9's top impact: v1c +2.05 round wins added per 100 rounds (#94 of 535 players "
+          "with 200+ rounds), OXY +1.64 (#119)", _impact_c9),
     Claim("ability_kills", "README caveats", "about 3.7% of kills have no weapon recorded",
           _ability_kills),
 ]  # fmt: skip

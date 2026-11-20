@@ -9,6 +9,7 @@ from __future__ import annotations
 import sqlite3
 from collections import Counter
 
+from nunyaintel import impact
 from nunyaintel.maps import MapInfo
 from nunyaintel.operator_profiler import profiler as op
 from nunyaintel.utility import placement
@@ -128,4 +129,7 @@ def profile(con: sqlite3.Connection, player_id: str, map_info: MapInfo | None = 
         ),  # fmt: skip
         "utility": utility,
         "points": points,
+        "impact": impact.per_player(con, map_name=map_info.name if map_info else None).get(
+            player_id
+        ),
     }

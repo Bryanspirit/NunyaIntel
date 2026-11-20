@@ -449,6 +449,7 @@ export interface PlayerProfile {
   operator: { rounds_with_op: number; rounds_played: number; op_kills: number; op_round_win_rate: number } | null;
   utility: { agent: string; ability: string; casts: number; per_round: number; buy_phase_share: number; median_time_s: number | null }[];
   points: [number, number, "kill" | "death" | "util"][]; // u, v, kind (heatmap)
+  impact: Impact | null;
 }
 
 // ---- /api/predict/round ------------------------------------------------------------------
@@ -544,3 +545,21 @@ export interface MatchStory {
 }
 
 export interface PlayerHit { id: string; name: string; team: string }
+
+// ---- /api/impact ---------------------------------------------------------------------------
+
+export interface Impact {
+  player_id: string;
+  rounds: number;
+  per_100: number; // round wins added per 100 rounds
+  kills_per_100: number;
+  deaths_per_100: number;
+  objectives_per_100: number;
+  kills: number;
+  deaths: number;
+  per_kill: number; // average win-chance swing of one kill
+  rank?: number; // league rank among players with 200+ rounds
+  ranked?: number;
+}
+
+export interface ImpactRow extends Impact { name: string }

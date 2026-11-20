@@ -57,6 +57,11 @@ function OnePlayer({ selection, onNavigate }: { selection: Selection; onNavigate
           sub={`${d.kills} kills, ${d.deaths} deaths`} />
         <BigStat label="Opening duels won" value={openings ? d.first_kills / openings : 0} n={openings} delay={240}
           sub={`${d.first_kills} of ${openings} first fights`} />
+        {d.impact && (
+          <BigStat label="Round wins added / 100 rounds" value={d.impact.per_100} kind="decimal" n={d.impact.rounds} delay={300}
+            tone={d.impact.per_100 >= 0 ? "good" : "bad"}
+            sub={`${d.impact.rank ? `#${d.impact.rank} of ${d.impact.ranked} players · ` : ""}kills ${d.impact.kills_per_100.toFixed(1)}, deaths ${d.impact.deaths_per_100.toFixed(1)}`} />
+        )}
         {d.operator && d.operator.rounds_with_op > 0 && (
           <BigStat label="Rounds with an Op" value={d.operator.rounds_with_op / d.operator.rounds_played}
             n={d.operator.rounds_played} delay={330}
@@ -205,6 +210,8 @@ function ComparePlayers({ selection, onNavigate }: { selection: Selection; onNav
     { label: "First kills per map", a: per(a.first_kills, a), b: per(b.first_kills, b), fmt: dec, higherIsBetter: true },
     { label: "Opening duels won", a: rate(a.first_kills, a.first_kills + a.first_deaths), b: rate(b.first_kills, b.first_kills + b.first_deaths),
       fmt: pc, higherIsBetter: true, n: [a.first_kills + a.first_deaths, b.first_kills + b.first_deaths] },
+    { label: "Round wins added / 100 rounds", a: a.impact?.per_100 ?? 0, b: b.impact?.per_100 ?? 0, fmt: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}`,
+      higherIsBetter: true, n: [a.impact?.rounds ?? 0, b.impact?.rounds ?? 0] },
     { label: "Rounds with an Operator", a: rate(op(a).rounds_with_op, op(a).rounds_played), b: rate(op(b).rounds_with_op, op(b).rounds_played),
       fmt: pc, higherIsBetter: null },
     { label: "Operator kills", a: op(a).op_kills, b: op(b).op_kills, fmt: int, higherIsBetter: null },

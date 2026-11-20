@@ -491,3 +491,12 @@ tr.clickable-row:hover td { background: rgba(255, 255, 255, 0.04); }
 .cmp-heat > .grid-2 { grid-template-columns: 1fr; }
 
 .clock-note { margin: 10px 0 14px; font-size: 13px; line-height: 1.5; }
+
+/* ---- Player impact ------------------------------------------------------------------------ */
+.impact td b { font-family: var(--display); font-size: 18px; margin-left: 8px; }
+.impact td b.good { color: var(--good); } .impact td b.bad { color: var(--bad); }
+.impact-bar { display: inline-flex; width: 120px; height: 8px; background: rgba(255, 255, 255, 0.06); position: relative; vertical-align: middle; }
+.impact-bar::before { content: ""; position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: rgba(255, 255, 255, 0.35); }
+.impact-bar .pos { position: absolute; left: 50%; height: 100%; background: var(--good); }
+.impact-bar .neg { position: absolute; right: 50%; height: 100%; background: var(--bad); }
+.impact-note { margin-top: 10px; }

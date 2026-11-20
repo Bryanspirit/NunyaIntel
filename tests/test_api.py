@@ -424,3 +424,22 @@ def test_player_search(client):
         {"id": "p1", "name": "Alice", "team": "Alpha"}
     ]
     assert client.get("/api/players", params={"q": "zzz"}).json()["players"] == []
+
+
+def test_player_impact(client, paths):
+    j = client.get("/api/impact", params={"team": "A"}).json()["players"]
+    (p1,) = j  # only Alice played for Alpha
+    assert (p1["name"], p1["rounds"], p1["kills"], p1["deaths"]) == ("Alice", 4, 4, 0)
+    # every round has the same kill and attack won half: the kill moves nothing (all 50%)
+    parts = p1["kills_per_100"] + p1["deaths_per_100"] + p1["objectives_per_100"]
+    assert p1["per_100"] == pytest.approx(parts) and p1["deaths_per_100"] == 0
+    assert p1["rank"] is None  # fewer than 200 rounds: not ranked
+    from nunyaintel import impact
+    from nunyaintel.data.extract import connect
+
+    t = impact.table(connect(paths[0]))
+    alice = sum(r[2] for (pid, _, _), r in t.items() if pid == "p1")
+    victim = sum(r[3] for (pid, _, _), r in t.items() if pid == "e1")
+    assert alice == pytest.approx(-victim)  # what the killer gains, the victim loses
+    profile = client.get("/api/player", params={"player": "p1"}).json()
+    assert profile["impact"]["per_100"] == pytest.approx(p1["per_100"])

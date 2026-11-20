@@ -11,6 +11,22 @@ One entry per build step: what we built, the key ideas behind it, how to run it,
 
 ---
 
+## Player impact: round wins added (branch `interactive`, 20 Nov 2026)
+
+**What:** every player's **round wins added per 100 rounds**, in a "Who wins rounds" panel on Key findings, on player pages and in player compare.
+
+**Key ideas**
+- **Value actions by what they change:** a kill is worth the change in the round win chance it causes. An opening kill moves attack from 52% to 74% (+22 points); a kill in a 5v1 barely moves anything. The killer gets the change and the victim loses it; a plant credits the planter, and a defuse earns the defuser the attack's remaining chance. Sports analysts call this *win probability added*.
+- **Zero-sum check:** across the league, kill credit and death charges cancel out (+53,034 / −53,034). A test checks the same on synthetic data.
+- **Per 100 rounds, ranked only with 200+ rounds:** comparable across players with different playing time, and no one ranks first off 30 lucky rounds.
+- **A sanity check isn't a validation:** team impact correlates 0.995 with team round win rate, but that's mostly by construction (impact adds up to wins above what was expected). What it shows is that the bookkeeping is right. The useful part is the split *between players*.
+- **Honest limits:** the model is fitted on all rounds, so this describes what happened; it isn't a forecast. It doesn't adjust for team strength.
+- **Cloud9:** v1c +2.05 (#94 of 535), OXY +1.64, Xeppaa +1.00, mitch +0.59 (most of it from plants), neT −0.95.
+
+**Read:** `src/nunyaintel/impact.py`, `web/src/components/ImpactPanel.tsx`.
+
+---
+
 ## Time in the round-win model (branch `interactive`, 20 Nov 2026)
 
 **What:** the win-chance model now knows *when* a state happens: before the plant, 20-second bands of round time; after the plant, 10-second bands since the plant (the spike goes off at 45 s).

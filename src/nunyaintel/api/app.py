@@ -371,6 +371,17 @@ def create_app(
             **timeline.replay(con, tm["id"], m, side=side, since=since),
         }
 
+    @app.get("/api/impact")
+    def impact_table(
+        team: str, map: str | None = None, con: sqlite3.Connection = db
+    ) -> dict[str, Any]:
+        """The team's players by round wins added per 100 rounds, with league ranks."""
+        from nunyaintel import impact
+
+        if map:
+            get_map(map)
+        return {"players": impact.team_players(con, _team(con, team)["id"], map_name=map)}
+
     @app.get("/api/matches")
     def matches(team: str, con: sqlite3.Connection = db) -> dict[str, Any]:
         """The team's maps, newest first (for the match-story picker)."""
