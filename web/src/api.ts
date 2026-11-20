@@ -372,6 +372,7 @@ export interface ReplayRound {
   won: boolean;
   win_type: string;
   own_buy: string;
+  wp: [number, number, string][]; // win-chance line: [t, chance this team wins the round, what happened]
 }
 
 export interface Replay {
@@ -447,4 +448,17 @@ export interface PlayerProfile {
   operator: { rounds_with_op: number; rounds_played: number; op_kills: number; op_round_win_rate: number } | null;
   utility: { agent: string; ability: string; casts: number; per_round: number; buy_phase_share: number; median_time_s: number | null }[];
   points: [number, number, "kill" | "death" | "util"][]; // u, v, kind (heatmap)
+}
+
+// ---- /api/predict/round ------------------------------------------------------------------
+
+export interface RoundCell { a: number; d: number; p: number; n: number } // attackers, defenders alive; P(attack wins)
+
+export interface RoundModel {
+  grid: { no_plant: RoundCell[]; planted: RoundCell[] };
+  model: {
+    train_rounds: number; test_rounds: number; test_states: number; accuracy: number;
+    brier: number; baseline_brier: number; log_loss: number; baseline_log_loss: number; attack_win_rate: number;
+    calibration: { from: number; to: number; won: number; n: number }[];
+  };
 }

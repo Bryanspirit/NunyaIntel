@@ -11,6 +11,24 @@ One entry per build step: what we built, the key ideas behind it, how to run it,
 
 ---
 
+## Live round win chance (branch `interactive`, 20 Nov 2026)
+
+**What:** each team's chance to win the round at every moment, drawn as a line under the Replay when you pick one round. The **Predict** tab gets a "Who wins the round from here?" grid and the model's test results.
+
+**Key ideas**
+- **The state of a round** is (attackers alive, defenders alive, spike planted). Kills tell us who died (`victim_side`) and objectives tell us when the spike went down, so we can replay any round as a list of states.
+- **Counting, not a black box:** for each state, how often did the attack go on to win? With 42,490 rounds most states have thousands of examples.
+- **Shrinkage again:** rare states (1v4 with the spike down) borrow strength from broader groups: same man advantage → planted or not → all rounds. A state needs ~10 rounds (K = 10) before its own rate dominates. It's the same empirical-Bayes idea as the lineup scores.
+- **Hard rules beat statistics:** no attackers and no spike = 0%; no defenders = 100%.
+- **Honest testing:** train on the earliest 70% of maps and score every moment of the latest 30%. Result: 74.6% right, Brier 0.162 vs 0.249 for always guessing, and well calibrated (when it says 90–100%, attack won 95%).
+- **What it shows:** the first kill moves attack from 52% to 74%, or down to 31% if defence gets it. A 1v1 is 62% for attack with the spike down, 42% without.
+- **Known gaps:** time left isn't in the state yet, and revives (Sage) aren't in the data, so a side can show 6 deaths. Alive counts stop at 0.
+- **CSS lesson:** a global `.note { margin: -16px … }` pulled the caption into the grid. Look for inherited rules before adding more spacing.
+
+**Read:** `src/nunyaintel/winprob.py`, `tests/test_winprob.py`, `WinChance` in `web/src/pages/ReplayPage.tsx`.
+
+---
+
 ## Presentation mode: a guided tour (branch `interactive`, 19 Nov 2026)
 
 **What:** **▶ Presentation** in the header starts a 7-step tour of the Cloud9 story: findings → Lotus scouting → the Omen smoke → Replay → OXY → Cloud9 vs NRG → predictions. Each step opens the right view and shows a broadcast lower-third caption.

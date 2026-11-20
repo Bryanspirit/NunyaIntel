@@ -1,8 +1,8 @@
 // Predict (branch predictive-analytics): map-win probability (Elo) and next-round buy.
 // Every prediction is shown next to how well the model did on matches it had never seen.
 
-import { useEffect, useState, type CSSProperties } from "react";
-import { apiUrl, type BuyState, type Matchup, type Meta, type NextBuy, type RatingSide } from "../api";
+import { Fragment, useEffect, useState, type CSSProperties } from "react";
+import { apiUrl, type BuyState, type Matchup, type Meta, type NextBuy, type RatingSide, type RoundModel } from "../api";
 import { BigStat, PageHero, Panel } from "../components/broadcast";
 import { CountUp, Reveal } from "../components/motion";
 import { Empty } from "../components/ui";
@@ -24,6 +24,7 @@ export function PredictPage({ selection, meta, teamName }: { selection: Selectio
       <PageHero kicker="Predictions · tested on matches the model never saw" title={teamName} />
       <MatchupSection selection={selection} meta={meta} />
       <NextBuySection selection={selection} teamName={teamName} />
+      <RoundSection />
     </section>
   );
 }
@@ -222,5 +223,60 @@ function BuyBars({ title, dist, n }: { title: string; dist: Record<BuyState, num
         </div>
       ))}
     </div>
+  );
+}
+
+// ---- C. round win chance ------------------------------------------------------------------
+
+function RoundSection() {
+  const r = useApi<RoundModel>(apiUrl("/predict/round"));
+  const [planted, setPlanted] = useState(false);
+  if (r.error) return <p className="error">{r.error}</p>;
+  if (!r.data) return <p className="muted">Counting every round's states…</p>;
+  const { grid, model } = r.data;
+  const cells = planted ? grid.planted : grid.no_plant;
+  return (
+    <Panel title="Who wins the round from here?" index={2} aside="the attack's chance to win, by players alive · used for the win-chance line in the Replay">
+      <div className="grid-2">
+        <div>
+          <div className="seg">
+            <button className={!planted ? "on" : ""} onClick={() => setPlanted(false)}>Spike not planted</button>
+            <button className={planted ? "on" : ""} onClick={() => setPlanted(true)}>Spike planted</button>
+          </div>
+          <div className="wp-grid">
+            <span className="wp-corner">atk ↓ / def →</span>
+            {[5, 4, 3, 2, 1, 0].map((d) => <span key={`h${d}`} className="wp-head">{d}</span>)}
+            {[5, 4, 3, 2, 1, 0].map((a) => (
+              <Fragment key={a}>
+                <span className="wp-head">{a}</span>
+                {cells.filter((c) => c.a === a).map((c) => (
+                  <span key={`${c.a}${c.d}`} className="wp-cell" title={`${c.a} attackers v ${c.d} defenders: attack wins ${Math.round(c.p * 100)}% (${c.n} rounds)`}
+                    style={{ background: `color-mix(in srgb, #ff4655 ${Math.round((1 - c.p) * 100)}%, #3ddc97)`, opacity: c.n >= 30 || c.a === 0 || c.d === 0 ? 1 : 0.45 }}>
+                    {Math.round(c.p * 100)}
+                  </span>
+                ))}
+              </Fragment>
+            ))}
+          </div>
+          <p className="note wp-note">Green = attack favoured, red = defence favoured. Faded = fewer than 30 rounds reached that state.</p>
+        </div>
+        <div>
+          <div className="bigstats">
+            <BigStat label="Right about the winner" value={model.accuracy} n={model.test_states} delay={150}
+              sub={`${model.test_states.toLocaleString()} moments in ${model.test_rounds.toLocaleString()} unseen rounds`} />
+            <BigStat label="Brier score (lower is better)" value={model.brier} kind="decimal" delay={240}
+              sub={`always guessing ${pct(model.attack_win_rate)}: ${model.baseline_brier.toFixed(3)}`} />
+          </div>
+          <table>
+            <thead><tr><th>When it said…</th><th>…attack actually won</th><th>Moments</th></tr></thead>
+            <tbody>
+              {model.calibration.map((b) => (
+                <tr key={b.from}><td>{pct(b.from)}–{pct(b.to)}</td><td>{pct(b.won / b.n)}</td><td>{b.n.toLocaleString()}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </Panel>
   );
 }

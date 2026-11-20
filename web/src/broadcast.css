@@ -403,3 +403,21 @@ header { position: relative; }
 @media (prefers-reduced-motion: reduce) { .tour-card { animation: none; } }
 @media (max-width: 640px) { .tour-start { position: static; margin-top: 8px; } .tour-title { font-size: 24px; } }
 .app.touring { overflow-anchor: none; } html:has(.app.touring) { overflow-anchor: none; }
+
+/* ---- Replay win chance ------------------------------------------------------------------- */
+.winchance { margin-top: 10px; }
+.winchance-head { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; font-size: 13px; }
+.winchance-head b { font-family: var(--display); font-size: 30px; line-height: 1; }
+.winchance-head b.good { color: var(--good); }
+.winchance-head b.bad { color: var(--bad); }
+.winchance svg { width: 100%; height: 90px; display: block; cursor: pointer; background: rgba(255, 255, 255, 0.02); }
+.winchance-top { fill: rgba(61, 220, 151, 0.05); }
+.winchance-line { fill: none; stroke: #fff; stroke-width: 2; vector-effect: non-scaling-stroke; }
+.wc-kill { fill: #3ddc97; } .wc-death { fill: #ff4655; } .wc-plant { fill: #f5c56b; }
+
+/* ---- Predict: round win-chance grid -------------------------------------------------------- */
+.wp-grid { display: grid; grid-template-columns: 90px repeat(6, 1fr); grid-auto-rows: 34px; gap: 3px; margin: 10px 0 12px; max-width: 460px; }
+.wp-head, .wp-corner { font-family: var(--display); font-weight: 700; text-align: center; color: var(--muted); font-size: 13px; align-self: center; }
+.wp-corner { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
+.wp-cell { display: flex; align-items: center; justify-content: center; font-family: var(--display); font-weight: 800; font-size: 17px; color: #0b141c; }
+.wp-note { margin-top: 18px; clear: both; }

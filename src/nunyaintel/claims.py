@@ -332,6 +332,24 @@ def _matchup_nrg(con):
     )
 
 
+def _round_winprob(con):
+    """Round win-chance model: test accuracy and the first-kill swing (Replay, Predict tab)."""
+    from nunyaintel import winprob
+
+    e = winprob.evaluate(con)
+    m = winprob.model(con)
+    got = (
+        e["test_rounds"], round(e["accuracy"] * 100, 1), round(e["brier"], 3),
+        round(e["baseline_brier"], 3), round(m.p_attack(5, 5, 0) * 100),
+        round(m.p_attack(5, 4, 0) * 100), round(m.p_attack(4, 5, 0) * 100),
+    )  # fmt: skip
+    return Result(
+        got == (12745, 74.6, 0.162, 0.249, 52, 74, 31),
+        f"{got[0]} unseen rounds: {got[1]}% right, Brier {got[2]} vs {got[3]}; attack wins "
+        f"{got[4]}% at 5v5, {got[5]}% after getting the first kill, {got[6]}% after losing it",
+    )
+
+
 CLAIMS = [
     Claim("dataset", "README intro",
           "857 series, 2,078 maps, 42,490 rounds, 160 teams (Jan 2025 - Sep 2026)", _dataset),
@@ -380,6 +398,10 @@ CLAIMS = [
           "Cloud9 vs NRG on Lotus: C9's most-attacked site A (35%) is held by NRG only 30% "
           "(11 of 37); NRG's most-attacked site C (36%) is C9's 33% hold; C9 won 5 of 8 "
           "head-to-head maps", _matchup_nrg),
+    Claim("round_winprob", "Replay win-chance line, Predict tab",
+          "round win chance: 74.6% right on 12,745 unseen rounds (Brier 0.162 vs 0.249); "
+          "attack wins 52% at 5v5, 74% after the first kill, 31% after losing it",
+          _round_winprob),
     Claim("ability_kills", "README caveats", "about 3.7% of kills have no weapon recorded",
           _ability_kills),
 ]  # fmt: skip

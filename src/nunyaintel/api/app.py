@@ -419,6 +419,17 @@ def create_app(
 
         return predict.next_buy(con, _team(con, team)["id"])
 
+    @app.get("/api/predict/round")
+    def predict_round(con: sqlite3.Connection = db) -> dict[str, Any]:
+        """Round win chance by players alive and spike: the grids, plus the tested accuracy."""
+        from nunyaintel import winprob
+
+        m = winprob.model(con)
+        return {
+            "grid": {"no_plant": m.grid(0), "planted": m.grid(1)},
+            "model": winprob.evaluate(con),
+        }
+
     @app.get("/api/operator")
     def operator(
         team: str | None = None,

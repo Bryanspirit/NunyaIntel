@@ -351,6 +351,11 @@ function Player({ replay, map, teamName, selection }: { replay: Replay; map: Map
             <input className="scrubber" type="range" min={replay.t_min} max={tEnd} step={0.1} value={t}
               onChange={(e) => { setPlaying(false); setT(Number(e.target.value)); }} aria-label="Round time" />
             <DensityStrip events={events} tMin={replay.t_min} tMax={tEnd} t={t} onSeek={(x) => { setPlaying(false); setT(x); }} />
+            {roundInfo && roundInfo.wp.length > 0 && (
+              <WinChance line={roundInfo.wp} team={teamName} tMin={replay.t_min} tMax={tEnd} t={t}
+                onSeek={(x) => { setPlaying(false); setT(x); }} />
+            )}
+            {!roundInfo && <p className="note">Pick a single round below to see {teamName}'s win chance move with every kill.</p>}
 
             <div className="replay-options">
               <div className="seg">
@@ -461,6 +466,50 @@ function AreaStats({ events, region }: { events: ReplayEvent[]; region: string }
 function describe(replay: Replay, i: number): string {
   const r = replay.rounds[i];
   return `${r.date} vs ${r.opponent} · R${r.round} · ${SIDE_LABEL[r.side]} · ${r.won ? "W" : "L"}`;
+}
+
+/** The team's chance to win the round, stepping at every kill and plant. Click to jump. */
+function WinChance({ line, team, tMin, tMax, t, onSeek }: {
+  line: [number, number, string][]; team: string; tMin: number; tMax: number; t: number; onSeek: (t: number) => void;
+}) {
+  const W = 600, H = 90;
+  const x = (v: number) => ((Math.min(Math.max(v, tMin), tMax) - tMin) / (tMax - tMin)) * W;
+  const y = (p: number) => H - p * H;
+  // step line: the chance holds until the next thing happens
+  let d = `M ${x(tMin)} ${y(line[0][1])}`;
+  for (let i = 0; i < line.length; i++) {
+    const [tt, p] = line[i];
+    d += ` L ${x(tt)} ${y(i === 0 ? p : line[i - 1][1])} L ${x(tt)} ${y(p)}`;
+  }
+  d += ` L ${x(tMax)} ${y(line[line.length - 1][1])}`;
+  let now = line[0];
+  for (const pt of line) if (pt[0] <= t) now = pt;
+  const tone = now[1] >= 0.6 ? "good" : now[1] <= 0.4 ? "bad" : "";
+  return (
+    <div className="winchance">
+      <div className="winchance-head">
+        <span>{team}'s chance to win this round</span>
+        <b className={tone}>{Math.round(now[1] * 100)}%</b>
+        <span className="muted">{now[2]}</span>
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none"
+        onClick={(ev) => {
+          const r = ev.currentTarget.getBoundingClientRect();
+          onSeek(tMin + ((ev.clientX - r.left) / r.width) * (tMax - tMin));
+        }}>
+        <rect x={0} y={0} width={W} height={H / 2} className="winchance-top" />
+        <line x1={0} x2={W} y1={H / 2} y2={H / 2} className="density-zero" />
+        <path d={d} className="winchance-line" />
+        {line.slice(1).map(([tt, p, what], i) => (
+          <circle key={i} cx={x(tt)} cy={y(p)} r={3} className={what.includes("kill") ? "wc-kill" : what.includes("lose") ? "wc-death" : "wc-plant"}>
+            <title>{`${fmtTime(tt)} · ${Math.round(p * 100)}% · ${what}`}</title>
+          </circle>
+        ))}
+        <line x1={x(t)} x2={x(t)} y1={0} y2={H} className="density-head" />
+      </svg>
+      <p className="note">From how often teams went on to win from the same players-alive and spike state (tested on 12,745 unseen rounds). Time left isn't counted yet.</p>
+    </div>
+  );
 }
 
 /** When the action happens: kills (up) and deaths (down) per 2 s, with the playhead. Click to jump. */

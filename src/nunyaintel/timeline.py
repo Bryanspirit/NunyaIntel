@@ -116,6 +116,35 @@ def replay(
         add((s, g, n), at, kind, (x, y), None, f"{names.get(team, team)} ({who})")
 
     events.sort(key=lambda e: (e[1], e[0]))
+
+    # win-chance line per round: the team's chance to win after every kill and plant
+    from nunyaintel import winprob
+
+    m = winprob.model(con)
+    wp: dict[int, list[list]] = {}
+    for story in winprob.stories(con, f"AND {where}", tuple(params)):
+        i = index.get(story.key)
+        if i is None or not story.buy_end:
+            continue
+        ours = rounds[i].side == "attacker"
+        flip = (lambda q: q) if ours else (lambda q: 1 - q)
+        line = [[0.0, round(flip(m.p_attack(*winprob.START_STATE)), 3), "round start"]]
+        for at, a, d, planted, what in story.steps:
+            t = t_of(at, story.buy_end)
+            if T_MIN <= t <= T_MAX:
+                state = f"{a}v{d}" if ours else f"{d}v{a}"
+                team = names.get(team_id, team_id)
+                if what == "spike planted":
+                    what = "spike planted"
+                elif (what == "attacker died") == ours:
+                    what = f"{team} lose a player"
+                else:
+                    what = f"{team} get a kill"
+                spike = " · spike down" if planted and what != "spike planted" else ""
+                p_team = round(flip(m.p_attack(a, d, planted)), 3)
+                line.append([round(t, 2), p_team, f"{what} · {state}{spike}"])
+        wp[i] = line
+
     return {
         "rounds": [
             {
@@ -128,6 +157,7 @@ def replay(
                 "won": r.won,
                 "win_type": r.win_type,
                 "own_buy": r.own_buy,
+                "wp": wp.get(i, []),  # [[t, chance this team wins, what happened]]
             }
             for i, r in enumerate(rounds)
         ],
